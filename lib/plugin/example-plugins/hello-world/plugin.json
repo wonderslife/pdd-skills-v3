@@ -1,0 +1,1 @@
+{"name": "hello-world", "version": "1.0.0", "description": "Hello World 示例插件 - PDD 插件系统入门示例", "main": "index.js", "author": "PDD Team", "license": "MIT", "keywords": ["example", "demo", "getting-started"], "pdd": ">=1.0.0"}

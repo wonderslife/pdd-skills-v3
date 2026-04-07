@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../pdd-skills"
+		},
+		{
+			"path": "../superpowers"
+		},
+		{
+			"path": "../skills"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../claude-code-snapshot"
+		}
+	],
+	"settings": {}
+}

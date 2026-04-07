@@ -1,0 +1,1 @@
+{"name": "pdd-template-engine", "version": "1.0.0", "category": "pr", "description": "Template engine generating standardized documents from PDD specs and feature matrices. Call when creating document templates or generating spec/checklist/PRD templates.", "triggers": ["模板引擎", "template", "文档模板"]}

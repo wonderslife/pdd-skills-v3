@@ -1,0 +1,1 @@
+{"name": "custom-linter", "version": "1.0.0", "description": "自定义 Linter 规则扩展 - 在 pre-verify 阶段执行自定义代码检查", "main": "index.js", "hooks": ["pre-verify"], "author": "PDD Team", "license": "MIT", "keywords": ["linter", "lint", "quality", "rules"], "pdd": ">=1.0.0"}

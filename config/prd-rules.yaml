@@ -1,0 +1,113 @@
+# PRD Linter 规则配置
+#
+# 用于检查PRD文档的完整性和规范性
+
+rules:
+  structure:
+    enabled: true
+    checks:
+      - id: prd-has-title
+        name: "PRD必须有标题"
+        pattern: "^#+\\s+.+"
+        severity: error
+        message: "PRD文档缺少标题（一级标题）"
+
+      - id: prd-has-version
+        name: "PRD必须包含版本信息"
+        pattern: "(?i)(version|版本|v\\d+\\.\\d+)"
+        severity: error
+        message: "PRD文档缺少版本号标识"
+
+      - id: prd-has-background
+        name: "PRD必须包含背景说明"
+        pattern: "(?i)(背景|background|项目背景|业务背景)"
+        severity: error
+        message: "PRD文档缺少背景说明章节"
+
+      - id: prd-has-goals
+        name: "PRD必须包含目标"
+        pattern: "(?i)(目标|goals?| objectives?)"
+        severity: error
+        message: "PRD文档缺少目标定义章节"
+
+      - id: prd-has-scope
+        name: "PRD必须包含范围定义"
+        pattern: "(?i)(范围|scope| in scope| out of scope|边界)"
+        severity: warn
+        message: "建议添加范围/边界定义章节"
+
+      - id: prd-has-user-stories
+        name: "PRD应包含用户故事"
+        pattern: "(?i)(用户故事|user story|功能需求|需求列表)"
+        severity: warn
+        message: "建议包含用户故事或需求列表"
+
+      - id: prd-has-acceptance-criteria
+        name: "PRD应包含验收标准"
+        pattern: "(?i)(验收标准|acceptance criteria|ac)"
+        severity: warn
+        message: "建议为每个需求添加验收标准"
+
+  content:
+    enabled: true
+    checks:
+      - id: prd-no-vague-language
+        name: "避免模糊语言"
+        pattern: "(大概|可能|也许|适当|合理|优化|改善|提升)"
+        severity: warn
+        message: "检测到模糊语言，建议使用具体可量化的描述"
+        exclude_patterns:
+          - "作为.*参考"
+          - "示例"
+
+      - id: prd-has-metrics
+        name: "关键指标应量化"
+        pattern: "(?i)(指标|kpi|性能|响应时间|并发|吞吐量)"
+        severity: info
+        message: "涉及指标的描述应尽量量化（如：<100ms, >99.9%）"
+
+      - id: prd-smart-goals
+        name: "目标应符合SMART原则"
+        pattern: "(?i)(目标|goal).*:.*"
+        severity: info
+        message: "目标描述应符合SMART原则（具体、可衡量、可实现、相关、有时限）"
+
+  format:
+    enabled: true
+    checks:
+      - id: prd-max-section-depth
+        name: "标题层级不超过5级"
+        max_depth: 5
+        severity: warn
+        message: "文档层级过深，建议控制在5级以内"
+
+      - id: prd-table-format
+        name: "表格格式正确性"
+        check_table_borders: true
+        severity: info
+        message: "表格格式不规范"
+
+      - id: prd-code-blocks
+        name: "代码块应有语言标注"
+        pattern: "```(?!\\w+)"
+        severity: info
+        message: "代码块缺少语言标注，建议使用 ```语言名 格式"
+
+  consistency:
+    enabled: true
+    checks:
+      - id: prd-consistent-terminology
+        name: "术语一致性"
+        severity: warn
+        message: "同一概念使用了不同的术语表达"
+
+      - id: prd-id-format
+        name: "需求ID格式统一"
+        pattern: "[A-Z]+-\\d{3,}"
+        severity: info
+        message: "需求ID建议采用统一的编号格式（如：REQ-001）"
+
+      - id: prd-reference-exists
+        name: "引用完整性"
+        severity: error
+        message: "文档中引用了不存在的章节或外部链接失效"

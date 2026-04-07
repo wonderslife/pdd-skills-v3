@@ -1,0 +1,47 @@
+# PDD Configuration Template - Default
+
+project:
+  name: "my-pdd-project"
+  version: "1.0.0"
+  description: "PDD Driven Development Project"
+  template: default
+
+pdd:
+  features:
+    output_dir: specs/features
+    naming_pattern: "{id}-{name}"
+  spec:
+    output_dir: specs
+    template: default
+    include_tests: true
+  verify:
+    dimensions:
+      - completeness
+      - correctness
+      - consistency
+    auto_fix: false
+
+linter:
+  enabled: true
+  types:
+    - code
+    - prd
+    - sql
+    - activiti
+  fail_on_error: false
+  report_format: markdown
+
+hooks:
+  enabled: true
+  events:
+    - session_start
+    - pre_feature
+    - post_feature
+
+cache:
+  enabled: true
+  ttl: 3600
+  max_size: 100
+
+logging:
+  level: info

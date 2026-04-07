@@ -1,0 +1,166 @@
+# Activiti BPMN Linter 规则配置
+#
+# 用于检查BPMN流程文件的规范性和最佳实践
+
+rules:
+  structure:
+    enabled: true
+    checks:
+      - id: bpmn-has-start-event
+        name: "流程必须有开始事件"
+        severity: error
+        message: "BPMN流程缺少开始事件(StartEvent)"
+        xpath: "//*[local-name()='process']"
+        condition: "count(//*[local-name()='startEvent']) > 0"
+
+      - id: bpmn-has-end-event
+        name: "流程必须有结束事件"
+        severity: error
+        message: "BPMN流程缺少结束事件(EndEvent)"
+        xpath: "//*[local-name()='process']"
+        condition: "count(//*[local-name()='endEvent']) > 0"
+
+      - id: bpmn-single-start-event
+        name: "建议只有一个开始事件"
+        severity: warn
+        message: "建议每个流程只包含一个开始事件"
+        max_count: 1
+
+      - id: bpmn-process-id-required
+        name: "流程ID必须存在且有效"
+        severity: error
+        pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+        message: "流程ID格式无效，应以字母开头，仅包含字母数字下划线"
+
+      - id: bpmn-process-name-required
+        name: "流程必须有名称"
+        severity: error
+        message: "BPMN流程缺少name属性"
+
+  connectivity:
+    enabled: true
+    checks:
+      - id: bpmn-no-orphan-nodes
+        name: "无孤立节点"
+        severity: error
+        message: "检测到未连接的孤立节点，所有节点应有入边或出边"
+
+      - id: bpmn-no-dangling-flows
+        name: "无悬空流"
+        severity: warn
+        message: "检测到未连接到目标节点的序列流"
+
+      - id: bpmn-gateway-balance
+        name: "网关进出平衡"
+        severity: error
+        message: "网关的流入和流出数量不匹配（排他/并行网关应平衡）"
+
+      - id: bpmn-all-paths-to-end
+        name: "所有路径通向结束节点"
+        severity: error
+        message: "存在无法到达结束事件的执行路径"
+
+  naming:
+    enabled: true
+    checks:
+      - id: bpmn-task-id-convention
+        name: "任务ID命名规范"
+        severity: info
+        pattern: "^task_[a-z][a-z0-9_]*$"
+        message: "任务ID建议使用 task_xxx 格式的小写蛇形命名"
+
+      - id: bpmn-gateway-id-convention
+        name: "网关ID命名规范"
+        severity: info
+        pattern: "^gateway_[a-z][a-z0-9_]*$"
+        message: "网关ID建议使用 gateway_xxx 格式"
+
+      - id: bpmn-sequence-flow-id-convention
+        name: "序列流ID命名规范"
+        severity: info
+        pattern: "^flow_[a-z][a-z0-9_]*$"
+        message: "序列流ID建议使用 flow_xxx 格式"
+
+      - id: bpmn-chinese-name-required
+        name: "节点名称使用中文"
+        severity: warn
+        message: "节点名称建议使用中文以便业务理解"
+
+  best_practices:
+    enabled: true
+    checks:
+      - id: bpmn-no-deep-nesting
+        name: "避免过深嵌套"
+        severity: warn
+        max_depth: 5
+        message: "流程嵌套层级超过5层，建议拆分子流程"
+
+      - id: bpmn-reasonable-size
+        name: "流程规模合理"
+        severity: warn
+        max_nodes: 50
+        message: "流程节点数过多(>50)，建议拆分为子流程"
+
+      - id: bpmn-user-task-has-assignee
+        name: "用户任务需指定处理人"
+        severity: error
+        message: "用户任务(UserTask)必须指定assignee或candidateUsers"
+
+      - id: bpmn-service-task-has-class
+        name: "服务任务需指定实现类"
+        severity: error
+        message: "服务任务(ServiceTask)必须指定class或expression"
+
+      - id: bpmn-timer-event-valid
+        name: "定时器配置有效性"
+        severity: error
+        message: "定时器边界事件的配置不完整或格式无效"
+
+      - id: bpmn-signal-event-defined
+        name: "信号事件已定义"
+        severity: warn
+        message: "引用了未定义的信号(Signal)"
+
+      - id: bpmn-no-inline-scripts
+        name: "避免内联脚本"
+        severity: warn
+        message: "不建议在流程中使用内联脚本，建议使用ServiceTask委托"
+
+      - id: bpmn-form-key-configured
+        name: "表单Key已配置"
+        severity: info
+        message: "用户任务建议配置formKey以支持动态表单"
+
+  security:
+    enabled: true
+    checks:
+      - id: bpmn-no-hardcoded-passwords
+        name: "禁止硬编码密码"
+        severity: error
+        pattern: "(password|passwd|pwd)\s*[:=]\s*['\"][^'\"]+['\"]"
+        message: "检测到可能的硬编码密码"
+
+      - id: bpmn-no-sql-injection-risk
+        name: "SQL注入风险检查"
+        severity: error
+        pattern: "\\$\\{.*(?:SELECT|INSERT|UPDATE|DELETE|DROP)"
+        message: "检测到潜在的SQL注入风险，请使用参数化查询"
+
+      - id: bpmn-permission-check-before-approval
+        name: "审批前权限检查"
+        severity: warn
+        message: "审批节点前建议添加权限校验步骤"
+
+  documentation:
+    enabled: true
+    checks:
+      - id: bpmn-process-documentation
+        name: "流程文档说明"
+        severity: info
+        message: "建议为流程添加documentation文档说明"
+
+      - id: bpmn-task-documentation
+        name: "关键任务文档说明"
+        severity: info
+        min_priority_tasks: true
+        message: "关键任务建议添加documentation说明用途"

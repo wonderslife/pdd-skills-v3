@@ -1,0 +1,1 @@
+{"name": "pdd-pr-merge", "version": "1.0.0", "category": "pr", "description": "PR merge coordinator managing safe merge operations with conflict detection and CI gate verification. Call when merging pull requests to main branch.", "triggers": ["合并PR", "merge PR", "合并代码"]}

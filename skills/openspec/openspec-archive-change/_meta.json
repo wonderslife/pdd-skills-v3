@@ -1,0 +1,1 @@
+{"name": "openspec-archive-change", "version": "1.0.0", "category": "openspec", "description": "Archive a completed OpenSpec change. Use when finalizing changes after implementation is complete.", "triggers": ["归档变更", "archive change", "完成归档"]}

@@ -1,0 +1,1 @@
+{"name": "openspec-verify-change", "version": "1.0.0", "category": "openspec", "description": "Verify implementation matches OpenSpec change artifacts. Invoke when validating completeness before archiving.", "triggers": ["验证变更", "verify change", "验证实现"]}

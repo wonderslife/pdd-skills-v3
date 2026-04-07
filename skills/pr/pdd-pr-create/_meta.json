@@ -1,0 +1,1 @@
+{"name": "pdd-pr-create", "version": "1.0.0", "category": "pr", "description": "PR creation agent generating well-structured pull requests from feature implementations with proper descriptions and metadata. Call when submitting code changes.", "triggers": ["创建PR", "create PR", "提交代码"]}

@@ -1,0 +1,1 @@
+{"name": "expert-arch-enforcer", "version": "1.0.0", "category": "entropy", "description": "Architecture constraint enforcer monitoring code for violations of preset invariants and boundaries. Invoke when checking architecture compliance, dependency direction, or module boundary violations.", "triggers": ["架构检查", "依赖检查", "模块边界"]}

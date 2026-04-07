@@ -1,0 +1,1 @@
+{"name": "openspec-onboard", "version": "1.0.0", "category": "openspec", "description": "Guided onboarding for OpenSpec walking through a complete workflow cycle with narration and real codebase work. Invoke when initializing OpenSpec or starting guided setup.", "triggers": ["初始化", "onboard", "规格管理初始化"]}

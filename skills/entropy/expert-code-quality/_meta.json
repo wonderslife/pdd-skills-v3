@@ -1,0 +1,1 @@
+{"name": "expert-code-quality", "version": "1.0.0", "category": "entropy", "description": "Code quality expert integrating refactoring techniques and design patterns for systematic improvement. Call when reviewing code, refactoring, checking code smells, or applying SOLID principles.", "triggers": ["代码审查", "重构", "设计模式", "SOLID原则"]}

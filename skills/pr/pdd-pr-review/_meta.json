@@ -1,0 +1,1 @@
+{"name": "pdd-pr-review", "version": "1.0.0", "category": "pr", "description": "PR review agent providing systematic code review on pull requests with quality gates and spec compliance checks. Invoke when reviewing PR code changes.", "triggers": ["审查PR", "review PR", "代码审查"]}

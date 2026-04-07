@@ -1,0 +1,1 @@
+{"name": "pdd-pr-batch", "version": "1.0.0", "category": "pr", "description": "Batch PR manager handling multiple pull requests in parallel with unified status tracking. Use when processing several PRs simultaneously.", "triggers": ["批量PR", "batch PR", "批量处理"]}

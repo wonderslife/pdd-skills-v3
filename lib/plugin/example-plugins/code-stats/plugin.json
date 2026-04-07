@@ -1,0 +1,1 @@
+{"name": "code-stats", "version": "1.0.0", "description": "代码统计插件 - 统计代码行数、函数数、复杂度等指标", "main": "index.js", "hooks": ["post-verify"], "author": "PDD Team", "license": "MIT", "keywords": ["stats", "metrics", "analysis"], "pdd": ">=1.0.0"}

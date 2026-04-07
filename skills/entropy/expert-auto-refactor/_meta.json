@@ -1,0 +1,1 @@
+{"name": "expert-auto-refactor", "version": "1.0.0", "category": "entropy", "description": "Automated refactoring expert transforming collected quality improvements into concrete code operations. Call when eliminating code duplication, simplifying complexity, or applying design patterns systematically.", "triggers": ["重构代码", "消除重复", "简化代码"]}

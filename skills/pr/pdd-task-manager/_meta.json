@@ -1,0 +1,1 @@
+{"name": "pdd-task-manager", "version": "1.0.0", "category": "pr", "description": "Task management system for tracking PDD development progress with SQLite-based atomic claiming. Invoke when managing tasks, tracking progress, or coordinating multi-agent work.", "triggers": ["任务管理", "task manager", "任务跟踪"]}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PDD Visual Manager - PRD驱动开发的可视化管理系统">
+  <title>PDD Visual Manager</title>
+
+  <!-- 主题 CSS -->
+  <link rel="stylesheet" href="/css/dashboard.css">
+
+  <!-- Favicon (可选) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body>
+  <!-- ============================================================
+       顶部导航栏
+       ============================================================ -->
+  <nav class="navbar">
+    <div class="navbar-brand">📊 PDD Visual Manager</div>
+
+    <div class="navbar-tabs">
+      <button class="tab-btn active" data-tab="pipeline" title="流水线视图 (快捷键: 1)">
+        🔀 流水线
+      </button>
+      <button class="tab-btn" data-tab="kanban" title="看板视图 (快捷键: 2)">
+        📋 看板
+      </button>
+      <button class="tab-btn" data-tab="quality" title="质量视图 (快捷键: 3)">
+        📈 质量
+      </button>
+      <button class="tab-btn" data-tab="system" title="系统视图 (快捷键: 4)">
+        ⚙️ 系统
+      </button>
+    </div>
+
+    <div class="navbar-actions">
+      <button id="theme-toggle" title="切换亮色/暗色主题">🌙</button>
+      <span id="connection-status" class="status-dot online" title="SSE 连接状态"></span>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       主内容区 - 多视图容器
+       ============================================================ -->
+  <main id="main-content">
+    <!-- 流水线视图 -->
+    <div id="view-pipeline" class="view active"></div>
+
+    <!-- 看板视图 -->
+    <div id="view-kanban" class="view"></div>
+
+    <!-- 质量视图 -->
+    <div id="view-quality" class="view"></div>
+
+    <!-- 系统视图 -->
+    <div id="view-system" class="view"></div>
+  </main>
+
+  <!-- ============================================================
+       底部状态栏
+       ============================================================ -->
+  <footer class="status-bar">
+    <span id="last-update" title="最后数据更新时间">最后更新: --</span>
+    <span id="refresh-timer" title="自动刷新间隔">刷新间隔: 30s</span>
+    <span id="feature-count" title="当前功能点总数">功能点: 0</span>
+    <span id="system-status" title="系统运行状态">系统: 正常</span>
+  </footer>
+
+  <!-- ============================================================
+       Modal 弹窗容器（用于显示详情、确认对话框等）
+       ============================================================ -->
+  <div id="modal-overlay" class="modal-hidden">
+    <div id="modal-content" class="modal">
+      <!-- 动态内容将通过 JS 注入 -->
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Toast 通知容器
+       ============================================================ -->
+  <div id="toast-container"></div>
+
+  <!-- ============================================================
+       JavaScript 模块加载
+       注意：加载顺序很重要！app.js 必须最先加载
+       ============================================================ -->
+
+  <!-- 核心应用控制器 -->
+  <script src="/js/app.js"></script>
+
+  <!-- 图表绘制工具 -->
+  <script src="/js/charts.js"></script>
+
+  <!-- 各视图模块 -->
+  <script src="/js/pipeline-view.js"></script>
+  <script src="/js/kanban-view.js"></script>
+  <script src="/js/quality-view.js"></script>
+  <script src="/js/system-view.js"></script>
+
+  <!-- 无 JavaScript 时的降级提示 -->
+  <noscript>
+    <style>
+      #main-content { display: none; }
+      .noscript-warning {
+        padding: 40px;
+        text-align: center;
+        font-size: 18px;
+        color: #e63946;
+      }
+    </style>
+    <div class="noscript-warning">
+      ⚠️ PDD Visual Manager 需要启用 JavaScript 才能正常工作。
+      请在浏览器设置中启用 JavaScript 后刷新页面。
+    </div>
+  </noscript>
+</body>
+</html>

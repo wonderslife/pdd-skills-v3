@@ -1,0 +1,1 @@
+{"name": "expert-entropy-auditor", "version": "1.0.0", "category": "entropy", "description": "Entropy audit skill discovering gaps between design intent and code implementation. Trigger when auditing technical debt, checking PRD consistency, or detecting AI residue in codebase.", "triggers": ["审计技术债务", "PRD一致性", "AI残渣检测"]}
