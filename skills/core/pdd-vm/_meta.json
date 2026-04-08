@@ -1,0 +1,18 @@
+{
+  "name": "pdd-vm",
+  "version": "1.0.0",
+  "category": "core",
+  "description": "PDD Visual Manager for monitoring project status, feature progress, quality scores, token usage, and iteration health across dashboard, TUI, and VM CLI commands. 支持中文触发：可视化看板、项目状态、功能进度、质量监控、VM面板、Dashboard。",
+  "triggers": [
+    "可视化看板",
+    "项目状态",
+    "功能进度",
+    "质量监控",
+    "VM面板",
+    "Dashboard",
+    "visual manager",
+    "project status",
+    "feature progress",
+    "quality dashboard"
+  ]
+}
