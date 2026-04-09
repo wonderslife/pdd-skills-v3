@@ -33,9 +33,30 @@ const LINTER_REGISTRY = {
 
 export default async function runLinters(options = {}) {
   const startTime = Date.now();
-  const types = options.type || ['code'];
+
+  // Handle type parameter - can be string or array
+  let types = options.type || 'code';
+  if (typeof types === 'string') {
+    // Handle 'all' type - run all linters
+    if (types === 'all') {
+      types = Object.keys(LINTER_REGISTRY);
+    } else {
+      types = types.split(',').map(t => t.trim()).filter(t => t);
+    }
+  }
+
   const incremental = options.incremental || false;
   const outputFormat = options.output || 'text';
+  
+  // Handle file parameter - can be string or array, convert to array for linterOptions
+  let fileOptions = null;
+  if (options.file) {
+    fileOptions = Array.isArray(options.file) ? options.file : [options.file];
+  }
+  const linterOptions = {
+    files: fileOptions,
+    includeAll: options.includeAll || false
+  };
 
   console.log(chalk.blue.bold('\n🔍 PDD Linter - 代码与文档质量检查\n'));
 
@@ -62,7 +83,7 @@ export default async function runLinters(options = {}) {
 
     for (const runner of linterDef.runners) {
       try {
-        const result = await executeLinter(runner, projectRoot, config, incremental);
+        const result = await executeLinter(runner, projectRoot, config, incremental, linterOptions);
         results.push(result);
         printResult(result, outputFormat);
       } catch (e) {
@@ -83,7 +104,7 @@ export default async function runLinters(options = {}) {
   return results;
 }
 
-async function executeLinter(runner, projectRoot, config, incremental) {
+async function executeLinter(runner, projectRoot, config, incremental, linterOptions) {
   const start = Date.now();
 
   switch (runner) {
@@ -96,7 +117,7 @@ async function executeLinter(runner, projectRoot, config, incremental) {
     case 'ruff':
       return runRuff(projectRoot, incremental);
     case 'prd':
-      return runPRDLinter(projectRoot);
+      return runPRDLinter(projectRoot, linterOptions);
     case 'sql':
       return runSQLLinter(projectRoot);
     case 'activiti':
@@ -168,9 +189,9 @@ function runRuff(projectRoot, incremental) {
   }
 }
 
-async function runPRDLinter(projectRoot) {
+async function runPRDLinter(projectRoot, linterOptions) {
   const { runPRDChecks } = await import('./prd-linter.js');
-  return runPRDChecks(projectRoot);
+  return runPRDChecks(projectRoot, linterOptions);
 }
 
 async function runSQLLinter(projectRoot) {
@@ -216,15 +237,32 @@ function printResult(result, format) {
   console.log(`  ${icon} ${chalk.white(result.runner)} (${timeStr})`);
 
   if (result.issueCount > 0) {
-    console.log(`     ${chalk.yellow(`${result.errorCount} 错误, ${result.warningCount} 警告`)}`);
+    console.log(`     ${chalk.yellow(`${result.errorCount} errors, ${result.warningCount} warnings`)}`);
 
-    for (const issue of (result.issues || []).slice(0, 10)) {
-      const color = issue.severity === 'error' ? chalk.red : chalk.yellow;
-      console.log(`     ${color('•')} ${issue.message}`);
+    for (const issue of (result.issues || []).slice(0, 20)) {
+      const color = issue.severity === 'error' ? chalk.red : issue.severity === 'warn' ? chalk.yellow : chalk.gray;
+      const severityIcon = issue.severity === 'error' ? 'ERR' : issue.severity === 'warn' ? 'WRN' : 'INF';
+
+      let line = `     ${color(`[${severityIcon}]`)} ${issue.ruleName || issue.ruleId || ''}`;
+
+      if (issue.file) {
+        line += chalk.gray(`  ${issue.file}`);
+      }
+      if (issue.line && issue.line > 0) {
+        line += chalk.cyan(`:${issue.line}`);
+      }
+
+      console.log(line);
+
+      if (issue.context) {
+        console.log(chalk.dim(`         >> ${issue.context}`));
+      }
+
+      console.log(chalk.dim(`         ${issue.message}`));
     }
 
-    if (result.issueCount > 10) {
-      console.log(`     ... 还有 ${result.issueCount - 10} 个问题`);
+    if (result.issueCount > 20) {
+      console.log(`     ... ${result.issueCount - 20} more issues`);
     }
   } else {
     console.log(chalk.gray('     无问题发现'));
@@ -268,10 +306,17 @@ async function generateMarkdownReport(reportPath, results, errors, warnings, dur
     lines.push(`## ${r.runner}`, '');
     if (r.issues && r.issues.length > 0) {
       for (const issue of r.issues) {
-        lines.push(`- [${issue.severity.toUpperCase()}] ${issue.message}`);
+        const severity = (issue.severity || 'info').toUpperCase();
+        let issueLine = `- [${severity}] ${issue.ruleName || issue.ruleId || 'unknown'}`;
+        if (issue.file) issueLine += `  (${issue.file}`;
+        if (issue.line && issue.line > 0) issueLine += `:${issue.line}`;
+        if (issue.file) issueLine += `)`;
+        lines.push(issueLine);
+        if (issue.context) lines.push(`  > ${issue.context}`);
+        lines.push(`  ${issue.message}`);
       }
     } else {
-      lines.push('- 无问题');
+      lines.push('- No issues');
     }
     lines.push('');
   }

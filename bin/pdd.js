@@ -6,6 +6,11 @@ import { initProject } from '../lib/init.js';
 import { updateSkills } from '../lib/update.js';
 import { listSkills } from '../lib/list.js';
 import { showVersion } from '../lib/version.js';
+import { initConsole, formatConsoleText } from '../lib/utils/console.js';
+
+initConsole();
+
+const safeChalk = (text) => formatConsoleText(text, { fallbackEmoji: true });
 
 const program = new Command();
 
@@ -16,14 +21,15 @@ program
 
 program
   .command('init [path]')
-  .description('初始化PDD项目目录结构')
-  .option('-f, --force', '强制覆盖现有目录')
-  .option('-t, --template <name>', '使用指定模板', 'default')
-  .option('--no-skills', '不复制技能文件')
+  .description('Initialize PDD project directory structure')
+  .option('-f, --force', 'Force overwrite existing directory')
+  .option('-t, --template <name>', 'Project template (business-analysis/ruoyi/generic)')
+  .option('-i, --ide <name>', 'Target IDE (trae/cursor/vscode/claude/codex/generic)')
+  .option('--no-skills', 'Do not copy skill files')
   .action(async (path = '.', options) => {
-    console.log(chalk.blue('\n🚀 初始化PDD项目...\n'));
+    console.log(chalk.blue('\n>> Initializing PDD project...\n'));
     await initProject(path, options);
-    console.log(chalk.green('\n✅ PDD项目初始化完成!'));
+    console.log(chalk.green('\n[OK] Project initialized!'));
   });
 
 program
