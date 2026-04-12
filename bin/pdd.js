@@ -252,7 +252,9 @@ program
   .option('-r, --refresh <sec>', '自动刷新间隔(秒)', '30')
   .action(async (options) => {
     const { DashboardServer } = await import('../lib/vm/dashboard/server.js');
-    const server = new DashboardServer();
+    const { PDDDataProvider } = await import('../lib/vm/data-provider.js');
+    const dataProvider = new PDDDataProvider(process.cwd());
+    const server = new DashboardServer(dataProvider);
     await server.start(parseInt(options.port, 10), {
       open: !options.noBrowser && !options.noOpen,
       refreshInterval: parseInt(options.refresh, 10) * 1000
