@@ -90,8 +90,8 @@ class UserBindingService:
         return binding
 
     async def _update_binding_time(self, binding: OAuthBinding):
-        from datetime import datetime
-        binding.last_login_at = datetime.utcnow()
+        from datetime import datetime, timezone
+        binding.last_login_at = datetime.now(timezone.utc)
         await self.db.commit()
 
     async def _create_new_user_and_binding(self, oauth_user: OAuthUser) -> Tuple[User, OAuthBinding]:

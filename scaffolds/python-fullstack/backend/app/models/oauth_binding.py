@@ -1,7 +1,7 @@
 """
 OAuth Binding Model - Third-party auth binding relationships
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 
@@ -20,8 +20,8 @@ class OAuthBinding(Base):
     nickname = Column(String(100), default="")
     avatar_url = Column(String(500), default="")
     raw_data = Column(Text, nullable=True, comment="原始数据备份 JSON")
-    bound_at = Column(DateTime, default=datetime.utcnow, comment="绑定时间")
-    last_login_at = Column(DateTime, default=datetime.utcnow, comment="最后登录时间")
+    bound_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="绑定时间")
+    last_login_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="最后登录时间")
     status = Column(Boolean, default=True, comment="1=正常 0=解绑")
 
     # Relationship

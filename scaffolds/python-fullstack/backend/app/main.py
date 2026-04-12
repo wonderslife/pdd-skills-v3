@@ -42,12 +42,14 @@ def create_app() -> FastAPI:
     # Startup / Shutdown events
     @app.on_event("startup")
     async def startup():
-        pass  # TODO: init db connection pool, redis, etc.
-    
+        from .database.database import init_db
+        await init_db()
+
     @app.on_event("shutdown")
     async def shutdown():
-        pass  # TODO: cleanup connections
-    
+        from .database.database import dispose_db
+        await dispose_db()
+
     return app
 
 
@@ -64,11 +66,12 @@ def _register_exception_handlers(app: FastAPI):
     
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
+        settings = get_settings()
         return JSONResponse(
             status_code=500,
             content={
                 "code": 500,
-                "message": str(exc),
-                "detail": getattr(exc, "detail", None),
+                "message": "Internal Server Error" if not settings.DEBUG else str(exc),
+                "detail": None if not settings.DEBUG else getattr(exc, "detail", None),
             }
         )

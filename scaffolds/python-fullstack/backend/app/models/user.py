@@ -1,7 +1,7 @@
 """
 User Model - Core user entity with org relationship
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, 
     ForeignKey, Text, Index
@@ -31,8 +31,8 @@ class User(Base):
     dept_id = Column(Integer, nullable=True, index=True, comment="所属部门ID")
 
     last_login_at = Column(DateTime, nullable=True, comment="最后登录时间")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), comment="更新时间")
 
     # Relationships
     org = relationship("Org", back_populates="users", foreign_keys=[org_id])

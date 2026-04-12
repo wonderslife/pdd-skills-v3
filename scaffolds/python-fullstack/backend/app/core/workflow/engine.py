@@ -2,7 +2,7 @@
 Workflow Engine Core - State machine driven workflow engine
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -171,7 +171,7 @@ class WorkflowEngine:
         if not wf_def:
             raise WorkflowDefNotFoundError(f"流程定义 {def_code} 不存在")
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         instance = WorkflowInstance(
             def_id=wf_def.id,
             business_key=business_key,
@@ -226,7 +226,7 @@ class WorkflowEngine:
         if rule.to_state in (WorkflowState.COMPLETED.value, WorkflowState.REJECTED.value,
                               WorkflowState.REVOKED.value, WorkflowState.CANCELLED.value):
             instance.status = InstanceStatus.COMPLETED.value
-            instance.finished_at = datetime.utcnow()
+            instance.finished_at = datetime.now(timezone.utc)
 
         log = WorkflowLog(
             instance_id=instance.id,
@@ -236,7 +236,7 @@ class WorkflowEngine:
             operator_id=operator_id,
             operator_name=operator_name,
             opinion=opinion,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
         self.db.add(log)
 
@@ -268,7 +268,7 @@ class WorkflowEngine:
             signer_id=signer_id,
             result="approved",
             opinion=opinion,
-            signed_at=datetime.utcnow(),
+            signed_at=datetime.now(timezone.utc),
         )
         self.db.add(sign)
         task.signed_count += 1
@@ -278,7 +278,7 @@ class WorkflowEngine:
         if should_advance:
             task.status = TaskStatus.COMPLETED.value
             task.result = "approved"
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(timezone.utc)
             
             instance = await self._get_instance(task.instance_id)
             return await self.execute_action(
@@ -306,12 +306,12 @@ class WorkflowEngine:
             signer_id=signer_id,
             result="rejected",
             opinion=reason,
-            signed_at=datetime.utcnow(),
+            signed_at=datetime.now(timezone.utc),
         )
         self.db.add(sign)
         task.status = TaskStatus.COMPLETED.value
         task.result = "rejected"
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now(timezone.utc)
 
         instance = await self._get_instance(task.instance_id)
         return await self.execute_action(
@@ -333,7 +333,7 @@ class WorkflowEngine:
         task.status = TaskStatus.COMPLETED.value
         task.result = "returned"
         task.opinion = reason
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now(timezone.utc)
 
         instance = await self._get_instance(task.instance_id)
         return await self.execute_action(
@@ -347,7 +347,7 @@ class WorkflowEngine:
             raise InvalidTransitionError("任务状态不允许认领")
         task.status = TaskStatus.CLAIMED.value
         task.assignee_id = user_id
-        task.claimed_at = datetime.utcnow()
+        task.claimed_at = datetime.now(timezone.utc)
         await self.db.commit()
         await self.db.refresh(task)
         return task

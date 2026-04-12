@@ -1,7 +1,7 @@
 """
 User Delegation Model - Temporary permission delegation (借调/委派)
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as SAEnum
 from sqlalchemy import (
     Column, Integer, String, DateTime, 
@@ -51,8 +51,8 @@ class UserDelegation(Base):
     rejection_reason = Column(String(500), nullable=True, comment="拒绝原因")
     reason = Column(String(500), nullable=True, comment="借调原因")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False, comment="创建人")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), comment="更新时间")
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id], back_populates="delegations")
@@ -61,7 +61,7 @@ class UserDelegation(Base):
 
     @property
     def is_currently_active(self) -> bool:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return (
             self.status == DelegationStatus.ACTIVE and
             self.start_time <= now <= self.end_time

@@ -1,7 +1,7 @@
 """
 Organization Model - Tree structure for org hierarchy
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
@@ -20,7 +20,7 @@ class Org(Base):
     path = Column(String(500), default="/", comment="树路径: /1/2/5/")
     sort_order = Column(Integer, default=0, comment="排序")
     is_active = Column(Boolean, default=True, comment="是否启用")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
 
     parent = relationship("Org", remote_side=[id], backref="children")
     users = relationship("User", back_populates="org", foreign_keys="User.org_id")

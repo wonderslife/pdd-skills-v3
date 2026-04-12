@@ -1,7 +1,7 @@
 """
 Role & Permission Models - RBAC support
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, 
     ForeignKey, Table, Text
@@ -38,7 +38,7 @@ class Role(Base):
     data_scope = Column(String(30), default="DEPT", comment="默认数据范围: ALL/DEPT/SELF/CUSTOM")
     sort_order = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     users = relationship("User", secondary=user_roles, back_populates="roles")
     permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")
@@ -57,7 +57,7 @@ class Permission(Base):
     resource = Column(String(100), nullable=False, comment="资源标识: /api/v1/users")
     action = Column(String(20), nullable=False, comment="操作: read/write/delete")
     description = Column(String(255), default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     roles = relationship("Role", secondary=role_permissions, back_populates="permissions")
 

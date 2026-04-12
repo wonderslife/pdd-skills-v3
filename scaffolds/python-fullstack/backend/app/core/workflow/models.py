@@ -1,7 +1,7 @@
 """
 Workflow Data Models - SQLAlchemy ORM models for workflow engine
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, DateTime, ForeignKey,
     Text, Boolean, Enum as SAEnum, JSON,
@@ -22,7 +22,7 @@ class WorkflowDef(Base):
     category = Column(String(50), comment="分类")
     config = Column(JSON, nullable=True, comment="流程配置JSON")
     is_active = Column(Boolean, default=True, comment="是否启用")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     instances = relationship("WorkflowInstance", back_populates="definition")
 
@@ -49,8 +49,8 @@ class WorkflowInstance(Base):
     variables = Column(JSON, nullable=True, comment="流程变量")
 
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False, comment="发起人")
-    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="创建时间")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), comment="更新时间")
 
     definition = relationship("WorkflowDef", back_populates="instances")
     tasks = relationship("WorkflowTask", back_populates="instance", cascade="all, delete-orphan")
@@ -85,7 +85,7 @@ class WorkflowTask(Base):
     opinion = Column(Text, nullable=True, comment="审批意见")
     comment = Column(Text, nullable=True, comment="备注")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     claimed_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     due_at = Column(DateTime, nullable=True, comment="截止时间")
@@ -126,7 +126,7 @@ class WorkflowLog(Base):
     operator_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="操作人")
     operator_name = Column(String(50), nullable=True, comment="操作人姓名")
     opinion = Column(Text, nullable=True, comment="操作意见")
-    timestamp = Column(DateTime, default=datetime.utcnow, comment="操作时间")
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), comment="操作时间")
 
     instance = relationship("WorkflowInstance", back_populates="logs")
 

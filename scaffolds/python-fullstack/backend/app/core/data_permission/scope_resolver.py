@@ -83,7 +83,7 @@ class ScopeResolver:
         return ScopeType.DEPT
 
     async def _get_active_delegations(self, user_id: int) -> List[UserDelegation]:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         result = await self.db.execute(
             select(UserDelegation).where(
                 UserDelegation.user_id == user_id,

@@ -43,6 +43,11 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     """Initialize database tables (called on startup)"""
-    from ..models import Base  # noqa: F401 - ensure models are imported
+    from ..models import Base
     async with engine.begin() as conn:
-        await conn.run_sync_do(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def dispose_db():
+    """Dispose database connection pool (called on shutdown)"""
+    await engine.dispose()
