@@ -1,1 +1,6 @@
 .pdd/cache/reports/linter-report-1775185289318.md
+
+# PDD
+.pdd/cache/
+.specs/.cache/
+*.pdd-report.md

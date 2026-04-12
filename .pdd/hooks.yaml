@@ -1,0 +1,22 @@
+# PDD Hooks Configuration
+session_start:
+  enabled: true
+  description: "Execute on session start, load project context"
+
+pre_feature:
+  enabled: true
+  checks:
+    - spec_exists
+    - dependencies_met
+
+post_feature:
+  enabled: true
+  actions:
+    - run_linter
+    - run_tests
+
+pre_commit:
+  enabled: true
+  checks:
+    - linter_pass
+    - tests_pass
