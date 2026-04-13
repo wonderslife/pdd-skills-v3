@@ -282,6 +282,18 @@ program
     await app.start();
   });
 
+// === version 子命令 ===
+program
+  .command('version')
+  .description('显示 PDD-Skills 版本信息')
+  .option('-v, --verbose', '显示详细信息（含最新版本检查）')
+  .action(async (options) => {
+    const version = await showVersion(options.verbose || false);
+    if (!options.verbose) {
+      console.log(chalk.green(`pdd-skills v${version}`));
+    }
+  });
+
 // === vm 子命令组 (VM-D003) ===
 const vmCmd = new Command()
   .name('vm')
