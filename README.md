@@ -1,14 +1,14 @@
 # PDD-Skills v3.0
 
-[![Version](https://img.shields.io/badge/version-3.0.1-blue.svg null)](https://github.com/pdd-skills/pdd-skills)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg null)](https://github.com/pdd-skills/pdd-skills)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg null)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg null)](LICENSE)
-[![Tasks](https://img.shields.io/badge/tasks-153%2F153-brightgreen.svg null)](docs/tasks.md)
-[![Milestones](https://img.shields.io/badge/milestones-29%2F29-success.svg null)](docs/tasks.md)
+[![Patterns](https://img.shields.io/badge/bug_patterns-14-purple.svg null)](config/bug-patterns.yaml)
+[![Gate](https://img.shields.io/badge/gate_rules-30-critical.svg null)](config/prd-rules.yaml)
 
 > **PRD 驱动的 AI 原生软件开发工作流框架**
 >
-> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**29 个里程碑**、**153 项任务**、**100% 完成** 🎉
+> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**双脚手架**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
 
 ***
 
@@ -27,6 +27,7 @@
   - [Phase 6: 生态建设](#phase-6-生态建设)
   - [📊 Phase 7: PDD Visual Manager](#-phase-7-pdd-visual-manager)
 - [技能系统](#技能系统)
+- [配置中心](#配置中心)
 - [API 层](#api-层)
 - [MCP 协议集成](#mcp-协议集成)
 - [SDK 使用指南](#sdk-使用指南)
@@ -229,18 +230,16 @@ scaffolds/python-fullstack/
 
 | 指标          | 数值                                            |
 | ----------- | --------------------------------------------- |
-| **版本**      | v3.0.2                                        |
-| **总任务数**    | 153 (**100% 完成**)                             |
-| **里程碑数**    | 29 (**100% 达成**)                              |
+| **版本**      | v3.1.0                                        |
 | **核心技能**    | 11 个（全双语 🇨🇳🇺🇸）                            |
-| **专家技能**    | 2 个（安全 + 性能）                                  |
-| **代码文件**    | \~80 个 `lib/*.js` 模块（含 Phase 7 新增 38 个）       |
+| **专家技能**    | 4 个（安全 + 性能 + 若依 + Activiti）                                  |
+| **PR技能**    | 5 个（模板引擎 + 多轮审查 + PR创建/审查/合并）                 |
+| **Bug模式库**  | 14 个（7通用 + 7若依专用），集中式管理 `config/bug-patterns.yaml` |
+| **PRD规则**   | 30 条（6大类），集中式管理 `config/prd-rules.yaml`      |
+| **质量门控**    | 4级（Blocker/Critical/Warning/Info）+ 0-100评分    |
+| **脚手架模板**   | 2 个（Python Fullstack + 若依RuoYi）               |
 | **协议支持**    | RESTful + MCP + gRPC + SSE                    |
 | **SDK 语言**  | JavaScript + Python                           |
-| **示例插件**    | 3 个（hello-world / code-stats / custom-linter） |
-| **社区文档**    | 5 套（\~10,700 行）                               |
-| **VM 新增代码** | \~6000 行（Phase 7）                             |
-| **脚手架模板**   | 1 个（python-fullstack 全栈模板）                     |
 
 ***
 
@@ -445,6 +444,8 @@ pdd config --get key                              # 读取配置项
 | ---------------------- | --------------------------------------- | -------------------------------------- |
 | **expert-security**    | SQL注入 / XSS / CSRF / 命令注入 / 路径遍历 / SSRF | OWASP Top 10 2021 完整覆盖，8 条安全铁律         |
 | **expert-performance** | CPU / 内存 / I/O / 网络 / 锁竞争诊断             | HikariCP / Redis多级缓存 / G1 GC调优 / P99指标 |
+| **expert-ruoyi**       | 若依框架全流程开发 / 代码生成 / 权限配置 / 菜单管理          | 7个若依Bug模式(PATTERN-R001~R007) + Spec模板参考 |
+| **expert-activiti**    | Activiti 7工作流引擎 / BPMN 2.0 / 流程部署管理      | 流程设计规范 + BPMN校验规则                       |
 
 ### Phase 4: 平台化建设
 
@@ -1014,9 +1015,9 @@ skills/
 │   ├── pdd-ba/             # 业务分析
 │   ├── pdd-extract-features/
 │   ├── pdd-generate-spec/
-│   ├── pdd-implement-feature/
-│   ├── pdd-verify-feature/
-│   ├── pdd-code-reviewer/
+│   ├── pdd-implement-feature/  # 含上下文注入 + 微验证
+│   ├── pdd-verify-feature/     # 含契约一致性验证
+│   ├── pdd-code-reviewer/      # 含Bug模式库匹配 + UX一致性
 │   ├── pdd-doc-change/
 │   ├── pdd-doc-gardener/
 │   ├── pdd-entropy-reduction/
@@ -1024,7 +1025,16 @@ skills/
 │
 ├── expert/                  # 专家技能 (按需加载)
 │   ├── expert-security/    # 安全审计专家
-│   └── expert-performance/ # 性能优化专家
+│   ├── expert-performance/ # 性能优化专家
+│   ├── expert-ruoyi/       # 若依框架专家 (含Bug模式库R001~R007)
+│   └── expert-activiti/    # Activiti工作流专家
+│
+├── pr/                      # PR与交付技能
+│   ├── pdd-template-engine/    # PRD感知动态模板引擎
+│   ├── pdd-multi-review/       # 三轮代码审查
+│   ├── pdd-pr-create/          # PR创建
+│   ├── pdd-pr-review/          # PR审查
+│   └── pdd-pr-merge/           # PR合并
 │
 ├── openspec/                # OpenSpec 协作技能
 │   ├── openspec-explore/
@@ -1036,6 +1046,99 @@ skills/
     ├── system-architect/
     ├── software-architect/
     └── software-engineer/
+```
+
+***
+
+## 配置中心
+
+> **Single Source of Truth 原则**：所有配置集中管理，技能和脚本通过引用获取，避免散落和不一致。
+
+### 配置文件一览
+
+| 配置文件 | 用途 | 消费方 |
+|---------|------|--------|
+| `config/bug-patterns.yaml` | Bug模式库（14个模式） | pdd-code-reviewer, pdd-verify-feature, pdd-implement-feature, pdd-template-engine, expert-ruoyi |
+| `config/prd-rules.yaml` | PRD检测规则（30条，6大类） | pdd-linter, run-linters.js |
+| `config/gate-config.yaml` | 质量门控配置（4级阻断+评分权重） | gate-engine.js |
+
+### Bug模式库架构
+
+```
+config/bug-patterns.yaml          ← 唯一真相源
+├── categories.general            # 通用模式 PATTERN-001~007
+│   ├── PATTERN-001  datetime字段类型陷阱
+│   ├── PATTERN-002  静态路由注册顺序错误
+│   ├── PATTERN-003  枚举硬编码/编码不一致
+│   ├── PATTERN-004  alert()未用safeAlert()包装
+│   ├── PATTERN-005  my-tasks查询条件不完整
+│   ├── PATTERN-006  Options接口路由顺序(同002)
+│   └── PATTERN-007  编号生成未检查已存在记录
+└── categories.ruoyi              # 若依专用 PATTERN-R001~R007
+    ├── PATTERN-R001  权限注解缺失
+    ├── PATTERN-R002  菜单配置不完整
+    ├── PATTERN-R003  数据权限未配置
+    ├── PATTERN-R004  Redis缓存未清除
+    ├── PATTERN-R005  参数校验缺失
+    ├── PATTERN-R006  XSS防护缺失
+    └── PATTERN-R007  操作日志缺失
+```
+
+### PRD检测规则架构
+
+```
+config/prd-rules.yaml             ← 唯一真相源 (30条规则)
+├── structure (7条)               # PRD结构完整性
+├── content (8条)                 # 内容质量
+├── uiux (6条)                    # UI/UX规范
+│   ├── uiux-form-mapping-exists  # 表单控件映射表 (BLOCKER)
+│   ├── uiux-no-uuid-input        # 禁止UUID输入 (BLOCKER)
+│   ├── uiux-options-api-listed   # Options API声明 (BLOCKER)
+│   ├── uiux-page-list            # 页面清单
+│   ├── uiux-seed-data-declared   # 种子数据声明
+│   └── uiux-wireframe-exists     # 线框图
+├── data_model (4条)              # 数据模型规范
+│   ├── dm-enum-convention        # 枚举编码约定 (BLOCKER)
+│   ├── dm-permission-matrix      # 权限矩阵 (BLOCKER)
+│   ├── dm-type-explicit          # 类型显式声明
+│   └── dm-audit-fields           # 审计字段
+└── api_design (3条)              # API设计规范
+    ├── api-options-endpoint      # Options端点 (BLOCKER)
+    ├── api-param-location        # 参数位置
+    └── api-error-format          # 错误格式
+```
+
+### 质量门控流程
+
+```
+PRD文档 → prd-linter (30条规则) → gate-engine (4级门控) → 评分卡
+                                                            │
+                                              ┌─────────────┼─────────────┐
+                                              ▼             ▼             ▼
+                                         BLOCKER       CRITICAL      WARNING/INFO
+                                         (阻断)        (必须修复)     (建议修复)
+                                              │             │
+                                              ▼             ▼
+                                         Score = 0     Score -= 15/5/1
+                                              │             │
+                                              ▼             ▼
+                                         Grade: F      Grade: A~D
+                                              │             │
+                                              ▼             ▼
+                                         ❌ FAIL        ✅ PASS
+```
+
+### 更新流程
+
+```bash
+# 新增Bug模式 → 只需编辑一个文件
+vim config/bug-patterns.yaml    # 各skill自动通过引用获取
+
+# 修改BLOCKER规则 → 只需编辑一个文件
+vim config/gate-config.yaml     # gate-engine.js自动读取
+
+# 修改PRD检测规则 → 只需编辑一个文件
+vim config/prd-rules.yaml       # run-linters.js自动读取
 ```
 
 ***
@@ -1511,11 +1614,16 @@ pdd-skills-v3/
 │   └── openspec/               # 10 个 OpenSpec 技能
 │
 ├── scripts/                   # 工具脚本
+│   ├── linter/                # PRD Linter 工具链
+│   │   ├── prd-linter.js      # PRD Linter 引擎
+│   │   ├── prd-rules.yaml     # (符号链接→config/)
+│   │   ├── gate-engine.js     # 4级门控引擎 (读取config/gate-config.yaml)
+│   │   ├── report-generator.js# 报告生成器
+│   │   └── run-linters.js     # Linter运行器 (集成Gate Engine)
+│   ├── openapi-contract-sync.js # OpenAPI契约同步工具
 │   ├── skill-linter.py        # Skill 文件检查器
-│   ├── skill-rules.yaml       # Linter 规则配置
 │   ├── i18n-checker.js         # 双语合规检查
-│   ├── token-analyzer.js       # Token 分析
-│   └── ...
+│   └── token-analyzer.js       # Token 分析
 │
 ├── docs/                       # 社区文档 (~10,700 行)
 │   ├── user-guide/
@@ -1526,9 +1634,18 @@ pdd-skills-v3/
 │   └── tasks.md               # 任务跟踪 (153/100%)
 │
 ├── templates/                 # 项目模板
-├── config/                    # 配置文件
+├── config/                    # 配置中心 (Single Source of Truth)
+│   ├── bug-patterns.yaml      # Bug模式库 (14个模式, 唯一真相源)
+│   ├── prd-rules.yaml         # PRD检测规则 (30条, 6大类)
+│   ├── gate-config.yaml       # 质量门控配置 (4级阻断+评分权重)
+│   ├── bpmn-rules.yaml        # BPMN校验规则
+│   ├── checkstyle.xml         # Java Checkstyle配置
+│   ├── eslint.config.js       # ESLint配置
+│   ├── pmd.xml                # PMD配置
+│   ├── ruff.toml              # Python Ruff配置
+│   └── sqlfluff.cfg           # SQL SQLFluff配置
 ├── hooks/                     # Hook 配置
-└── package.json               # v3.0.1
+└── package.json               # v3.1.0
 ```
 
 ***
@@ -1613,9 +1730,10 @@ CLI 参数 > 环境变量 > .pddrc.local > .pddrc > defaults
 
 | 版本         | 日期         | 重要变更                                                                                                                                            |
 | ---------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v3.1.0** | 2026-04-15 | **智能能力+生态集成**: Bug模式库集中化(14模式), PRD Linter扩展(30规则6大类), 4级门控引擎(Blocker/Critical/Warning/Info), OpenAPI契约同步, PRD感知动态模板, MVP分层交付策略, 上下文注入+微验证, expert-ruoyi+expert-activiti专家技能, 若依RuoYi脚手架支持, 种子数据分层设计 |
 | **v3.0.2** | 2026-04-12 | **脚手架系统发布**: python-fullstack 全栈模板(FastAPI+Vue3), 数据权限引擎, OAuth2六平台认证, 工作流状态机引擎, 响应式前端, 4份架构设计文档, Docker一键部署, CI流水线 |
-| **v3.0.1** | 2026-04-07 | **PDD Visual Manager 发布**: Web Dashboard + Terminal TUI 双形态可视化监控, 11个REST API端点, SSE实时推送, Canvas图表引擎, ANSI TUI组件库 (59/59 任务 100%, 4/4 里程碑 100%) |
-| **v3.0.0** | 2026-04-05 | **正式发布版**: 6大Phase全部完成 + 插件系统 + OpenClaw + gRPC + Python SDK + 暂缓清零 (94/94 任务 100%)                                                             |
+| **v3.0.1** | 2026-04-07 | **PDD Visual Manager 发布**: Web Dashboard + Terminal TUI 双形态可视化监控, 11个REST API端点, SSE实时推送, Canvas图表引擎, ANSI TUI组件库 |
+| **v3.0.0** | 2026-04-05 | **正式发布版**: 6大Phase全部完成 + 插件系统 + OpenClaw + gRPC + Python SDK + 暂缓清零                                                             |
 | v2.x       | 2026-03    | 内部迭代版本: MCP/SDK/缓存/Token/质量/迭代                                                                                                                  |
 | v1.x       | 2025-12    | 初始版本: 基础设施 + 核心技能 + Linter                                                                                                                      |
 
@@ -1636,9 +1754,9 @@ CLI 参数 > 环境变量 > .pddrc.local > .pddrc > defaults
 ***
 
 <p align="center">
-  <b>PDD-Skills v3.0 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
+  <b>PDD-Skills v3.1 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
 </p>
 
 <p align="center">
-  <sub>153/153 Tasks ✅ · 29/29 Milestones ✅ · 100% Complete 🎉</sub>
+  <sub>14 Bug Patterns ✅ · 30 PRD Rules ✅ · 4-Level Gate ✅ · Dual Scaffold ✅</sub>
 </p>

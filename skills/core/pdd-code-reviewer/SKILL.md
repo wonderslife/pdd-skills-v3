@@ -101,6 +101,52 @@ metadata:
 ### 🇺🇸 Business Logic
 - [ ] State transition correctness | [ ] Business rule execution | [ ] Exception handling
 
+### 🇨🇳 Bug模式库匹配
+> 完整模式定义参见 `config/bug-patterns.yaml`，以下为检查清单摘要
+
+- [ ] datetime字段是否使用正确类型(非str)(PATTERN-001)
+- [ ] /options路由是否在/{id}之前注册(PATTERN-002)
+- [ ] 枚举值是否统一编码规范(PATTERN-003)
+- [ ] 前端alert是否使用safeAlert而非原生alert(PATTERN-004)
+- [ ] my-tasks查询是否同时匹配evaluator_id和created_by(PATTERN-005)
+- [ ] 编号生成是否检查已存在记录(PATTERN-007)
+- [ ] 若依权限注解是否完整(PATTERN-R001)
+- [ ] 若依菜单配置是否完整(PATTERN-R002)
+- [ ] 若依数据权限是否配置(PATTERN-R003)
+- [ ] 若依参数校验是否添加@Validated(PATTERN-R005)
+- [ ] 若依XSS防护是否添加@Xss(PATTERN-R006)
+
+### 🇺🇸 Bug Pattern Library Matching
+> Full pattern definitions in `config/bug-patterns.yaml`, below is a checklist summary
+
+- [ ] datetime fields use correct type (not str) (PATTERN-001)
+- [ ] /options route registered before /{id} (PATTERN-002)
+- [ ] Enum values follow consistent coding convention (PATTERN-003)
+- [ ] Frontend uses safeAlert instead of native alert (PATTERN-004)
+- [ ] my-tasks query matches both evaluator_id and created_by (PATTERN-005)
+- [ ] ID generation checks existing records (PATTERN-007)
+- [ ] RuoYi permission annotations are complete (PATTERN-R001)
+- [ ] RuoYi menu configuration is complete (PATTERN-R002)
+- [ ] RuoYi data scope is configured (PATTERN-R003)
+- [ ] RuoYi parameter validation uses @Validated (PATTERN-R005)
+- [ ] RuoYi XSS protection uses @Xss (PATTERN-R006)
+
+### 🇨🇳 UX一致性
+- [ ] 表单组件是否与PRD中的组件映射一致(Select/Radio/DatePicker等)
+- [ ] 下拉选择是否通过Options API获取数据(非硬编码)
+- [ ] 列表页是否有一致的搜索/分页/操作按钮布局
+- [ ] 操作按钮是否使用v-hasPermi权限控制(RuoYi项目)
+- [ ] 错误提示是否使用safeAlert而非原生alert
+- [ ] CSS布局是否遵循global-reset.css基线(无width:100%溢出)
+
+### 🇺🇸 UX Consistency
+- [ ] Form components match PRD component mapping (Select/Radio/DatePicker etc.)
+- [ ] Dropdowns fetch data via Options API (not hardcoded)
+- [ ] List pages have consistent search/pagination/action button layout
+- [ ] Action buttons use v-hasPermi permission control (RuoYi projects)
+- [ ] Error messages use safeAlert instead of native alert
+- [ ] CSS layout follows global-reset.css baseline (no width:100% overflow)
+
 ## 问题分级 / Issue Classification
 
 ### 🇨🇳 CRITICAL - 必须修复
@@ -139,11 +185,15 @@ Read spec definitions from `dev-specs/FP-{sequence}/spec.md`
 **a. 接口审查**: 接口路径/请求方法/参数处理/响应结构是否正确匹配规格
 **b. 业务逻辑审查**: 处理流程/状态转换/校验规则是否正确
 **c. 数据模型审查**: 字段映射/类型定义/审计字段是否完整
+**d. Bug模式库匹配**: 读取 `config/bug-patterns.yaml` 中的Bug模式库，逐条检查代码是否触犯已知模式(PATTERN-001~PATTERN-007, PATTERN-R001~R007)
+**e. UX一致性审查**: 对照PRD组件映射表检查表单组件、Options API使用、布局一致性
 
 ### 🇺🇸 Step 3: Execute Basic Review
 **a. API Review**: Do API paths/request methods/parameter handling/response structures correctly match specs
 **b. Business Logic Review**: Are processing flows/state transitions/validation rules correct
 **c. Data Model Review**: Are field mappings/type definitions/audit fields complete
+**d. Bug Pattern Library Matching**: Read bug pattern library from `config/bug-patterns.yaml`, check code against known patterns (PATTERN-001~007, PATTERN-R001~R007)
+**e. UX Consistency Review**: Check form components, Options API usage, layout consistency against PRD component mapping
 
 ### 🇨🇳 Step 4: 执行代码质量审查（按需）
 调用 **expert-code-quality**(如发现代码质量问题): 代码异味检测 | 重构建议 | 设计模式推荐
@@ -173,6 +223,32 @@ Invoke **software-architect** (if architecture issues detected): Module boundary
 ### 通过项 | CRITICAL问题 | WARNING问题 | SUGGESTION问题
 (包含: 序号/问题描述/文件/建议)
 
+### Bug模式库匹配结果
+> 完整模式定义: `config/bug-patterns.yaml`
+
+| PATTERN编号 | 是否触犯 | 文件位置 | 说明 |
+|------------|---------|---------|------|
+| PATTERN-001 | ☐是 ☐否 | | datetime字段类型 |
+| PATTERN-002 | ☐是 ☐否 | | /options路由顺序 |
+| PATTERN-003 | ☐是 ☐否 | | 枚举编码规范 |
+| PATTERN-004 | ☐是 ☐否 | | safeAlert使用 |
+| PATTERN-005 | ☐是 ☐否 | | my-tasks查询条件 |
+| PATTERN-007 | ☐是 ☐否 | | 编号生成检查 |
+| PATTERN-R001 | ☐是 ☐否 | | 若依权限注解 |
+| PATTERN-R002 | ☐是 ☐否 | | 若依菜单配置 |
+| PATTERN-R003 | ☐是 ☐否 | | 若依数据权限 |
+| PATTERN-R005 | ☐是 ☐否 | | 若依参数校验 |
+| PATTERN-R006 | ☐是 ☐否 | | 若依XSS防护 |
+
+### UX一致性审查结果
+| 检查项 | 是否通过 | 说明 |
+|--------|---------|------|
+| 表单组件映射 | ☐是 ☐否 | |
+| Options API使用 | ☐是 ☐否 | |
+| 列表页布局一致性 | ☐是 ☐否 | |
+| 权限控制(RuoYi) | ☐是 ☐否 | |
+| 错误提示方式 | ☐是 ☐否 | |
+
 ## 结论
 - [ ] 通过审查
 - [ ] 需要修复后重新审查
@@ -193,6 +269,32 @@ Output to `docs/reviews/review-{timestamp}.md`:
 ## Review Results
 ### Passed Items | CRITICAL Issues | WARNING Issues | SUGGESTION Issues
 (Includes: sequence number/description/file/suggestion)
+
+### Bug Pattern Library Matching Results
+> Full pattern definitions: `config/bug-patterns.yaml`
+
+| PATTERN ID | Violated? | File Location | Notes |
+|------------|-----------|---------------|-------|
+| PATTERN-001 | ☐Yes ☐No | | datetime field type |
+| PATTERN-002 | ☐Yes ☐No | | /options route order |
+| PATTERN-003 | ☐Yes ☐No | | Enum coding convention |
+| PATTERN-004 | ☐Yes ☐No | | safeAlert usage |
+| PATTERN-005 | ☐Yes ☐No | | my-tasks query condition |
+| PATTERN-007 | ☐Yes ☐No | | ID generation check |
+| PATTERN-R001 | ☐Yes ☐No | | RuoYi permission annotation |
+| PATTERN-R002 | ☐Yes ☐No | | RuoYi menu configuration |
+| PATTERN-R003 | ☐Yes ☐No | | RuoYi data scope |
+| PATTERN-R005 | ☐Yes ☐No | | RuoYi parameter validation |
+| PATTERN-R006 | ☐Yes ☐No | | RuoYi XSS protection |
+
+### UX Consistency Review Results
+| Check Item | Passed? | Notes |
+|------------|---------|-------|
+| Form component mapping | ☐Yes ☐No | |
+| Options API usage | ☐Yes ☐No | |
+| List page layout consistency | ☐Yes ☐No | |
+| Permission control (RuoYi) | ☐Yes ☐No | |
+| Error message method | ☐Yes ☐No | |
 
 ## Conclusion
 - [ ] Passed review
@@ -363,13 +465,17 @@ Code implementation complete → pdd-code-reviewer (compliance review) → [Has 
 - **EXEC-CR-001**: 提出的Critical问题无法追溯到规格文档或编码规范 → 🔴 CRITICAL → 补充依据或调整问题级别 / Supplement evidence or adjust issue level
 - **EXEC-CR-002**: 发现代码质量问题但未转交expert-code-quality而是自行深度分析 → 🟡 WARN → 记录质量问题并标注将在expert-code-quality阶段处理 / Record quality issues and mark for expert-code-quality phase
 - **EXEC-CR-003**: 发现架构问题但未调用架构师技能 → 🔴 CRITICAL → 暂停审查,先完成架构咨询 / Pause review, complete architecture consultation first
-- **EXEC-CR-004**: 安全漏洞(SQL注入/XSS/权限绕过)未标记为Critical → 🔴 CRITICAL → 修正问题级别为Critical / Correct issue level to CRITICAL
+- **EXEC-CR-004**: 安全漏洞(SQL注入/XSS/权限绕过)未标记为Critical → 🔴 CRITICAL → 修正问题级别为Critical
+- **EXEC-CR-005**: 代码触犯Bug模式库中的已知模式但未标记为问题 → 🔴 CRITICAL → 按 `config/bug-patterns.yaml` 中的severity级别标记问题并引用PATTERN编号
+- **EXEC-CR-006**: UX一致性问题(硬编码下拉选项/原生alert/布局溢出)未记录 → 🟡 WARN → 记录为Warning级别问题
 
 ### Layer 3: 输出检查 / Output Validation Guards - 3 guards
 
 - **OUTPUT-CR-001**: 审查报告缺少问题分级汇总(Critical/Warning/Suggestion数量) → 🔴 CRITICAL → 补充分级统计 / Supplement classification statistics
 - **OUTPUT-CR-002**: 报告结论为"通过"但存在未解决的Critical问题 → 🔴 CRITICAL → 修正结论为"需要修复" / Correct conclusion to "Requires fix"
-- **OUTPUT-CR-003**: 问题列表中存在无法定位到具体代码行的问题 → 🟡 WARN → 补充精确的代码位置引用 / Supplement precise code location references
+- **OUTPUT-CR-003**: 问题列表中存在无法定位到具体代码行的问题 → 🟡 WARN → 补充精确的代码位置引用
+- **OUTPUT-CR-004**: 审查报告未包含Bug模式库匹配结果 → 🔴 CRITICAL → 补充Bug模式库匹配章节
+- **OUTPUT-CR-005**: 审查报告未包含UX一致性审查结果 → 🟡 WARN → 补充UX一致性审查章节
 
 ### 🇨🇳 触发Red Flag时的处理流程
 🔴 CRITICAL → 立即停止,报告问题详情,等待指示 | 🟡 WARN → 记录警告到审查日志,尝试自动修复,在最终报告中标注 | 🔵 INFO → 记录信息,正常继续

@@ -37,6 +37,7 @@
   - [5.2 Phase 2: 特征提取](#52-phase-2-特征提取)
   - [5.3 Phase 3: 规格生成](#53-phase-3-规格生成)
   - [5.4 Phase 4: 代码实现](#54-phase-4-代码实现)
+    - [5.4.1 MVP分层交付策略](#541-mvp-分层交付策略)
   - [5.5 Phase 5: 代码审查](#55-phase-5-代码审查)
   - [5.6 Phase 6: 验证确认](#56-phase-6-验证确认)
 - [第6章：核心功能演示](#第6章核心功能演示)
@@ -52,6 +53,9 @@
   - [7.3 配置 CI/CD 流水线](#73-配置-cicd-流水线)
   - [7.4 使用 PDD Visual Manager 监控项目](#74-使用-pdd-visual-manager-监控项目)
   - [7.5 性能优化建议](#75-性能优化建议)
+  - [7.6 数据初始化与种子数据](#76-数据初始化与种子数据)
+  - [7.7 Bug模式库与反模式防护](#77-bug模式库与反模式防护)
+  - [7.8 PRD Linter与质量门控](#78-prd-linter与质量门控)
 - [第8章：常见问题解答 (FAQ)](#第8章常见问题解答-faq)
 - [附录](#附录)
   - [A: 命令速查表](a-命令速查表)
@@ -1968,6 +1972,50 @@ async function handleSubmit() {
 </script>
 ```
 
+#### 5.4.1 MVP 分层交付策略
+
+在实际项目中，一个功能点往往涉及前后端多个文件的修改。如果一次性交付所有内容，调试和验证会非常困难。PDD-Skills 推荐采用 **MVP 分层交付策略**，将每个功能点的交付分为三层：
+
+| 层级 | 名称 | 交付内容 | 验证标准 |
+|------|------|---------|---------|
+| **L1** | 骨架层 (Skeleton) | 数据模型 + API路由 + 前端页面框架 | 数据库表创建成功，API返回200，页面可访问 |
+| **L2** | 功能层 (Functionality) | 完整CRUD + 业务逻辑 + 表单交互 | 所有接口测试通过，表单提交成功 |
+| **L3** | 体验层 (Experience) | 权限控制 + 状态流转 + UX优化 + 种子数据 | 权限隔离生效，审批流程跑通，下拉框有数据 |
+
+**实战示例：以"资产评估备案"功能点为例**
+
+```bash
+# L1 骨架层 — 只需确认基础结构
+/implement FP-ZCPG1-001 --layer skeleton
+
+# 验证 L1
+curl http://localhost:8000/api/v1/evaluations          # → 200 OK
+# 前端访问 /evaluations 页面                             # → 页面渲染成功
+
+# L2 功能层 — 填充业务逻辑
+/implement FP-ZCPG1-001 --layer functionality
+
+# 验证 L2
+curl -X POST http://localhost:8000/api/v1/evaluations   # → 创建成功
+curl http://localhost:8000/api/v1/evaluations/1          # → 查询成功
+
+# L3 体验层 — 打磨细节
+/implement FP-ZCPG1-001 --layer experience
+
+# 验证 L3
+# 不同角色登录 → 数据权限隔离
+# 提交评估 → 审批流程触发
+# 资产分类下拉 → 有种子数据填充
+```
+
+**分层交付的好处**：
+
+1. **快速定位问题**：L1失败说明基础设施有问题，L2失败说明业务逻辑有问题，L3失败说明配置/权限有问题
+2. **降低返工成本**：骨架不对时，不需要重写业务逻辑
+3. **并行开发友好**：前端可以基于L1的API接口先行开发，不必等L2完成
+
+> **铁律提醒**：每完成一层，必须执行微验证（5项检查：编译通过、API可达、数据可写、页面可访问、无控制台错误），确认通过后再进入下一层。
+
 ### 5.5 Phase 5: 代码审查 (pdd-code-reviewer)
 
 代码实现完成后，需要进行质量审查。
@@ -2655,6 +2703,211 @@ pdd vm export --format json
 | **文件上传** | 使用 OSS/S3 对象存储 + CDN 加速 | 上传速度提升 5x |
 | **Token 管理** | 配置 Token 预算，避免超额消耗 | 成本降低 30% |
 
+### 7.6 数据初始化与种子数据
+
+在 PDD 工作流中，功能点验证需要依赖基础数据。如果数据库是空的，下拉框无选项、列表无数据、审批无流程，功能演示就无法进行。
+
+#### 7.6.1 种子数据的分层设计
+
+| 数据层级 | 内容 | 示例 | 依赖 |
+|---------|------|------|------|
+| **系统级** | 字典表、枚举值、系统配置 | 资产分类、处置方式、审批状态 | 无 |
+| **组织级** | 部门、角色、用户 | 评估部、财务部、admin用户 | 系统级 |
+| **业务级** | 业务实体数据 | 资产卡片、评估报告、处置申请 | 组织级 + 系统级 |
+
+#### 7.6.2 种子数据脚本示例
+
+```python
+# scripts/seed_data.py
+
+async def seed_system_data(db):
+    """系统级种子数据 — 最先执行"""
+    categories = [
+        {"code": "FIXED_ASSET", "name": "固定资产", "sort": 1},
+        {"code": "INTANGIBLE_ASSET", "name": "无形资产", "sort": 2},
+        {"code": "CURRENT_ASSET", "name": "流动资产", "sort": 3},
+    ]
+    for cat in categories:
+        db.add(AssetCategory(**cat))
+
+    disposal_methods = [
+        {"code": "AUCTION", "name": "公开拍卖", "sort": 1},
+        {"code": "AGREEMENT", "name": "协议转让", "sort": 2},
+        {"code": "SCRAP", "name": "报废清理", "sort": 3},
+    ]
+    for method in disposal_methods:
+        db.add(DisposalMethod(**method))
+
+async def seed_org_data(db):
+    """组织级种子数据 — 依赖系统级"""
+    departments = [
+        {"name": "资产管理部", "code": "ASSET_MGMT"},
+        {"name": "评估部", "code": "EVALUATION"},
+        {"name": "财务部", "code": "FINANCE"},
+    ]
+    for dept in departments:
+        db.add(Department(**dept))
+
+    roles = [
+        {"name": "资产管理员", "code": "asset_manager"},
+        {"name": "评估师", "code": "evaluator"},
+        {"name": "审批人", "code": "approver"},
+    ]
+    for role in roles:
+        db.add(Role(**role))
+
+async def seed_business_data(db):
+    """业务级种子数据 — 依赖组织级+系统级"""
+    assets = [
+        {"name": "办公大楼A栋", "category_code": "FIXED_ASSET",
+         "original_value": 5000000, "department_code": "ASSET_MGMT"},
+        {"name": "专利技术-X1", "category_code": "INTANGIBLE_ASSET",
+         "original_value": 800000, "department_code": "EVALUATION"},
+    ]
+    for asset in assets:
+        db.add(Asset(**asset))
+
+async def run_all_seeds(db):
+    """按依赖顺序执行所有种子数据"""
+    await seed_system_data(db)
+    await seed_org_data(db)
+    await seed_business_data(db)
+    await db.commit()
+    print("✅ 种子数据初始化完成")
+```
+
+#### 7.6.3 PRD 中的种子数据声明
+
+在 PRD 文档中，应明确声明每个功能点需要的种子数据：
+
+```yaml
+# PRD 中的种子数据声明示例
+seed_data:
+  system:
+    - asset_categories: [固定资产, 无形资产, 流动资产]
+    - disposal_methods: [公开拍卖, 协议转让, 报废清理]
+    - approval_statuses: [待审批, 审批中, 已通过, 已驳回]
+  org:
+    - departments: [资产管理部, 评估部, 财务部]
+    - roles: [asset_manager, evaluator, approver]
+    - test_users:
+        - username: admin, role: admin
+        - username: evaluator01, role: evaluator
+        - username: approver01, role: approver
+  business:
+    - assets: 5条测试资产数据
+    - evaluations: 2条评估记录
+```
+
+> **提示**：PRD Linter 会检查 `uiux-seed-data-declared` 规则，如果功能点涉及下拉框/列表但未声明种子数据，会产生警告。
+
+### 7.7 Bug 模式库与反模式防护
+
+PDD-Skills v3 内置了 Bug 模式库，帮助你在代码审查和验证阶段快速识别常见问题。
+
+> **完整模式定义**: `config/bug-patterns.yaml`（唯一真相源，新增/修改模式只需编辑此文件）
+
+#### 7.7.1 通用 Bug 模式 (PATTERN-001~007)
+
+| 模式ID | 名称 | 严重级别 | 简述 |
+|--------|------|---------|------|
+| PATTERN-001 | datetime字段类型陷阱 | 🔴 Critical | datetime字段声明为str导致序列化失败 |
+| PATTERN-002 | 静态路由注册顺序错误 | 🔴 Critical | /options在/{id}之后被动态路由拦截 |
+| PATTERN-003 | 枚举硬编码/编码不一致 | 🟡 Warning | 枚举值散落硬编码，编码风格不统一 |
+| PATTERN-004 | alert()未用safeAlert()包装 | 🟡 Warning | 原生alert可能导致非string参数报错 |
+| PATTERN-005 | my-tasks查询条件不完整 | 🔴 Critical | 只匹配evaluator_id或created_by之一 |
+| PATTERN-006 | Options接口路由顺序(同002) | 🔴 Critical | PATTERN-002的特化版本 |
+| PATTERN-007 | 编号生成未检查已存在记录 | 🔴 Critical | 可能导致编号冲突 |
+
+#### 7.7.2 若依专用 Bug 模式 (PATTERN-R001~R007)
+
+| 模式ID | 名称 | 严重级别 | 简述 |
+|--------|------|---------|------|
+| PATTERN-R001 | 权限注解缺失 | 🔴 Critical | Controller方法缺少@PreAuthorize |
+| PATTERN-R002 | 菜单配置不完整 | 🔴 Critical | 新增页面未配置sys_menu记录 |
+| PATTERN-R003 | 数据权限未配置 | 🔴 Critical | Service方法缺少@DataScope注解 |
+| PATTERN-R004 | Redis缓存未清除 | 🟡 Warning | 修改权限/菜单后未清缓存 |
+| PATTERN-R005 | 参数校验缺失 | 🟡 Warning | @RequestBody参数无@Validated |
+| PATTERN-R006 | XSS防护缺失 | 🟡 Warning | 文本字段未添加@Xss注解 |
+| PATTERN-R007 | 操作日志缺失 | 🔵 Info | 增删改操作无@Log注解 |
+
+#### 7.7.3 在代码审查中使用 Bug 模式库
+
+```bash
+# 代码审查时自动匹配 Bug 模式
+/code-review backend/app/api/v1/evaluations.py
+
+# 审查报告中会包含 Bug 模式匹配结果：
+# ┌──────────────────────────────────────────────────┐
+# │ Bug Pattern Library Matching Results             │
+# ├──────────────┬──────────┬────────────────────────┤
+# │ Pattern      │ Severity │ Location               │
+# ├──────────────┼──────────┼────────────────────────┤
+# │ PATTERN-001  │ CRITICAL │ schemas/eval.py:L15    │
+# │ PATTERN-003  │ WARN     │ views/EvalList.vue:L42 │
+# └──────────────┴──────────┴────────────────────────┘
+```
+
+> **铁律**：代码审查中如果发现 Bug 模式匹配但未标记，属于 EXEC-CR-005 红旗（CRITICAL级别），必须修正。
+
+### 7.8 PRD Linter 与质量门控
+
+PDD-Skills v3 提供了 PRD Linter 工具，在 PRD 编写阶段就能发现潜在问题。
+
+> **规则定义**: `config/prd-rules.yaml` | **门控配置**: `config/gate-config.yaml`
+
+#### 7.8.1 运行 PRD Linter
+
+```bash
+# 检查单个 PRD 文件
+pdd lint docs/prd/asset-evaluation.prdx
+
+# 检查所有 PRD 文件
+pdd lint docs/prd/ --all
+
+# 输出 JSON 格式
+pdd lint docs/prd/ --format json -o lint-report.json
+```
+
+#### 7.8.2 四级门控体系
+
+| 级别 | 含义 | 处理方式 |
+|------|------|---------|
+| 🔴 **BLOCKER** | 阻断性问题，必须修复 | 立即修复，否则流程无法继续 |
+| 🟠 **CRITICAL** | 严重问题，强烈建议修复 | 当前迭代必须修复 |
+| 🟡 **WARNING** | 警告，建议修复 | 可在后续迭代修复 |
+| 🔵 **INFO** | 信息提示 | 了解即可 |
+
+**BLOCKER 级别规则**（触发即阻断）：
+
+| 规则ID | 说明 |
+|--------|------|
+| `uiux-no-uuid-input` | 禁止UUID作为用户输入字段 |
+| `dm-enum-convention` | 枚举必须使用编码约定 |
+| `dm-permission-matrix` | 必须声明权限矩阵 |
+| `uiux-form-mapping-exists` | 必须有表单控件映射表 |
+| `uiux-options-api-listed` | 下拉数据必须声明Options API |
+| `api-options-endpoint` | Options端点必须定义 |
+| `prd-has-out-of-scope` | PRD不得包含超范围需求 |
+
+#### 7.8.3 评分卡示例
+
+```
+╔══════════════════════════════════════════╗
+║        PRD Quality Scorecard             ║
+╠══════════════════════════════════════════╣
+║  Score: 82/100  Grade: B                ║
+║  Gate:  PASS (no blockers)              ║
+╠══════════════════════════════════════════╣
+║  🔴 Blockers:  0                        ║
+║  🟠 Critical:  1                        ║
+║  🟡 Warning:   3                        ║
+║  🔵 Info:      2                        ║
+╚══════════════════════════════════════════╝
+```
+
+> **提示**：评分低于60分（Grade: F）或有任何 BLOCKER 时，门控状态为 FAIL，建议修复后再进入开发阶段。
+
 ---
 
 ## 第8章：常见问题解答 (FAQ)
@@ -2890,6 +3143,11 @@ your-project/                           # 你的业务项目 (pdd init 生成)
 | **CI/CD** | Continuous Integration/Deployment | 持续集成/部署 |
 | **Linter** | - | 代码静态检查工具 |
 | **Evals** | Evaluations | 评估测试框架 |
+| **MVP** | Minimum Viable Product | 最小可行产品，PDD中指分层交付的最小验证单元 |
+| **Seed Data** | - | 种子数据，用于初始化系统的参考数据 |
+| **Bug Pattern** | - | Bug模式，已知的常见代码缺陷模式 |
+| **Gate Engine** | - | 门控引擎，基于四级阻断的PRD质量评分系统 |
+| **Options API** | - | 下拉选项接口，提供枚举/字典数据的API端点 |
 
 ---
 

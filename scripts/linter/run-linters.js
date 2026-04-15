@@ -4,6 +4,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { log, findProjectRoot, loadConfig } from '../../lib/utils/logger.js';
+import { GateEngine } from './gate-engine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONFIG_ROOT = path.join(__dirname, '..', '..', 'config');
@@ -275,14 +276,22 @@ async function generateSummary(results, startTime, format) {
   const totalWarnings = results.reduce((s, r) => s + (r.warningCount || 0), 0);
   const allPassed = results.every(r => r.success);
 
+  const gateEngine = new GateEngine({ strict: false });
+  const gateResult = gateEngine.evaluate(results);
+
   if (format === 'json') {
-    console.log(JSON.stringify({ summary: { totalErrors, totalWarnings, allPassed, duration: totalDuration }, results }, null, 2));
+    console.log(JSON.stringify({ summary: { totalErrors, totalWarnings, allPassed, duration: totalDuration, gateResult }, results }, null, 2));
     return;
   }
 
   console.log(chalk.bold('\n━━━ 检查摘要 ━━━'));
   console.log(allPassed ? chalk.green('  ✅ 所有检查通过') : chalk.red(`  ❌ 发现 ${totalErrors} 个错误`));
   console.log(chalk.gray(`  ⏱ 总耗时: ${totalDuration}ms`));
+
+  if (gateResult) {
+    console.log(gateEngine.generateScorecard(gateResult));
+    console.log(gateResult.message);
+  }
 
   const reportDir = path.join(await findProjectRoot(process.cwd()), '.pdd', 'cache', 'reports');
   await fs.ensureDir(reportDir);

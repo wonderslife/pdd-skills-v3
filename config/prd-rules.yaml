@@ -4,6 +4,11 @@
 #   - presence: document MUST contain the pattern (fail if missing)
 #   - absence: document MUST NOT contain the pattern (fail if found)
 #   - max_depth: heading depth must not exceed limit
+#
+# Severity levels:
+#   - error: blocks process, must fix
+#   - warn: recommended fix, non-blocking
+#   - info: optional optimization
 
 rules:
   structure:
@@ -57,6 +62,13 @@ rules:
         pattern: "(?i)(验收标准|acceptance criteria|ac)"
         severity: warn
         message: "Consider adding acceptance criteria for each requirement"
+
+      - id: prd-has-out-of-scope
+        name: "PRD must declare out-of-scope items"
+        type: presence
+        pattern: "(?i)(out of scope|不在范围|不包含|超出范围|不做)"
+        severity: error
+        message: "PRD must explicitly declare what is OUT of scope to prevent feature creep"
 
   content:
     enabled: true
@@ -128,3 +140,103 @@ rules:
         type: absence
         severity: error
         message: "Document references a non-existent section or broken external link"
+
+  uiux:
+    enabled: true
+    checks:
+      - id: uiux-form-mapping-exists
+        name: "Form component mapping table must exist"
+        type: presence
+        pattern: "(?i)(表单.*映射|组件映射|form.*mapping|控件.*映射|表单字段.*组件)"
+        severity: error
+        message: "PRD must include form component mapping table (which field uses Select/Radio/DatePicker etc.)"
+
+      - id: uiux-no-uuid-input
+        name: "UUID fields must not use manual input"
+        type: absence
+        pattern: "(?i)(uuid.*手动|手动输入.*uuid|uuid.*input|手工输入.*id)"
+        severity: error
+        message: "UUID/ID fields must use Select or auto-generate, NOT manual text input"
+
+      - id: uiux-options-api-listed
+        name: "Options API data sources must be listed"
+        type: presence
+        pattern: "(?i)(options.?api|下拉.*数据源|select.*数据|字典.*来源|关联数据)"
+        severity: error
+        message: "PRD must list all Options API endpoints for dropdown/select data sources"
+
+      - id: uiux-page-list
+        name: "Page list with routes must exist"
+        type: presence
+        pattern: "(?i)(页面列表|page.*list|路由.*列表|route.*list|页面.*路由)"
+        severity: warn
+        message: "PRD should include a page list with route paths for each page"
+
+      - id: uiux-seed-data-declared
+        name: "Seed data requirements should be declared"
+        type: presence
+        pattern: "(?i)(种子数据|初始数据|seed.?data|基础数据|预置数据)"
+        severity: warn
+        message: "PRD should declare seed/initial data requirements for development"
+
+      - id: uiux-wireframe-exists
+        name: "Wireframes or mockups should exist"
+        type: presence
+        pattern: "(?i)(线框图|原型|wireframe|mockup|界面.*设计|ui.*设计)"
+        severity: warn
+        message: "PRD should include wireframes or mockups for key pages"
+
+  data_model:
+    enabled: true
+    checks:
+      - id: dm-type-explicit
+        name: "Field types must be explicitly declared"
+        type: presence
+        pattern: "(?i)(类型映射|type.?mapping|字段.*类型|数据类型|VARCHAR|DECIMAL|DATETIME|Integer|String)"
+        severity: warn
+        message: "PRD should include explicit type mapping table (PRD type -> Python/Java/MySQL/TypeScript)"
+
+      - id: dm-enum-convention
+        name: "Enum coding convention must be defined"
+        type: presence
+        pattern: "(?i)(枚举.*编码|enum.*coding|枚举.*约定|枚举.*规范|snake_case|编码规则)"
+        severity: error
+        message: "PRD must define enum coding convention (e.g., snake_case lowercase) to prevent inconsistent values"
+
+      - id: dm-audit-fields
+        name: "Audit fields should be mentioned"
+        type: presence
+        pattern: "(?i)(审计字段|audit.?field|create_time|update_time|create_by|del_flag)"
+        severity: info
+        message: "Consider declaring audit fields (create_time/update_time/create_by/del_flag) in data model"
+
+      - id: dm-permission-matrix
+        name: "Permission matrix must exist"
+        type: presence
+        pattern: "(?i)(权限矩阵|permission.?matrix|角色.*权限|操作.*权限|角色.*操作)"
+        severity: error
+        message: "PRD must include role x status x operation permission matrix"
+
+  api_design:
+    enabled: true
+    checks:
+      - id: api-param-location
+        name: "API parameter location convention must be defined"
+        type: presence
+        pattern: "(?i)(参数位置|param.?location|Query.*Body|请求.*参数.*位置|API.*约定)"
+        severity: warn
+        message: "PRD should define API parameter location convention (when to use Query vs Body)"
+
+      - id: api-error-format
+        name: "Error response format must be defined"
+        type: presence
+        pattern: "(?i)(错误响应|error.?response|错误格式|异常.*格式|错误码|error.?code)"
+        severity: warn
+        message: "PRD should define unified error response format"
+
+      - id: api-options-endpoint
+        name: "Options endpoints must be declared"
+        type: presence
+        pattern: "(?i)(/options|options.*端点|下拉.*接口|字典.*接口)"
+        severity: error
+        message: "PRD must declare /options endpoints for all dropdown data sources"

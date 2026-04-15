@@ -51,6 +51,42 @@ PRD文档 → 5W1H分析 → 用例图 → 流程图 → 状态图 → 功能矩
 ### Phase 3: 功能循环实现
 对每个功能(P0→P1→P2): 实现 → 审查 → 修复 → 验收
 
+### Phase 3.5: MVP分层交付策略（推荐）
+
+**核心理念**: 不要等所有功能点全部完成才交付，而是按MVP层级递进交付，每层都可独立运行和验证。
+
+**三层MVP模型**:
+
+| 层级 | 内容 | 交付标准 | 典型耗时 |
+|------|------|---------|---------|
+| **MVP-1 骨架层** | 数据模型+基础CRUD接口+种子数据 | 后端API可调通、Swagger可访问、种子数据可查询 | 1-2小时 |
+| **MVP-2 功能层** | 业务逻辑+状态流转+表单校验 | 核心业务流程可走通、异常处理完整 | 2-4小时 |
+| **MVP-3 体验层** | UX优化+权限控制+Options API+样式打磨 | 前后端联调完成、权限生效、UI一致 | 2-3小时 |
+
+**MVP-1 骨架层实现清单**:
+- [ ] Model定义(含审计字段、BaseAuditModel继承)
+- [ ] Schema定义(含OptionSchema、ResponseSchema)
+- [ ] 基础CRUD API(含/options端点)
+- [ ] 路由注册(/options在/{id}之前)
+- [ ] 种子数据SQL
+- [ ] 微验证通过(后端启动+API可达)
+
+**MVP-2 功能层实现清单**:
+- [ ] 业务逻辑Service实现
+- [ ] 状态流转/审批流程
+- [ ] 参数校验(@Validated/@Xss)
+- [ ] 异常处理(try-catch+safeAlert)
+- [ ] 微验证通过(Schema序列化+业务流程)
+
+**MVP-3 体验层实现清单**:
+- [ ] 前端页面(列表/表单/详情)
+- [ ] Options API下拉数据加载
+- [ ] 权限控制(@PreAuthorize/v-hasPermi)
+- [ ] CSS布局(global-reset.css基线)
+- [ ] 微验证通过(前端编译+联调)
+
+**交付节奏**: 每完成一个MVP层级，向用户展示成果并获取反馈，再进入下一层级。避免"黑盒开发"导致的返工。
+
 ### Phase 4: 架构审查集成
 按需调用 system-architect / software-architect
 
@@ -68,7 +104,43 @@ PRD documents → 5W1H analysis → Use case diagrams → Flowcharts → State d
 Feature matrix → Architecture consultation(as needed) → API design → Data model → Development spec + Acceptance criteria
 
 ### Phase 3: Feature Loop Implementation
-For each feature (P0→P1→P2): Implement → Review → Fix → Verify
+For each feature (by priority P0→P1→P2): Implement → Review → Fix → Verify
+
+### Phase 3.5: MVP Layered Delivery Strategy (Recommended)
+
+**Core Concept**: Don't wait for all feature points to be complete before delivering. Instead, deliver incrementally by MVP layers, where each layer can run and be verified independently.
+
+**Three-Layer MVP Model**:
+
+| Layer | Content | Delivery Standard | Typical Time |
+|-------|---------|-------------------|--------------|
+| **MVP-1 Skeleton** | Data models + Basic CRUD APIs + Seed data | Backend APIs callable, Swagger accessible, seed data queryable | 1-2 hours |
+| **MVP-2 Functionality** | Business logic + State transitions + Form validation | Core business flow works, exception handling complete | 2-4 hours |
+| **MVP-3 Experience** | UX polish + Permission control + Options API + Style refinement | Frontend-backend integration complete, permissions working, UI consistent | 2-3 hours |
+
+**MVP-1 Skeleton Implementation Checklist**:
+- [ ] Model definition (with audit fields, BaseAuditModel inheritance)
+- [ ] Schema definition (with OptionSchema, ResponseSchema)
+- [ ] Basic CRUD API (with /options endpoint)
+- [ ] Route registration (/options before /{id})
+- [ ] Seed data SQL
+- [ ] Micro-verification passed (backend startup + API reachable)
+
+**MVP-2 Functionality Implementation Checklist**:
+- [ ] Business logic Service implementation
+- [ ] State transitions / approval workflows
+- [ ] Parameter validation (@Validated/@Xss)
+- [ ] Exception handling (try-catch + safeAlert)
+- [ ] Micro-verification passed (Schema serialization + business flow)
+
+**MVP-3 Experience Implementation Checklist**:
+- [ ] Frontend pages (list/form/detail)
+- [ ] Options API dropdown data loading
+- [ ] Permission control (@PreAuthorize/v-hasPermi)
+- [ ] CSS layout (global-reset.css baseline)
+- [ ] Micro-verification passed (frontend compilation + integration)
+
+**Delivery Rhythm**: After completing each MVP layer, present results to the user and get feedback before proceeding to the next layer. Avoid "black box development" that leads to rework.
 
 ### Phase 4: Architecture Review Integration
 On-demand invocation of system-architect / software-architect

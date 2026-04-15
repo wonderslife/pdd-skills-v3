@@ -88,6 +88,29 @@ Verify that feature implementation conforms to development specifications and ac
 
 **命名规范性**: 检查代码命名是否符合项目约定
 
+### Step 4.5: 契约一致性验证（关键改进）
+
+**OpenAPI契约同步检查**: 使用openapi-contract-sync.js工具验证前后端契约一致性
+
+1. **后端端点覆盖检查**: 前端API调用的每个URL在后端OpenAPI中是否有对应端点
+2. **字段类型一致性**: 后端Schema的datetime字段是否在前端正确映射为string(ISO8601)
+3. **Options接口完整性**: PRD中声明的下拉数据源是否都有对应的/options端点
+4. **枚举值一致性**: 后端枚举值是否与PRD枚举编码约定一致(snake_case)
+
+**Bug模式库验证**: 对照 `config/bug-patterns.yaml` 中的Bug模式库，验证代码是否触犯已知模式
+
+| 模式 | 验证方法 | 失败级别 |
+|------|---------|---------|
+| PATTERN-001 datetime类型 | 检查datetime字段是否为str类型 | 🔴 Critical |
+| PATTERN-002 路由顺序 | 检查/options是否在/{id}之前 | 🔴 Critical |
+| PATTERN-003 枚举编码 | 检查枚举值是否遵循编码约定 | 🟡 Warning |
+| PATTERN-004 safeAlert | 检查前端是否使用原生alert | 🟡 Warning |
+| PATTERN-005 my-tasks查询 | 检查查询条件是否完整 | 🔴 Critical |
+| PATTERN-007 编号生成 | 检查是否验证已存在记录 | 🔴 Critical |
+| PATTERN-R001 若依权限 | 检查@PreAuthorize注解 | 🔴 Critical |
+| PATTERN-R002 若依菜单 | 检查sys_menu配置 | 🔴 Critical |
+| PATTERN-R003 若依数据权限 | 检查@DataScope注解 | 🔴 Critical |
+
 ### 🇺🇸
 
 ### Step 1: Gather Verification Materials
@@ -121,6 +144,29 @@ Verify that feature implementation conforms to development specifications and ac
 **Doc-Code Consistency**: Compare specification documents with actual code implementation (interface path/response structure/naming)
 
 **Naming Convention Compliance**: Check if code naming follows project conventions
+
+### Step 4.5: Contract Consistency Verification (Critical Improvement)
+
+**OpenAPI Contract Sync Check**: Use openapi-contract-sync.js tool to verify frontend-backend contract consistency
+
+1. **Backend Endpoint Coverage**: Does every frontend API call URL have a corresponding backend OpenAPI endpoint
+2. **Field Type Consistency**: Are backend Schema datetime fields correctly mapped to string(ISO8601) in frontend
+3. **Options API Completeness**: Do all dropdown data sources declared in PRD have corresponding /options endpoints
+4. **Enum Value Consistency**: Are backend enum values consistent with PRD enum coding convention (snake_case)
+
+**Bug Pattern Library Verification**: Check code against bug pattern library in `config/bug-patterns.yaml` for known pattern violations
+
+| Pattern | Verification Method | Failure Level |
+|---------|-------------------|---------------|
+| PATTERN-001 datetime type | Check if datetime fields are declared as str | 🔴 Critical |
+| PATTERN-002 route order | Check if /options is registered before /{id} | 🔴 Critical |
+| PATTERN-003 enum coding | Check if enum values follow coding convention | 🟡 Warning |
+| PATTERN-004 safeAlert | Check if frontend uses native alert | 🟡 Warning |
+| PATTERN-005 my-tasks query | Check if query conditions are complete | 🔴 Critical |
+| PATTERN-007 ID generation | Check if existing records are verified | 🔴 Critical |
+| PATTERN-R001 RuoYi permission | Check @PreAuthorize annotation | 🔴 Critical |
+| PATTERN-R002 RuoYi menu | Check sys_menu configuration | 🔴 Critical |
+| PATTERN-R003 RuoYi data scope | Check @DataScope annotation | 🔴 Critical |
 
 ## 验证检查清单 / Verification Checklist
 
@@ -156,6 +202,13 @@ Verify that feature implementation conforms to development specifications and ac
 - [ ] 数据类型是否一致
 - [ ] 校验规则是否一致
 
+### 契约一致性验证（新增）
+- [ ] 前端API调用是否都有对应后端端点
+- [ ] datetime字段是否正确映射(后端datetime→前端string)
+- [ ] Options接口是否完整覆盖PRD声明的数据源
+- [ ] 枚举值是否符合snake_case编码约定
+- [ ] Bug模式库PATTERN-001~PATTERN-007及PATTERN-R001~R007是否全部通过(详见 `config/bug-patterns.yaml`)
+
 ### 🇺🇸
 
 ### Interface Verification
@@ -187,6 +240,13 @@ Verify that feature implementation conforms to development specifications and ac
 - [ ] Field names are consistent
 - [ ] Data types are consistent
 - [ ] Validation rules are consistent
+
+### Contract Consistency Verification (New)
+- [ ] Frontend API calls all have corresponding backend endpoints
+- [ ] datetime fields correctly mapped (backend datetime → frontend string)
+- [ ] Options API completely covers PRD-declared data sources
+- [ ] Enum values conform to snake_case coding convention
+- [ ] Bug pattern library PATTERN-001~PATTERN-007 and PATTERN-R001~R007 all pass (see `config/bug-patterns.yaml`)
 
 ## 输出规范 / Output Specification
 

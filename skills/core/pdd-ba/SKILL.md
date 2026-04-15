@@ -192,8 +192,10 @@ Complete operation matrix: Entity × Create/Read/Update/Delete/List/Export
 5. **状态分析**: 详见Step 3.c
 6. **CRUD矩阵**: 详见Step 4
 7. **业务规则**: 详见Step 5
-8. **风险与假设**: 风险(ID/描述/影响/概率/应对) | 假设(ID/描述/验证方式)
-9. **附录**: 术语表 | 参考文档
+8. **枚举编码约定**: 每个枚举必须给出显示名(中文)+编码值(英文snake_case小写)
+9. **权限矩阵**: 角色×状态×操作的操作权限矩阵
+10. **风险与假设**: 风险(ID/描述/影响/概率/应对) | 假设(ID/描述/验证方式)
+11. **附录**: 术语表 | 参考文档
 
 ### 🇺🇸
 ### Business Analysis Report Structure
@@ -204,8 +206,10 @@ Complete operation matrix: Entity × Create/Read/Update/Delete/List/Export
 5. **State Analysis**: See Step 3.c
 6. **CRUD Matrix**: See Step 4
 7. **Business Rules**: See Step 5
-8. **Risks & Assumptions**: Risks (ID/description/impact/probability/mitigation) | Assumptions (ID/description/verification method)
-9. **Appendix**: Glossary | Reference documents
+8. **Enum Coding Conventions**: Each enum must provide display name (Chinese) + code value (English snake_case lowercase)
+9. **Permission Matrix**: Role × State × Operation permission matrix
+10. **Risks & Assumptions**: Risks (ID/description/impact/probability/mitigation) | Assumptions (ID/description/verification method)
+11. **Appendix**: Glossary | Reference documents
 
 ## Guardrails / 安全护栏
 

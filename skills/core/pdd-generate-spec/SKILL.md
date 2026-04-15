@@ -93,6 +93,72 @@ Based on the feature matrix and business analysis report, generate detailed deve
 
 ### 5.2 数据权限
 | 操作 | 数据范围 |
+
+## 6. 前端实现约定
+
+### 6.1 页面组件
+- 页面路径: /{module}
+- 组件文件: {ModuleName}View.vue
+- 布局: AppLayout + ContentArea
+
+### 6.2 表单字段映射
+| 字段 | 组件 | 数据源API | 默认值 | 校验规则 |
+|------|------|----------|--------|---------|
+| (根据PRD 4.4节填写) | | | | |
+
+### 6.3 操作按钮矩阵
+| 状态 | 创建者 | 评估师/审批人 | 其他人 |
+|------|--------|-------------|--------|
+| (根据PRD 7.1节填写) | | | |
+
+### 6.4 列表表格列定义
+| 列名 | 字段 | 宽度 | 排序 | 筛选 |
+|------|------|------|------|------|
+
+## 7. 关联数据源（Options接口）
+
+### 7.1 需要的Options接口
+| 接口 | 路径 | 返回格式 | 过滤参数 |
+|------|------|---------|---------|
+| (根据PRD 4.5节填写) | | | |
+
+### 7.2 Options接口设计规则
+- 路由必须在 /{id} 之前定义（避免路由冲突）
+- 返回轻量数据（仅id+显示字段）
+- 支持query参数过滤（如 ?role=evaluator）
+
+## 8. 路由注册与命名约定
+
+### 8.1 路由注册顺序（必须严格遵守）
+1. /me (当前用户)
+2. / (列表)
+3. /options (下拉选项) — 必须在 /{id} 之前！
+4. /{id} (详情)
+5. POST / (创建)
+6. PUT /{id} (更新)
+7. DELETE /{id} (删除)
+
+### 8.2 文件命名约定
+- API路由: {module_name}.py
+- Service: {module_name}_service.py
+- Schema: {module_name}.py (在schemas目录)
+- Model: {module_name}.py (在models目录)
+- Vue组件: {ModuleName}View.vue (PascalCase)
+
+## 9. 依赖检查清单
+
+### 9.1 前置依赖（必须满足才能开始开发）
+- [ ] **部门管理模块**已就绪
+  - 验证: curl GET /departments/options → 返回≥1条记录
+  - 如果未就绪: 先实现 FP-INFRA-001
+- [ ] **种子数据**已初始化
+  - 验证: python seed_base_data.py 执行成功
+  - 如果未就绪: 先运行种子脚本
+- [ ] **认证中间件**已配置
+  - 验证: POST /auth/login → 返回access_token
+
+### 9.2 本功能产生的后续依赖
+- [ ] 本功能的 /options 端点将被 FP-XXX 依赖
 ```
 
 ### checklist.md 模板
@@ -175,6 +241,72 @@ Current State → Condition/Event → Target State
 
 ### 5.2 Data Permissions
 | Operation | Data Scope |
+
+## 6. Frontend Implementation Conventions
+
+### 6.1 Page Components
+- Page path: /{module}
+- Component file: {ModuleName}View.vue
+- Layout: AppLayout + ContentArea
+
+### 6.2 Form Field Mapping
+| Field | Component | Data Source API | Default | Validation |
+|-------|-----------|---------------|---------|------------|
+| (Fill from PRD Section 4.4) | | | | |
+
+### 6.3 Action Button Matrix
+| Status | Creator | Reviewer | Others |
+|--------|---------|----------|--------|
+| (Fill from PRD Section 7.1) | | | |
+
+### 6.4 List Table Column Definition
+| Column | Field | Width | Sortable | Filterable |
+|--------|-------|-------|----------|------------|
+
+## 7. Related Data Sources (Options APIs)
+
+### 7.1 Required Options APIs
+| API | Path | Response Format | Filter Params |
+|-----|------|----------------|---------------|
+| (Fill from PRD Section 4.5) | | | |
+
+### 7.2 Options API Design Rules
+- Route MUST be defined before /{id} (avoid route conflicts)
+- Return lightweight data (id + display fields only)
+- Support query parameter filtering (e.g., ?role=evaluator)
+
+## 8. Route Registration & Naming Conventions
+
+### 8.1 Route Registration Order (MUST strictly follow)
+1. /me (current user)
+2. / (list)
+3. /options (dropdown options) — MUST be before /{id}!
+4. /{id} (detail)
+5. POST / (create)
+6. PUT /{id} (update)
+7. DELETE /{id} (delete)
+
+### 8.2 File Naming Conventions
+- API route: {module_name}.py
+- Service: {module_name}_service.py
+- Schema: {module_name}.py (in schemas directory)
+- Model: {module_name}.py (in models directory)
+- Vue component: {ModuleName}View.vue (PascalCase)
+
+## 9. Dependency Checklist
+
+### 9.1 Prerequisites (MUST be met before development)
+- [ ] **Department module** is ready
+  - Verify: curl GET /departments/options → returns ≥1 record
+  - If not ready: implement FP-INFRA-001 first
+- [ ] **Seed data** is initialized
+  - Verify: python seed_base_data.py executes successfully
+  - If not ready: run seed script first
+- [ ] **Auth middleware** is configured
+  - Verify: POST /auth/login → returns access_token
+
+### 9.2 Dependencies Created by This Feature
+- [ ] This feature's /options endpoint will be needed by FP-XXX
 ```
 
 ### checklist.md Template
@@ -258,15 +390,15 @@ Save to `dev-specs/FP-{sequence}/spec.md` and `checklist.md`
 
 ### 🇨🇳
 
-**必须遵守**: 接口定义必须符合RESTful规范 | 数据模型必须包含审计字段 | 业务规则必须标注优先级 | 验收标准必须可测试可验证
+**必须遵守**: 接口定义必须符合RESTful规范 | 数据模型必须包含审计字段 | 业务规则必须标注优先级 | 验收标准必须可测试可验证 | 外键字段必须定义前端组件类型(禁止UUID手动输入) | Options接口必须在Spec中声明 | 路由注册顺序必须遵守约定 | 枚举值必须使用snake_case小写英文
 
-**避免事项**: ❌ 接口路径不符合RESTful规范 | ❌ 数据模型缺少审计字段 | ❌ 业务规则模糊无法验证 | ❌ 验收标准不可测试
+**避免事项**: ❌ 接口路径不符合RESTful规范 | ❌ 数据模型缺少审计字段 | ❌ 业务规则模糊无法验证 | ❌ 验收标准不可测试 | ❌ 外键字段用Input而非Select | ❌ Options接口路由在/{id}之后 | ❌ 枚举值使用大写或中文 | ❌ datetime字段声明为str而非datetime
 
 ### 🇺🇸
 
-**Must Follow**: API definitions must comply with RESTful conventions | Data models must include audit fields | Business rules must be marked with priority levels | Acceptance criteria must be testable and verifiable
+**Must Follow**: API definitions must comply with RESTful conventions | Data models must include audit fields | Business rules must be marked with priority levels | Acceptance criteria must be testable and verifiable | Foreign key fields MUST define frontend component type (no manual UUID input) | Options APIs MUST be declared in Spec | Route registration order MUST follow conventions | Enum values MUST use snake_case lowercase English
 
-**Avoid**: ❌ API paths that do not follow RESTful conventions | ❌ Data models missing audit fields | ❌ Business rules that are vague and unverifiable | ❌ Acceptance criteria that are not testable
+**Avoid**: ❌ API paths that do not follow RESTful conventions | ❌ Data models missing audit fields | ❌ Business rules that are vague and unverifiable | ❌ Acceptance criteria that are not testable | ❌ Foreign key fields using Input instead of Select | ❌ Options API route defined after /{id} | ❌ Enum values using UPPERCASE or Chinese | ❌ datetime fields declared as str instead of datetime
 
 ## 与其他技能协作 / Collaboration with Other Skills
 
@@ -404,12 +536,18 @@ Save to `dev-specs/FP-{sequence}/spec.md` and `checklist.md`
 - **EXEC-GS-002**: 数据模型缺少审计字段(create_time等)或主键定义 → 🔴 CRITICAL → 补充标准的审计字段和主键 / Data model is missing audit fields (create_time, etc.) or primary key definition → 🔴 CRITICAL → Supplement standard audit fields and primary key
 - **EXEC-GS-003**: 验收标准存在无法客观验证的条目 → 🟡 WARN → 重写为可量化的或可明确判定的标准 / Acceptance criteria contains items that cannot be objectively verified → 🟡 WARN → Rewrite as quantifiable or clearly determinable criteria
 - **EXEC-GS-004**: 规格中的业务规则与业务分析报告矛盾 → 🔴 CRITICAL → 以业务分析为准修正规格或记录冲突并请用户确认 / Business rules in spec contradict business analysis report → 🔴 CRITICAL → Correct spec based on business analysis or record conflict and ask user for confirmation
+- **EXEC-GS-005**: 外键字段未定义前端组件类型(如department_id用Input) → 🔴 CRITICAL → 改为Select并声明Options API数据源 / Foreign key field missing frontend component type (e.g., department_id using Input) → 🔴 CRITICAL → Change to Select and declare Options API data source
+- **EXEC-GS-006**: 枚举值使用大写或中文编码 → 🟡 WARN → 改为snake_case小写英文 / Enum values using UPPERCASE or Chinese → 🟡 WARN → Change to snake_case lowercase English
+- **EXEC-GS-007**: datetime字段在Pydantic Schema中声明为str → 🟡 WARN → 改为datetime类型并添加序列化配置 / datetime field declared as str in Pydantic Schema → 🟡 WARN → Change to datetime type and add serialization config
 
 ### Layer 3: 输出检查 / Output Validation Guards
 
 - **OUTPUT-GS-001**: spec.md缺少必要的章节(接口定义/数据模型/业务逻辑) → 🔴 CRITICAL → 补充缺失的章节 / spec.md is missing required sections (API definition/data model/business logic) → 🔴 CRITICAL → Supplement missing sections
 - **OUTPUT-GS-002**: checklist.md的验收标准少于5条或明显不足以覆盖主要功能 → 🔴 CRITICAL → 补充更完善的验收标准 / checklist.md has fewer than 5 acceptance criteria or is clearly insufficient to cover main functionality → 🔴 CRITICAL → Supplement more comprehensive acceptance criteria
 - **OUTPUT-GS-003**: 规格文件的保存路径不符合规范(不在dev-specs/FP-{序号}/下) → 🟡 WARN → 移动到正确的目录位置 / Spec file save path does not conform to standards (not under dev-specs/FP-{sequence}/) → 🟡 WARN → Move to correct directory location
+- **OUTPUT-GS-004**: spec.md缺少前端实现约定章节(第6章) → 🔴 CRITICAL → 补充前端组件映射和操作按钮矩阵 / spec.md missing Frontend Implementation Conventions section (Chapter 6) → 🔴 CRITICAL → Supplement frontend component mapping and action button matrix
+- **OUTPUT-GS-005**: spec.md缺少关联数据源章节(第7章) → 🔴 CRITICAL → 补充Options接口定义 / spec.md missing Related Data Sources section (Chapter 7) → 🔴 CRITICAL → Supplement Options API definitions
+- **OUTPUT-GS-006**: spec.md缺少依赖检查清单(第9章) → 🟡 WARN → 补充前置依赖和后续依赖 / spec.md missing Dependency Checklist (Chapter 9) → 🟡 WARN → Supplement prerequisites and downstream dependencies
 
 ### 触发Red Flag时的处理流程 / Red Flag Trigger Handling Process
 

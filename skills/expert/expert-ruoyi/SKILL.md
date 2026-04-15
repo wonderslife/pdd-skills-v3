@@ -410,6 +410,81 @@ export function exportAsset(query) {
 - ❌ 前端验证替代后端验证
 - ❌ 忘记清除Redis缓存
 
+## 7.5 若依Spec模板参考
+
+当pdd-generate-spec为若依项目生成开发规格时，expert-ruoyi应提供以下模板参考：
+
+### 7.5.1 若依Spec必须包含的章节
+
+| 章节 | 内容 | 若依特有要求 |
+|------|------|-------------|
+| 数据模型 | 实体类定义 | 必须包含BaseEntity继承、@Data/@TableName注解 |
+| 接口设计 | Controller/Service/Mapper | 必须包含@PreAuthorize权限注解、@Log操作日志 |
+| 菜单配置 | sys_menu INSERT语句 | 必须包含目录(M)+菜单(C)+按钮(F)三层配置 |
+| 权限矩阵 | 权限标识符列表 | 格式：`模块:功能:操作`(如asset:list:add) |
+| 数据权限 | @DataScope配置 | 必须指定deptAlias和userAlias |
+| 前端API | request封装 | 必须遵循listXxx/getXxx/addXxx/updateXxx/delXxx命名 |
+
+### 7.5.2 若依Spec模板片段
+
+```markdown
+## 数据模型
+
+### {EntityName} 实体
+- 继承: BaseEntity
+- 注解: @Data, @TableName("{table_name}")
+- 字段:
+  | 字段名 | 类型 | 注解 | 说明 |
+  |--------|------|------|------|
+  | {fieldName} | {type} | @Excel(name="{label}") | {desc} |
+
+## 接口设计
+
+### {EntityName}Controller
+- 路径: @RequestMapping("/{module}/{feature}")
+- 权限前缀: {module}:{feature}
+
+| 方法 | 路径 | 权限标识 | 注解 |
+|------|------|---------|------|
+| list | GET / | {module}:{feature}:list | @PreAuthorize |
+| getInfo | GET /{id} | {module}:{feature}:query | @PreAuthorize |
+| add | POST / | {module}:{feature}:add | @PreAuthorize + @Log |
+| edit | PUT / | {module}:{feature}:edit | @PreAuthorize + @Log |
+| remove | DELETE /{ids} | {module}:{feature}:remove | @PreAuthorize + @Log |
+
+## 菜单配置SQL
+
+-- 目录(M)
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, menu_type, visible, perms, icon)
+VALUES ('{菜单名}', 0, {排序}, '{path}', NULL, 'M', '0', NULL, '{icon}');
+
+-- 菜单(C) - 列表页
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, menu_type, visible, perms)
+VALUES ('{菜单名}列表', {parent_id}, 1, '{path}', '{module}/{feature}/index', 'C', '0', '{module}:{feature}:list');
+
+-- 按钮(F) - 新增/修改/删除/导出
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, menu_type, visible, perms)
+VALUES ('{菜单名}新增', {menu_id}, 1, '', '', 'F', '0', '{module}:{feature}:add');
+```
+
+## 7.6 若依Bug模式库
+
+> 完整模式定义: `config/bug-patterns.yaml` (categories.ruoyi)
+
+expert-ruoyi在提供解决方案时，必须主动检查并避免以下已知Bug模式：
+
+| 模式编号 | 模式名称 | 典型表现 | 预防措施 |
+|---------|---------|---------|---------|
+| PATTERN-R001 | 权限注解缺失 | Controller方法缺少@PreAuthorize | 每个接口方法必须配置权限注解 |
+| PATTERN-R002 | 菜单配置不完整 | 新增页面404/按钮不显示 | 所有页面(含隐藏页)必须配置sys_menu |
+| PATTERN-R003 | 数据权限未配置 | 用户看到跨部门数据 | Service方法添加@DataScope注解 |
+| PATTERN-R004 | Redis缓存未清除 | 权限修改后不生效 | 修改权限/菜单后必须清除Redis |
+| PATTERN-R005 | 参数校验缺失 | @RequestBody参数无@Validated | 所有@RequestBody参数添加@Validated |
+| PATTERN-R006 | XSS防护缺失 | 文本字段未添加@Xss | 所有String类型文本字段添加@Xss |
+| PATTERN-R007 | 操作日志缺失 | 增删改操作无@Log | 所有CUD操作添加@Log注解 |
+
+**检查原则**: 每次提供若依相关建议时，必须对照以上7个模式逐一检查，确保建议的代码不会触犯已知模式。新增模式时只需修改 `config/bug-patterns.yaml`，无需修改此文件。
+
 ## 8. 本地开发指南
 
 本项目有特定的开发规范和历史经验，请在提供建议时优先参考：

@@ -88,11 +88,26 @@ Feature Point/Page Path/API Path/Method
 # [模块名称] 功能点矩阵
 
 ## 功能点汇总
-| 功能点ID | 功能名称 | 页面/接口 | 操作类型 | 复杂度 | AI角色 | 依赖功能 |
-|---------|---------|----------|---------|--------|--------|---------|
-| FP-001 | 发起转让申请 | form.vue | C | P0 | AI-C | - |
-| FP-002 | 查看转让申请 | detail.vue | R | P1 | AI-L | FP-001 |
+| 功能点ID | 功能名称 | 页面/接口 | 操作类型 | 复杂度 | AI角色 | 依赖功能 | 前端组件类型 | 关联数据源 |
+|---------|---------|----------|---------|--------|--------|---------|------------|-----------|
+| FP-001 | 发起转让申请 | form.vue | C | P0 | AI-C | - | Form+Select+DatePicker | /departments/options, /assets/options |
+| FP-002 | 查看转让申请 | detail.vue | R | P1 | AI-L | FP-001 | Detail+StatusTag | - |
 ```
+
+**前端组件类型说明**:
+- Form: 表单页面 (el-form)
+- List: 列表页面 (el-table + el-pagination)
+- Detail: 详情页面 (el-descriptions)
+- Select: 下拉选择 (el-select, 数据来自Options API)
+- DatePicker: 日期选择 (el-date-picker)
+- Checkbox: 多选 (el-checkbox-group)
+- Upload: 文件上传 (el-upload)
+- StatusTag: 状态标签 (el-tag, 根据状态显示不同颜色)
+
+**关联数据源说明**:
+- 列出该功能点需要的所有Options API端点
+- 格式: `/{module}/options[?filter=params]`
+- 确保前端组件有数据来源
 
 ### 🇺🇸 Step 4: Generate Feature Matrix
 
@@ -100,11 +115,26 @@ Feature Point/Page Path/API Path/Method
 # [Module Name] Feature Matrix
 
 ## Feature Summary
-| Feature ID | Feature Name | Page/API | Operation Type | Complexity | AI Role | Dependencies |
-|-----------|-------------|----------|---------------|------------|---------|--------------|
-| FP-001 | Initiate Transfer Request | form.vue | C | P0 | AI-C | - |
-| FP-002 | View Transfer Request | detail.vue | R | P1 | AI-L | FP-001 |
+| Feature ID | Feature Name | Page/API | Operation Type | Complexity | AI Role | Dependencies | Frontend Component | Related Data Source |
+|-----------|-------------|----------|---------------|------------|---------|--------------|-------------------|---------------------|
+| FP-001 | Initiate Transfer Request | form.vue | C | P0 | AI-C | - | Form+Select+DatePicker | /departments/options, /assets/options |
+| FP-002 | View Transfer Request | detail.vue | R | P1 | AI-L | FP-001 | Detail+StatusTag | - |
 ```
+
+**Frontend Component Types**:
+- Form: Form page (el-form)
+- List: List page (el-table + el-pagination)
+- Detail: Detail page (el-descriptions)
+- Select: Dropdown select (el-select, data from Options API)
+- DatePicker: Date picker (el-date-picker)
+- Checkbox: Multi-select (el-checkbox-group)
+- Upload: File upload (el-upload)
+- StatusTag: Status tag (el-tag, different colors by status)
+
+**Related Data Source**:
+- List all Options API endpoints needed by this feature
+- Format: `/{module}/options[?filter=params]`
+- Ensure frontend components have data sources
 
 ### 🇨🇳 Step 5: 功能点详情(P0必填)
 
@@ -143,7 +173,7 @@ Generate details for each P0 feature point:
 ### 按操作类型统计: C/R/U/D/A/E/F 各N个
 
 ## 详细功能点列表
-| 功能点ID | 功能名称 | 页面/接口 | 操作 | 复杂度 | AI角色 | 依赖 | 测试策略 |
+| 功能点ID | 功能名称 | 页面/接口 | 操作 | 复杂度 | AI角色 | 依赖 | 测试策略 | 前端组件 | 关联数据源 |
 ```
 
 ### 🇺🇸
@@ -159,7 +189,7 @@ Generate details for each P0 feature point:
 ### By Operation Type: C/R/U/D/A/E/F each N items
 
 ## Detailed Feature List
-| Feature ID | Feature Name | Page/API | Operation | Complexity | AI Role | Dependencies | Test Strategy |
+| Feature ID | Feature Name | Page/API | Operation | Complexity | AI Role | Dependencies | Test Strategy | Frontend Component | Related Data Source |
 ```
 
 ## Guardrails / 安全护栏

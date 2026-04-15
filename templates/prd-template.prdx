@@ -84,7 +84,7 @@
 ## 4. 界面原型
 
 ### 4.1 页面列表
-<!-- 列出主要页面 -->
+<!-- 列出主要页面，必须标注表单字段组件类型 -->
 | 页面名称 | 页面路径 | 说明 |
 |---------|---------|------|
 | 首页 | /home | 系统首页 |
@@ -94,6 +94,31 @@
 ### 4.2 页面说明
 <!-- 描述每个页面的功能和布局 -->
 
+### 4.3 界面线框图
+<!-- 为每个核心页面提供线框图，标注：
+  - 页面布局结构（头部/侧边栏/内容区/操作区）
+  - 表单字段及组件类型（Input/Select/DatePicker/Checkbox等）
+  - 操作按钮位置和显示条件（基于角色×状态）
+  - 列表表格的列定义（列名/字段/宽度/排序/筛选）
+-->
+
+### 4.4 表单字段组件映射表
+<!-- 必填：定义每个表单字段的交互方式，避免UUID手动输入等问题 -->
+| 字段名 | 组件类型 | 数据源API | 默认值 | 校验规则 | 交互说明 |
+|--------|---------|----------|--------|---------|---------|
+| department_id | Select下拉 | GET /departments/options | null | 必填 | 显示name(code)，值为id |
+| asset_ids | Checkbox多选 | GET /assets/options | [] | 至少选1个 | 搜索+勾选 |
+| evaluator_id | Select下拉 | GET /users/options?role=evaluator | null | 必填 | 显示姓名(角色) |
+| deadline | DatePicker | - | null | 必填，≥今天+7天 | 日期选择 |
+
+### 4.5 Options API定义
+<!-- 必填：列出所有下拉选项数据来源，确保前端组件有数据 -->
+| 接口名称 | 路径 | 返回格式 | 过滤参数 | 认证 |
+|---------|------|---------|---------|------|
+| 部门选项 | GET /departments/options | [{id, name, code}] | - | 可选 |
+| 用户选项 | GET /users/options | [{id, name, role}] | role=evaluator | 可选 |
+| 资产选项 | GET /assets/options | [{id, name, category}] | status=idle | 可选 |
+
 ## 5. 数据模型
 
 ### 5.1 实体关系
@@ -101,10 +126,49 @@
 
 ### 5.2 数据字典
 <!-- 列出关键数据字段 -->
-| 字段名 | 类型 | 说明 | 示例值 |
-|-------|------|------|--------|
-| id | string | 唯一标识 | "USR-001" |
-| name | string | 名称 | "张三" |
+| 字段名 | 类型 | 必填 | 说明 | 示例值 |
+|-------|------|------|------|--------|
+| id | string | 是 | 唯一标识 | "USR-001" |
+| name | string | 是 | 名称 | "张三" |
+
+### 5.3 枚举值编码约定
+<!-- 必填：每个枚举必须同时给出显示名(中文)+编码值(英文snake_case小写) -->
+**编码规则**: 枚举值统一使用snake_case小写英文
+
+| 字段 | 显示名(中文) | 编码值(英文) | 说明 |
+|------|------------|------------|------|
+| 资产类别-设备 | 设备 | `equipment` | 机械设备类 |
+| 资产类别-车辆 | 车辆 | `vehicle` | 运输车辆类 |
+| 资产状态-闲置 | 闲置 | `idle` | 未使用的资产 |
+| 资产状态-评估中 | 评估中 | `evaluating` | 正在评估 |
+| 审批状态-已提交 | 已提交 | `submitted` | 待审批 |
+| 审批状态-已通过 | 已通过 | `approved` | 审批通过 |
+
+### 5.4 数据类型映射约定
+<!-- 必填：根据脚手架类型选择对应的类型映射表 -->
+
+**Python Fullstack (FastAPI + SQLAlchemy + Vue)**:
+
+| PRD类型 | Python类型 | SQLAlchemy类型 | Pydantic类型 | TypeScript类型 | MySQL类型 |
+|---------|-----------|---------------|-------------|---------------|----------|
+| UUID | str | String(36) | str | string | VARCHAR(36) |
+| Decimal(12,2) | float | Numeric(12,2) | float | number | DECIMAL(12,2) |
+| DateTime | datetime | DateTime | datetime(自动序列化ISO8601) | string(ISO8601) | DATETIME |
+| Date | date | Date | date(自动序列化) | string(YYYY-MM-DD) | DATE |
+| Enum | str | String(20) | str(Literal[...]) | string | VARCHAR(20) |
+| Boolean | bool | Boolean | bool | boolean | TINYINT(1) |
+
+**若依 RuoYi (Spring Boot + MyBatis + Vue)**:
+
+| PRD类型 | Java类型 | MyBatis类型 | MySQL类型 | 前端类型 |
+|---------|---------|------------|----------|---------|
+| UUID | String | VARCHAR(36) | VARCHAR(36) | string |
+| Decimal(12,2) | BigDecimal | DECIMAL | DECIMAL(12,2) | number |
+| DateTime | Date | TIMESTAMP | DATETIME | string(ISO8601) |
+| Date | LocalDate | DATE | DATE | string(YYYY-MM-DD) |
+| Enum | String | VARCHAR(20) | VARCHAR(20) | string |
+| Boolean | Integer(0/1) | TINYINT | TINYINT(1) | boolean |
+| Long | Long | BIGINT | BIGINT | number |
 
 ## 6. 接口需求
 
@@ -114,17 +178,92 @@
 ### 6.2 内部接口
 <!-- 描述系统内部模块间的接口 -->
 
-## 7. 附录
+### 6.3 API设计约定
+<!-- 必填：统一API参数位置和路由规则 -->
 
-### 7.1 术语表
+**参数位置规则**:
+- 资源标识 → Path参数: `/assets/{asset_id}`
+- 筛选/分页 → Query参数: `?page=1&page_size=10&status=idle`
+- 创建/更新数据 → Request Body (JSON)
+- 状态变更 → Query参数: `PUT /evaluations/{id}/status?status=in_progress`
+
+**路由顺序规则** (FastAPI项目必须遵守):
+1. `/me` (当前用户)
+2. `/` (列表)
+3. `/options` (下拉选项) — 必须在 `/{id}` 之前！
+4. `/{id}` (详情)
+5. `POST /` (创建)
+6. `PUT /{id}` (更新)
+7. `DELETE /{id}` (删除)
+
+**字段命名约定**:
+- 数据库列: snake_case (如 `created_by`)
+- API请求/响应: snake_case (同DB)
+- 前端变量: camelCase (如 `createdBy`)
+- 前端显示: 中文映射表
+
+### 6.4 错误响应格式约定
+<!-- 必填：统一错误响应格式 -->
+
+```json
+{
+  "code": 40001,
+  "message": "审批意见不能为空",
+  "detail": null
+}
+```
+
+**规则**:
+- `message`: 用户可读消息，必须为string类型，可直接用于前端alert
+- `detail`: 技术细节，可选，不得传给前端alert
+- 前端错误处理: `safeAlert(e.response?.data?.message || '操作失败')`
+
+## 7. 权限矩阵
+
+### 7.1 角色×状态×操作权限矩阵
+<!-- 必填：定义每个角色在每个状态下可执行的操作，避免操作按钮缺失 -->
+
+**[模块名称]操作矩阵**:
+
+| 状态 | 创建者 | 评估师/审批人 | 其他人 |
+|------|--------|-------------|--------|
+| pending(待处理) | 编辑、删除 | 开始处理 | - |
+| in_progress(处理中) | - | 提交结果 | - |
+| completed(已完成) | 审核 | 详情 | 详情 |
+| reviewed(已审核) | 详情 | 详情 | 详情 |
+
+### 7.2 若依菜单配置规范（仅RuoYi项目）
+<!-- 若依项目必填：定义sys_menu配置 -->
+
+| 菜单名 | 类型(M/C/F) | 父菜单 | 路由地址 | 权限标识 |
+|--------|------------|--------|---------|---------|
+| [模块名] | M(目录) | 顶级 | [module] | - |
+| [功能名] | C(菜单) | [模块名] | [module]/list | [module]:list |
+| 新增 | F(按钮) | [功能名] | - | [module]:add |
+| 修改 | F(按钮) | [功能名] | - | [module]:edit |
+| 删除 | F(按钮) | [功能名] | - | [module]:remove |
+
+### 7.3 种子数据要求
+<!-- 必填：定义系统初始化时需要的最低数据 -->
+
+| 数据类型 | 数量 | 说明 | 验证方式 |
+|---------|------|------|---------|
+| 部门 | ≥12 | 覆盖多层级组织架构 | GET /departments/options 返回≥1条 |
+| 用户 | ≥5 | 每个角色至少1个 | POST /auth/login 各角色均可登录 |
+| 字典 | 按需 | 资产类别、处置方式等 | GET /dict_items/options 返回非空 |
+| 示例数据 | ≥3 | 覆盖不同类别 | GET /assets 返回≥3条 |
+
+## 8. 附录
+
+### 8.1 术语表
 | 术语 | 定义 |
 |------|------|
 | | |
 
-### 7.2 参考资料
+### 8.2 参考资料
 <!-- 列出参考文档 -->
 
-### 7.3 变更记录
+### 8.3 变更记录
 | 版本 | 日期 | 变更内容 | 作者 |
 |------|------|---------|------|
 | v1.0.0 | <!-- YYYY-MM-DD --> | 初始版本 | <!-- 作者 --> |

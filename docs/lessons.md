@@ -158,6 +158,44 @@ After fix, `pdd init` copies all **42 skills**:
 
 ---
 
-*Last Updated: 2026-04-07*
-*Lesson Number: LESSON-002*
-*Trigger Condition: pdd init command execution*
+## Bug Pattern Library / Bug模式库
+
+> ⚠️ **此章节已迁移至 `config/bug-patterns.yaml`**
+>
+> 本章节保留作为历史参考，但不再作为唯一真相源。
+> 所有技能(SKILL.md)和脚本现在统一引用 `config/bug-patterns.yaml`。
+>
+> **更新流程**: 新增或修改Bug模式时，只需修改 `config/bug-patterns.yaml`，
+> 各skill通过引用自动获取最新模式，无需逐个文件同步。
+>
+> 以下为 `config/bug-patterns.yaml` 的摘要快照(截至 2026-04-15):
+
+### 通用模式 (Python Fullstack) — PATTERN-001~007
+
+| 模式ID | 模式描述 | 严重级别 |
+|--------|---------|---------|
+| PATTERN-001 | datetime字段类型陷阱 | critical |
+| PATTERN-002 | 静态路由注册顺序错误 | critical |
+| PATTERN-003 | 枚举硬编码/编码不一致 | warning |
+| PATTERN-004 | alert()未用safeAlert()包装 | warning |
+| PATTERN-005 | my-tasks查询条件不完整 | critical |
+| PATTERN-006 | Options接口路由顺序(同PATTERN-002) | critical |
+| PATTERN-007 | 编号生成未检查已存在记录 | critical |
+
+### 若依专用模式 (RuoYi) — PATTERN-R001~R007
+
+| 模式ID | 模式描述 | 严重级别 |
+|--------|---------|---------|
+| PATTERN-R001 | 权限注解缺失 | critical |
+| PATTERN-R002 | 菜单配置不完整 | critical |
+| PATTERN-R003 | 数据权限未配置 | critical |
+| PATTERN-R004 | Redis缓存未清除 | warning |
+| PATTERN-R005 | 参数校验缺失 | warning |
+| PATTERN-R006 | XSS防护缺失 | warning |
+| PATTERN-R007 | 操作日志缺失 | info |
+
+---
+
+*Last Updated: 2026-04-15*
+*Lesson Number: LESSON-002 + Bug Pattern Library v1.0*
+*Trigger Condition: pdd init command execution / pdd-implement-feature code generation*

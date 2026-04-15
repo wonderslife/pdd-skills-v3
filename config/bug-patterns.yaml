@@ -1,0 +1,293 @@
+# Bug Pattern Library / Bug模式库
+#
+# 唯一真相源 (Single Source of Truth)
+# 所有SKILL.md和脚本必须引用此文件，不得内联副本
+#
+# 更新流程:
+#   1. 在此文件中添加/修改模式
+#   2. 运行 scripts/linter/validate-patterns.js 验证格式
+#   3. 各skill自动通过引用获取最新模式
+#
+# 模式ID命名规范:
+#   - 通用模式: PATTERN-NNN (如 PATTERN-001)
+#   - 若依专用: PATTERN-RNNN (如 PATTERN-R001)
+#   - 未来脚手架: PATTERN-JNNN (Java/Spring), PATTERN-GNNN (Go) 等
+
+meta:
+  version: "1.0.0"
+  last_updated: "2026-04-15"
+  source: "资产评估处置管理系统首次项目实践复盘"
+  maintainers: ["pdd-skills-v3"]
+
+categories:
+  general:
+    name: "通用模式 (Python Fullstack)"
+    description: "适用于所有Python Fullstack项目的常见Bug模式"
+    patterns:
+      - id: PATTERN-001
+        name: "datetime字段类型陷阱"
+        name_en: "datetime field type trap"
+        description: "datetime字段必须用field_validator或field_serializer处理，不能声明为str"
+        trigger: "Pydantic Schema包含datetime字段"
+        prevention: "使用 @field_serializer 或 model_config=json_encoders"
+        severity: critical
+        detection:
+          - "Schema中 created_at/updated_at 字段类型为 str"
+          - "datetime字段缺少序列化配置"
+        fix_example: |
+          # ❌ 错误
+          created_at: str
+          # ✅ 正确
+          created_at: datetime
+          # 并在Schema中添加:
+          @field_serializer('created_at')
+          def serialize_datetime(self, dt): return dt.isoformat() if dt else None
+        related_rules: ["dm-type-explicit"]
+        tags: ["schema", "datetime", "serialization"]
+
+      - id: PATTERN-002
+        name: "静态路由注册顺序错误"
+        name_en: "Static route registration order error"
+        description: "静态路由(/options, /me等)必须在动态路由(/{id})之前注册，否则被动态路由拦截"
+        trigger: "FastAPI路由文件同时包含/options和/{id}"
+        prevention: "路由注册顺序: /me → / → /options → /{id}"
+        severity: critical
+        detection:
+          - "router.py中 /options 定义在 /{id} 之后"
+          - "访问/options返回404或数据异常"
+        fix_example: |
+          # ❌ 错误
+          @router.get("/{id}")
+          @router.get("/options")
+          # ✅ 正确
+          @router.get("/options")
+          @router.get("/{id}")
+        related_rules: ["api-options-endpoint", "uiux-options-api-listed"]
+        tags: ["routing", "fastapi", "options-api"]
+
+      - id: PATTERN-003
+        name: "枚举硬编码/编码不一致"
+        name_en: "Enum hardcoding / inconsistent coding"
+        description: "枚举值散落硬编码在前端代码中，且编码风格不统一(大小写混用/中英混用)"
+        trigger: "定义Enum或状态字段"
+        prevention: "编码值统一用snake_case小写英文，显示名用中文映射，通过字典表/Options API管理"
+        severity: warning
+        detection:
+          - "前端 if status === '1' 散落各处"
+          - "枚举值大小写不统一(ACTIVE vs active vs Active)"
+        fix_example: |
+          # ❌ 错误
+          if (row.status === '1') { ... }
+          # ✅ 正确
+          const STATUS_MAP = { draft: '草稿', pending: '待审批', approved: '已通过' }
+        related_rules: ["dm-enum-convention"]
+        tags: ["enum", "coding-convention", "frontend"]
+
+      - id: PATTERN-004
+        name: "alert()未用safeAlert()包装"
+        name_en: "alert() not wrapped with safeAlert()"
+        description: "前端使用原生alert()可能导致非string参数报错"
+        trigger: "前端代码使用alert()"
+        prevention: "safeAlert确保参数为string类型"
+        severity: warning
+        detection:
+          - "Vue组件中使用 alert(...) 而非 safeAlert(...)"
+        fix_example: |
+          # ❌ 错误
+          alert(res.message)
+          # ✅ 正确
+          safeAlert(res.message)
+        related_rules: []
+        tags: ["frontend", "vue", "safety"]
+
+      - id: PATTERN-005
+        name: "my-tasks查询条件不完整"
+        name_en: "Incomplete my-tasks query conditions"
+        description: "我的任务查询必须同时匹配evaluator_id和created_by，否则遗漏任务"
+        trigger: "实现'我的任务'列表接口"
+        prevention: "OR(evaluator_id==user_id, created_by==user_id)"
+        severity: critical
+        detection:
+          - "我的任务接口只查 evaluator_id 或只查 created_by"
+        fix_example: |
+          # ❌ 错误
+          query = query.filter(Evaluation.evaluator_id == user_id)
+          # ✅ 正确
+          query = query.filter(
+            or_(Evaluation.evaluator_id == user_id, Evaluation.created_by == user_id)
+          )
+        related_rules: []
+        tags: ["query", "business-logic"]
+
+      - id: PATTERN-006
+        name: "Options接口路由顺序(同PATTERN-002)"
+        name_en: "Options API route order (same as PATTERN-002)"
+        description: "PATTERN-002的特化版本，专指/options端点的路由注册顺序问题"
+        trigger: "实现下拉选项API"
+        prevention: "参见PATTERN-002"
+        severity: critical
+        detection:
+          - "同PATTERN-002"
+        fix_example: "参见PATTERN-002"
+        related_rules: ["api-options-endpoint"]
+        tags: ["routing", "options-api"]
+        alias_of: "PATTERN-002"
+
+      - id: PATTERN-007
+        name: "编号生成未检查已存在记录"
+        name_en: "ID generation without checking existing records"
+        description: "自动编号生成时未检查数据库中已存在的最大编号，可能导致编号冲突"
+        trigger: "实现task_no等自动编号"
+        prevention: "SELECT MAX(task_no) WHERE task_no LIKE prefix%"
+        severity: critical
+        detection:
+          - "编号生成逻辑直接使用计数而非MAX查询"
+          - "并发场景下出现重复编号"
+        fix_example: |
+          # ❌ 错误
+          new_no = f"TASK-{count + 1:04d}"
+          # ✅ 正确
+          max_no = db.query(func.max(Task.task_no)).filter(
+            Task.task_no.like(f"TASK-{prefix}%")
+          ).scalar()
+          next_seq = int(max_no.split("-")[-1]) + 1 if max_no else 1
+        related_rules: []
+        tags: ["business-logic", "concurrency"]
+
+  ruoyi:
+    name: "若依专用模式 (RuoYi Framework)"
+    description: "若依框架特有的常见Bug模式"
+    patterns:
+      - id: PATTERN-R001
+        name: "权限注解缺失"
+        name_en: "Missing permission annotation"
+        description: "Controller方法缺少@PreAuthorize注解，导致接口无权限控制"
+        trigger: "新增Controller方法"
+        prevention: "每个接口方法必须配置@PreAuthorize注解"
+        severity: critical
+        detection:
+          - "Controller方法无@PreAuthorize注解"
+          - "接口可被任意角色访问"
+        fix_example: |
+          # ❌ 错误
+          @GetMapping("/list")
+          public TableDataInfo list(Evaluation evaluation) { ... }
+          # ✅ 正确
+          @PreAuthorize("@ss.hasPermi('eval:evaluation:list')")
+          @GetMapping("/list")
+          public TableDataInfo list(Evaluation evaluation) { ... }
+        related_rules: ["dm-permission-matrix"]
+        tags: ["ruoyi", "permission", "security"]
+
+      - id: PATTERN-R002
+        name: "菜单配置不完整"
+        name_en: "Incomplete menu configuration"
+        description: "新增页面未配置sys_menu记录，导致页面404或按钮不显示"
+        trigger: "新增功能页面"
+        prevention: "所有页面(含隐藏页)必须配置sys_menu INSERT语句"
+        severity: critical
+        detection:
+          - "新页面通过菜单访问返回404"
+          - "按钮权限不显示"
+        fix_example: |
+          -- 必须提供的菜单SQL
+          INSERT INTO sys_menu VALUES(2000, '评估管理', 0, 1, 'evaluation', NULL, '', 1, 0, 'M', '0', '0', '', 'eval', 'admin', sysdate(), '', NULL, '');
+        related_rules: []
+        tags: ["ruoyi", "menu", "configuration"]
+
+      - id: PATTERN-R003
+        name: "数据权限未配置"
+        name_en: "Data scope not configured"
+        description: "Service方法缺少@DataScope注解，用户可看到跨部门数据"
+        trigger: "实现列表查询接口"
+        prevention: "Service方法添加@DataScope注解"
+        severity: critical
+        detection:
+          - "普通用户能看到其他部门的数据"
+          - "Service查询方法无@DataScope"
+        fix_example: |
+          # ❌ 错误
+          public List<Evaluation> selectEvaluationList(Evaluation evaluation) { ... }
+          # ✅ 正确
+          @DataScope(deptAlias = "d")
+          public List<Evaluation> selectEvaluationList(Evaluation evaluation) { ... }
+        related_rules: ["dm-permission-matrix"]
+        tags: ["ruoyi", "data-scope", "security"]
+
+      - id: PATTERN-R004
+        name: "Redis缓存未清除"
+        name_en: "Redis cache not cleared"
+        description: "修改权限/菜单后未清除Redis缓存，导致修改不生效"
+        trigger: "修改权限或菜单配置"
+        prevention: "修改权限/菜单后必须清除Redis缓存"
+        severity: warning
+        detection:
+          - "权限修改后用户仍可访问旧权限的接口"
+          - "菜单修改后页面不更新"
+        fix_example: |
+          // 修改权限后执行
+          redisCache.deleteObject(Constants.LOGIN_TOKEN_KEY + userId);
+        related_rules: []
+        tags: ["ruoyi", "redis", "cache"]
+
+      - id: PATTERN-R005
+        name: "参数校验缺失"
+        name_en: "Missing parameter validation"
+        description: "@RequestBody参数未添加@Validated注解，校验注解不生效"
+        trigger: "新增POST/PUT接口"
+        prevention: "所有@RequestBody参数添加@Validated"
+        severity: warning
+        detection:
+          - "提交空字段无校验提示"
+          - "@RequestBody参数缺少@Validated"
+        fix_example: |
+          # ❌ 错误
+          @PostMapping
+          public AjaxResult add(@RequestBody Evaluation evaluation) { ... }
+          # ✅ 正确
+          @PostMapping
+          public AjaxResult add(@Validated @RequestBody Evaluation evaluation) { ... }
+        related_rules: []
+        tags: ["ruoyi", "validation"]
+
+      - id: PATTERN-R006
+        name: "XSS防护缺失"
+        name_en: "Missing XSS protection"
+        description: "文本字段未添加@Xss注解，存在XSS攻击风险"
+        trigger: "新增文本输入字段"
+        prevention: "所有String类型文本字段添加@Xss"
+        severity: warning
+        detection:
+          - "文本字段可输入<script>标签"
+          - "Bo实体类String字段无@Xss注解"
+        fix_example: |
+          # ❌ 错误
+          @NotBlank(message = "名称不能为空")
+          private String evalName;
+          # ✅ 正确
+          @Xss
+          @NotBlank(message = "名称不能为空")
+          private String evalName;
+        related_rules: []
+        tags: ["ruoyi", "xss", "security"]
+
+      - id: PATTERN-R007
+        name: "操作日志缺失"
+        name_en: "Missing operation log"
+        description: "增删改操作未添加@Log注解，无法追溯操作记录"
+        trigger: "新增CUD操作接口"
+        prevention: "所有CUD操作添加@Log注解"
+        severity: info
+        detection:
+          - "操作后sys_oper_log表中无记录"
+          - "CUD方法无@Log注解"
+        fix_example: |
+          # ❌ 错误
+          @DeleteMapping("/{ids}")
+          public AjaxResult remove(@PathVariable Long[] ids) { ... }
+          # ✅ 正确
+          @Log(title = "评估管理", businessType = BusinessType.DELETE)
+          @DeleteMapping("/{ids}")
+          public AjaxResult remove(@PathVariable Long[] ids) { ... }
+        related_rules: []
+        tags: ["ruoyi", "audit", "logging"]
