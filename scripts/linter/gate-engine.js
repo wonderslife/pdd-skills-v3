@@ -52,6 +52,11 @@ function parseSimpleYaml(raw) {
     if (listItemMatch && currentSection === 'gate_levels') {
       currentItem = {};
       config.gate_levels.push(currentItem);
+      const inlineKv = listItemMatch[1].match(/^([a-z_]+):\s*(.+)$/);
+      if (inlineKv) {
+        let val = inlineKv[2].trim().replace(/^["']|["']$/g, '');
+        currentItem[inlineKv[1]] = isNaN(Number(val)) ? val : Number(val);
+      }
       continue;
     }
 
