@@ -291,3 +291,14 @@ categories:
           public AjaxResult remove(@PathVariable Long[] ids) { ... }
         related_rules: []
         tags: ["ruoyi", "audit", "logging"]
+
+      - id: PATTERN-R013
+        name: @DataScope注解缺失
+        description: 导致跨部门数据泄露
+        trigger: 实现select*List() Mapper方法
+        prevention: 所有列表查询必须添加注解
+        severity: critical
+        detection: [3种检测方式]
+        fix_example: [❌错误 vs ✅正确 代码示例]
+        related_rules: ["dm-permission-matrix"]
+        tags: ["ruoyi", "data-scope", "security"]

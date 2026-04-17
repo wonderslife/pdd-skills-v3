@@ -1,0 +1,61 @@
+# {{ module_name }} - 性能测试用例
+
+> **模块编码**: {{ module_code }}
+> **模块名称**: {{ module_name }}
+> **测试层级**: Level 6 - 性能测试
+> **生成时间**: {{ generated_at }}
+> **用例总数**: {{ test_cases | length }}
+
+---
+
+## 一、测试范围
+
+### 1.1 性能测试维度
+
+| 维度 | 描述 | 目标指标 |
+|------|------|---------|
+| 响应时间 | 单接口P95响应时间 | < {{ response_time_target }}ms |
+| 吞吐量 | 单接口QPS | > {{ qps_target }} |
+| 并发用户 | 同时在线操作用户数 | {{ concurrent_users }} |
+| 数据量 | 大数据量下列表查询 | {{ data_volume }}条 |
+
+### 1.2 性能基线
+
+| API编号 | 接口名称 | P50(ms) | P95(ms) | P99(ms) | QPS |
+|---------|---------|---------|---------|---------|-----|
+{% for ep in performance_baselines %}| {{ ep.id }} | {{ ep.name }} | {{ ep.p50 }} | {{ ep.p95 }} | {{ ep.p99 }} | {{ ep.qps }} |
+{% endfor %}
+
+---
+
+## 二、测试用例
+
+{% for tc in test_cases %}
+### {{ tc.id }} {{ tc.title }}
+
+| 属性 | 值 |
+|------|-----|
+| **用例ID** | {{ tc.id }} |
+| **测试目的** | {{ tc.purpose }} |
+| **优先级** | {{ tc.priority }} |
+| **类型** | 性能测试 |
+| **并发数** | {{ tc.concurrency }} |
+| **持续时间** | {{ tc.duration }} |
+| **前置条件** | {{ tc.preconditions }} |
+| **操作步骤** | {{ tc.steps }} |
+| **预期结果** | {{ tc.expected }} |
+| **实际结果** | （留空，执行时填写） |
+| **状态** | 待执行 |
+
+{% endfor %}
+
+---
+
+## 三、Locust脚本配置
+
+```python
+# 性能测试配置
+class {{ module_code | replace('-', '_') }}User(HttpUser):
+    wait_time = between(1, 3)
+    host = "{{ base_url }}"
+```

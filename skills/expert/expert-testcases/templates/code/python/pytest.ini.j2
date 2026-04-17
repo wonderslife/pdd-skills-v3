@@ -1,0 +1,19 @@
+[pytest]
+testpaths = .
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+addopts = -v --tb=short --strict-markers
+markers =
+    p0: P0 blocker priority
+    p1: P1 important priority
+    p2: P2 normal priority
+    functional: Functional test
+    permission: Permission test
+    exception: Exception test
+    boundary: Boundary test
+    integration: Integration test
+    workflow: Workflow test
+    concurrency: Concurrency test
+    regression: Regression test
+    datascope: Data scope permission test

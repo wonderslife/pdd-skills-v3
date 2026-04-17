@@ -1,0 +1,59 @@
+# {{ module_name }} - UI层测试用例
+
+> **模块编码**: {{ module_code }}
+> **模块名称**: {{ module_name }}
+> **测试层级**: Level 3 - UI界面测试
+> **生成时间**: {{ generated_at }}
+> **用例总数**: {{ test_cases | length }}
+
+---
+
+## 一、测试范围
+
+### 1.1 页面清单
+
+| 页面 | 路由 | 组件 | 用例数 |
+|------|------|------|--------|
+{% for page in pages %}| {{ page.name }} | {{ page.route }} | {{ page.component }} | {{ page.case_count }} |
+{% endfor %}
+
+### 1.2 UI测试维度
+
+| 维度 | 描述 | 用例数 |
+|------|------|--------|
+| 表单渲染 | 页面元素正确渲染 | {{ render_case_count }} |
+| 表单交互 | 输入/选择/提交交互 | {{ interaction_case_count }} |
+| 表单验证 | 必填/格式/范围校验 | {{ validation_case_count }} |
+| 列表操作 | 搜索/分页/排序 | {{ list_case_count }} |
+| 审批界面 | 审批操作与状态展示 | {{ approval_case_count }} |
+
+---
+
+## 二、测试用例
+
+{% for tc in test_cases %}
+### {{ tc.id }} {{ tc.title }}
+
+| 属性 | 值 |
+|------|-----|
+| **用例ID** | {{ tc.id }} |
+| **测试目的** | {{ tc.purpose }} |
+| **优先级** | {{ tc.priority }} |
+| **类型** | UI测试 |
+| **目标页面** | {{ tc.target_page }} |
+| **前置条件** | {{ tc.preconditions }} |
+| **操作步骤** | {{ tc.steps }} |
+| **预期结果** | {{ tc.expected }} |
+| **实际结果** | （留空，执行时填写） |
+| **状态** | 待执行 |
+
+{% endfor %}
+
+---
+
+## 三、Playwright选择器映射
+
+| 元素 | 选择器 | 用途 |
+|------|--------|------|
+{% for selector in selectors %}| {{ selector.name }} | {{ selector.css }} | {{ selector.purpose }} |
+{% endfor %}
