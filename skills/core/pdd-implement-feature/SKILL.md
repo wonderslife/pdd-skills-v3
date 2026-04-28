@@ -71,12 +71,16 @@ Read from `dev-specs/FP-{sequence}/spec.md`: API Definitions | Data Models | Bus
 3. **扫描已有Schema**: 从 `schemas/` 目录提取所有Schema定义
 4. **读取Bug模式库**: 从 `config/bug-patterns.yaml` 提取Bug模式
 5. **读取命名约定**: 从PRD/Spec提取枚举编码、类型映射等约定
+6. **扫描前后端契约关系**: 从后端 Controller 提取所有 @RequestMapping 路径和方法签名，从前端 api/ 目录提取所有 request() 调用的 URL，建立 {后端路径 → 前端调用文件} 的映射表
+7. **扫描状态映射关系**: 全局搜索所有包含 getStatusLabel / statusMap / getNodeLabel / getStatusTagType 等方法的文件，建立 {状态值 → 使用文件列表} 的映射表
 
 将以上信息作为额外上下文注入到代码生成过程中，确保：
 - 新代码正确import已有Model（防止PATTERN-C4: import缺失）
 - 新路由不与已有路由冲突（防止PATTERN-002: 路由顺序错误）
 - 新Schema与已有Schema字段一致（防止PATTERN-C3: 字段不同步）
 - 遵守Bug模式库中的约束（防止重复犯错）
+- 新代码的前端API路径与后端Controller完整路径一致（防止PATTERN-R008: API路径断层）
+- 新增状态值时所有映射文件同步更新（防止PATTERN-R011: 状态字典不完整）
 
 ### 🇺🇸 Step 1.5: Context Injection (Critical Improvement)
 Before generating code, scan existing project code to build project context, avoiding AI island effect:
@@ -86,12 +90,16 @@ Before generating code, scan existing project code to build project context, avo
 3. **Scan existing Schemas**: Extract all Schema definitions from `schemas/` directory
 4. **Read Bug Pattern Library**: Extract bug patterns from `config/bug-patterns.yaml`
 5. **Read Naming Conventions**: Extract enum coding, type mapping conventions from PRD/Spec
+6. **Scan Frontend-Backend Contract Relations**: Extract all @RequestMapping paths and method signatures from backend Controllers, extract all request() call URLs from frontend api/ directory, build {backend path → frontend call file} mapping table
+7. **Scan Status Mapping Relations**: Global search all files containing getStatusLabel / statusMap / getNodeLabel / getStatusTagType methods, build {status value → usage file list} mapping table
 
 Inject the above information as additional context into the code generation process, ensuring:
 - New code correctly imports existing Models (prevent PATTERN-C4: missing import)
 - New routes don't conflict with existing routes (prevent PATTERN-002: route order errors)
 - New Schemas are consistent with existing Schemas (prevent PATTERN-C3: field mismatch)
 - Bug pattern library constraints are followed (prevent recurring bugs)
+- New frontend API paths match backend Controller complete paths (prevent PATTERN-R008: API path mismatch)
+- When adding new status values, all mapping files are synchronized (prevent PATTERN-R011: incomplete status dictionary)
 
 ### 🇨🇳 Step 2: 读取验收标准
 从 `dev-specs/FP-{序号}/checklist.md` 读取验收项

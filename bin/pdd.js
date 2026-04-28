@@ -371,4 +371,110 @@ vmCmd
 
 program.addCommand(vmCmd);
 
+// === deps 子命令组 (依赖链感知引擎) ===
+const depsCmd = new Command()
+  .name('deps')
+  .description('依赖链感知引擎 - 分析前后端依赖关系 / Dependency Chain Engine');
+
+depsCmd
+  .command('scan')
+  .description('扫描项目文件关系 / Scan project file relationships')
+  .option('-d, --dir <path>', '项目目录', '.')
+  .option('--backend-dir <path>', '后端源码目录', 'src/main/java')
+  .option('--frontend-api-dir <path>', '前端API目录', 'src/api')
+  .option('--json', 'JSON格式输出')
+  .action(async (options) => {
+    const { DependencyChainEngine } = await import('../lib/dependency-chain/index.js');
+    const engine = new DependencyChainEngine(options.dir, {
+      backendDir: options.backendDir,
+      frontendApiDir: options.frontendApiDir
+    });
+    const graph = await engine.scan();
+    if (options.json) {
+      console.log(engine.toJSON());
+    } else {
+      console.log(chalk.bold('\n🔗 依赖链扫描结果\n'));
+      console.log(`   后端端点: ${graph.controllers.length}`);
+      console.log(`   前端API调用: ${graph.frontendApis.length}`);
+      console.log(`   状态映射: ${graph.statusMaps.length}`);
+      console.log(`   依赖边: ${graph.edges.length}`);
+      console.log(`\n   孤立API: ${engine.findOrphanedApis().length} (可能的PATTERN-R008)`);
+      console.log(`   不完整状态映射: ${engine.findIncompleteStatusMaps().length} (可能的PATTERN-R011)`);
+    }
+  });
+
+depsCmd
+  .command('impact <file>')
+  .description('分析修改某文件的影响范围 / Analyze impact of modifying a file')
+  .option('-d, --dir <path>', '项目目录', '.')
+  .action(async (file, options) => {
+    const { DependencyChainEngine } = await import('../lib/dependency-chain/index.js');
+    const engine = new DependencyChainEngine(options.dir);
+    await engine.scan();
+    const result = engine.analyzeImpact(file);
+    console.log(chalk.bold(`\n📊 修改 ${file} 的影响分析\n`));
+    if (result.impactedFiles.length === 0) {
+      console.log(chalk.yellow('   未发现直接依赖关系'));
+    } else {
+      result.impactedFiles.forEach((item, i) => {
+        console.log(`   ${i + 1}. ${chalk.cyan(item.file)}`);
+        item.reasons.forEach(r => console.log(`      └── ${r}`));
+      });
+    }
+    console.log(`\n   总影响文件数: ${result.totalImpacted}`);
+  });
+
+depsCmd
+  .command('orphans')
+  .description('查找孤立的前端API调用 / Find orphaned frontend API calls')
+  .option('-d, --dir <path>', '项目目录', '.')
+  .action(async (options) => {
+    const { DependencyChainEngine } = await import('../lib/dependency-chain/index.js');
+    const engine = new DependencyChainEngine(options.dir);
+    await engine.scan();
+    const orphans = engine.findOrphanedApis();
+    console.log(chalk.bold(`\n⚠️ 孤立API调用 (可能的PATTERN-R008)\n`));
+    if (orphans.length === 0) {
+      console.log(chalk.green('   无孤立API，所有前端调用都有对应后端端点'));
+    } else {
+      orphans.forEach((api, i) => {
+        console.log(`   ${i + 1}. ${chalk.red(api.url)} (${api.method})`);
+        console.log(`      文件: ${api.file}:${api.line}`);
+      });
+    }
+  });
+
+program.addCommand(depsCmd);
+
+// === contract 子命令 (契约自动发现引擎) ===
+program
+  .command('contract')
+  .description('契约自动发现 - AST级前后端契约分析 / Contract Discovery - AST-level analysis')
+  .option('-d, --dir <path>', '项目目录', '.')
+  .option('--backend-dir <path>', '后端源码目录', 'src/main/java')
+  .option('--frontend-api-dir <path>', '前端API目录', 'src/api')
+  .option('-o, --output <path>', '输出报告路径')
+  .option('--json', 'JSON格式输出')
+  .action(async (options) => {
+    const { ContractDiscovery } = await import('../lib/contract-discovery/index.js');
+    const discovery = new ContractDiscovery(options.dir, {
+      backendDir: options.backendDir,
+      frontendApiDir: options.frontendApiDir
+    });
+    const result = await discovery.analyze();
+
+    if (options.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      const report = discovery.generateContractReport();
+      if (options.output) {
+        const fs = await import('fs');
+        fs.writeFileSync(options.output, report, 'utf-8');
+        console.log(chalk.green(`\n✅ 契约报告已生成: ${options.output}`));
+      } else {
+        console.log(report);
+      }
+    }
+  });
+
 program.parse();

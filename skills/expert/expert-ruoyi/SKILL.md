@@ -482,8 +482,134 @@ expert-ruoyi在提供解决方案时，必须主动检查并避免以下已知Bu
 | PATTERN-R005 | 参数校验缺失 | @RequestBody参数无@Validated | 所有@RequestBody参数添加@Validated |
 | PATTERN-R006 | XSS防护缺失 | 文本字段未添加@Xss | 所有String类型文本字段添加@Xss |
 | PATTERN-R007 | 操作日志缺失 | 增删改操作无@Log | 所有CUD操作添加@Log注解 |
+| PATTERN-R008 | API路径拼接断层 | 前端请求404 | 前端API路径=类级@RequestMapping+方法级@XXXMapping |
+| PATTERN-R009 | 附件入参类型错误 | 参数解析异常 | 通用上传后用List<String>接收URL，不用MultipartFile |
+| PATTERN-R010 | 状态流转审批日志遗漏 | 审批历史缺记录 | 状态变更方法加@Transactional并同步插入审批记录 |
+| PATTERN-R011 | 状态字典映射不完整 | 状态显示英文原文 | 新增状态值时全局搜索所有映射方法并同步 |
+| PATTERN-R012 | MyBatis多参数@Param缺失 | 参数绑定异常 | 多参数Mapper方法每个参数加@Param |
 
-**检查原则**: 每次提供若依相关建议时，必须对照以上7个模式逐一检查，确保建议的代码不会触犯已知模式。新增模式时只需修改 `config/bug-patterns.yaml`，无需修改此文件。
+**检查原则**: 每次提供若依相关建议时，必须对照以上12个模式逐一检查，确保建议的代码不会触犯已知模式。新增模式时只需修改 `config/bug-patterns.yaml`，无需修改此文件。
+
+## 7.7 前后端契约规范 / Frontend-Backend Contract Standards
+
+### 🇨🇳
+
+#### 7.7.1 API 路径拼接规则
+- 前端 API 路径 = Controller 类 `@RequestMapping` + 方法 `@XXXMapping`
+- **编写前端 API 前，必须检查后端 Controller 类上的完整路径**
+- 防止：PATTERN-R008（API路径404）
+
+```javascript
+// 后端: @RequestMapping("/evaluation/approval") + @GetMapping("/review/manage/detail/{id}")
+// ❌ 错误: 遗漏类级路径
+request({ url: '/review/manage/detail/' + id })
+// ✅ 正确: 完整拼接
+request({ url: '/evaluation/approval/review/manage/detail/' + id })
+```
+
+#### 7.7.2 附件处理标准模式
+- **模式A（直传）**: 后端接收 `MultipartFile`，适用于单文件简单上传
+- **模式B（先传后存）**: 前端先调 `/common/upload` 获取 URL，业务接口统一接收 `List<String>`
+- **若依项目中，业务表单附件必须默认使用模式B**
+- 防止：PATTERN-R009（参数类型不匹配）
+
+#### 7.7.3 响应数据解析约定
+- 后端返回嵌套结构时，前端取值路径必须与后端一致
+- **修改后端返回结构后，必须同步检查所有前端取值路径**
+- 防止：response.data 解析错误
+
+### 🇺🇸
+
+#### 7.7.1 API Path Concatenation Rule
+- Frontend API path = Controller class `@RequestMapping` + method `@XXXMapping`
+- **Before writing frontend API, must check the complete path on the backend Controller class**
+- Prevents: PATTERN-R008 (API path 404)
+
+#### 7.7.2 File Upload Standard Pattern
+- **Pattern A (Direct)**: Backend receives `MultipartFile`, for simple single-file uploads
+- **Pattern B (Upload-then-Save)**: Frontend calls `/common/upload` to get URL first, business API receives `List<String>`
+- **In RuoYi projects, business form attachments must default to Pattern B**
+- Prevents: PATTERN-R009 (parameter type mismatch)
+
+#### 7.7.3 Response Data Parsing Convention
+- When backend returns nested structures, frontend value paths must match backend
+- **After modifying backend return structure, must sync-check all frontend value paths**
+
+## 7.8 页面生命周期规范 / Page Lifecycle Standards
+
+### 🇨🇳
+
+#### 7.8.1 列表页 → 详情页 → 返回列表的标准流程
+1. 列表页使用 `this.$router.push()` 跳转到详情/处理页
+2. 详情页提交成功后：
+   - 调用 `this.$store.dispatch('tagsView/delView', this.$route)` 关闭标签
+   - 调用 `this.$router.back()` 返回列表
+3. **列表页必须实现 `activated()` 钩子**，在 keep-alive 激活时刷新数据
+
+```javascript
+// 列表页 index.vue
+activated() {
+  this.getList();
+}
+
+// 详情页 form.vue - 提交成功后
+this.$store.dispatch('tagsView/delView', this.$route).then(() => {
+  this.$router.back();
+});
+```
+
+#### 7.8.2 状态字典管理
+- **禁止**在单个 Vue 组件中硬编码 `getStatusLabel` / `getNodeLabel` 等大段映射
+- 必须抽离到 `src/utils/constants.js` 或使用若依字典管理 `dict.type.xxx`
+- 防止：PATTERN-R011（状态映射不完整/横向不一致）
+
+### 🇺🇸
+
+#### 7.8.1 List → Detail → Back to List Standard Flow
+1. List page uses `this.$router.push()` to navigate to detail/process page
+2. After detail page submission succeeds:
+   - Call `this.$store.dispatch('tagsView/delView', this.$route)` to close tag
+   - Call `this.$router.back()` to return to list
+3. **List page must implement `activated()` hook** to refresh data on keep-alive activation
+
+#### 7.8.2 Status Dictionary Management
+- **Forbidden** to hardcode `getStatusLabel` / `getNodeLabel` mappings in individual Vue components
+- Must extract to `src/utils/constants.js` or use RuoYi dictionary management `dict.type.xxx`
+- Prevents: PATTERN-R011 (incomplete/inconsistent status mapping)
+
+## 7.9 状态流转规范 / State Transition Standards
+
+### 🇨🇳
+
+#### 7.9.1 审批日志强制记录
+- 任何涉及 `status` 字段变更的操作，**必须**在同一事务中记录审批日志
+- 使用 `@Transactional` 确保原子性
+- 防止：PATTERN-R010（审批历史遗漏）
+
+#### 7.9.2 状态判断优先查表
+- **禁止**通过推断/计算获取实体状态，必须直接查询数据库字段
+- 防止：状态推断偏差导致的业务逻辑错误
+
+```java
+// ❌ 错误: 通过推断获取状态
+if (project.getApprovalRecords().size() >= requiredApprovals) {
+    // 推断为已通过
+}
+// ✅ 正确: 直接查询数据库状态字段
+String status = projectMapper.selectStatusById(id);
+if ("approved".equals(status)) { ... }
+```
+
+### 🇺🇸
+
+#### 7.9.1 Mandatory Approval Log Recording
+- Any operation involving `status` field changes **must** record approval logs in the same transaction
+- Use `@Transactional` to ensure atomicity
+- Prevents: PATTERN-R010 (missing approval history)
+
+#### 7.9.2 Status Lookup Over Inference
+- **Forbidden** to infer entity status through calculation; must directly query database field
+- Prevents: business logic errors caused by status inference bias
 
 ## 8. 本地开发指南
 
@@ -541,6 +667,7 @@ expert-ruoyi在提供解决方案时，必须主动检查并避免以下已知Bu
 
 | 版本 | 日期 | 变更内容 |
 |-----|------|---------|
+| 3.2 | 2026-04-28 | 新增§7.7前后端契约规范、§7.8页面生命周期规范、§7.9状态流转规范；Bug模式库表扩充至12个(+R008~R012) |
 | 3.1 | 2026-03-22 | 添加本地开发指南和文档引用 |
 | 3.0 | 2026-03-21 | 标准化结构，添加诊断模式，增强协作指导 |
 | 2.0 | 早期 | 完善问题解决方案 |

@@ -14,9 +14,9 @@
 #   - 未来脚手架: PATTERN-JNNN (Java/Spring), PATTERN-GNNN (Go) 等
 
 meta:
-  version: "1.0.0"
-  last_updated: "2026-04-15"
-  source: "资产评估处置管理系统首次项目实践复盘"
+  version: "1.1.0"
+  last_updated: "2026-04-28"
+  source: "资产评估处置管理系统首次项目实践复盘 + 共识Bug分析报告"
   maintainers: ["pdd-skills-v3"]
 
 categories:
@@ -302,3 +302,124 @@ categories:
         fix_example: [❌错误 vs ✅正确 代码示例]
         related_rules: ["dm-permission-matrix"]
         tags: ["ruoyi", "data-scope", "security"]
+
+      - id: PATTERN-R008
+        name: "API路径拼接断层"
+        name_en: "API path concatenation mismatch"
+        description: "前端API路径遗漏了Controller类级别的@RequestMapping路径段，导致请求404"
+        trigger: "新增前端API调用或修改后端Controller路径"
+        prevention: "前端API路径 = Controller类@RequestMapping + 方法@XXXMapping，编写前必须完整拼接"
+        severity: critical
+        detection:
+          - "前端请求返回404 Not Found"
+          - "前端API路径与后端Controller完整路径不一致"
+          - "Controller类有多级@RequestMapping但前端只取了方法级路径"
+        fix_example: |
+          # ❌ 错误: 遗漏了类级别路径 /evaluation/approval
+          request({ url: '/review/manage/detail/' + id })
+          # ✅ 正确: 完整拼接类级别 + 方法级别
+          request({ url: '/evaluation/approval/review/manage/detail/' + id })
+        related_rules: []
+        tags: ["ruoyi", "api", "frontend-backend", "404"]
+
+      - id: PATTERN-R009
+        name: "附件入参类型错误"
+        name_en: "File upload parameter type mismatch"
+        description: "前端已通过通用上传接口获取文件URL，但后端业务接口仍使用MultipartFile接收，导致参数解析异常"
+        trigger: "实现包含文件附件的业务接口"
+        prevention: "若前端使用了通用上传（/common/upload），后端业务接口必须使用List<String>接收URL列表，不要用MultipartFile"
+        severity: critical
+        detection:
+          - "后端报Content-Type不支持或参数解析异常"
+          - "前端已调用/common/upload但业务接口仍声明MultipartFile参数"
+          - "前端传递的是文件URL字符串但后端期望的是文件流"
+        fix_example: |
+          // ❌ 错误: 前端已通过通用上传获取URL，不应再用MultipartFile
+          @PostMapping
+          public AjaxResult add(@RequestParam("files") MultipartFile[] files, EvalProject project) { ... }
+          // ✅ 正确: 接收URL列表
+          @PostMapping
+          public AjaxResult add(@Validated @RequestBody EvalProjectBo bo) {
+              // bo.getAttachments() 返回 List<String>，每项为文件URL
+          }
+        related_rules: []
+        tags: ["ruoyi", "file-upload", "parameter", "frontend-backend"]
+
+      - id: PATTERN-R010
+        name: "状态流转审批日志遗漏"
+        name_en: "Missing approval log during state transition"
+        description: "状态变更操作未在同一事务中记录审批日志，导致审批历史中缺少某个节点的记录"
+        trigger: "实现涉及status字段变更的业务方法"
+        prevention: "涉及状态流转的方法必须添加@Transactional，并在同方法内插入审批记录"
+        severity: critical
+        detection:
+          - "审批历史页面中缺少某个节点的审批记录"
+          - "状态变更方法中无审批日志插入语句"
+          - "状态变更和日志记录不在同一个@Transactional事务中"
+        fix_example: |
+          // ❌ 错误: 只改状态未记录审批日志
+          public void approve(Long id) {
+              project.setStatus("approved");
+              projectMapper.updateById(project);
+          }
+          // ✅ 正确: 同一事务中记录审批日志
+          @Transactional
+          public void approve(Long id) {
+              project.setStatus("approved");
+              projectMapper.updateById(project);
+              // 记录审批日志
+              EvalApprovalRecord record = new EvalApprovalRecord();
+              record.setProjectId(id);
+              record.setAction("approve");
+              record.setOperator(SecurityUtils.getUsername());
+              approvalRecordMapper.insert(record);
+          }
+        related_rules: []
+        tags: ["ruoyi", "approval", "transaction", "audit"]
+
+      - id: PATTERN-R011
+        name: "状态字典映射不完整"
+        name_en: "Incomplete status dictionary mapping"
+        description: "新增状态值后，未在所有包含状态映射的文件中同步添加，导致状态显示为英文原文或标签颜色异常"
+        trigger: "新增或修改业务状态值"
+        prevention: "新增状态值时，必须全局搜索所有getStatusLabel/getNodeLabel/getStatusTagType方法并同步更新"
+        severity: warning
+        detection:
+          - "状态值在页面上显示为英文原文（如'approved'而非'已通过'）"
+          - "状态标签颜色异常（如显示为默认灰色或红色）"
+          - "部分页面状态翻译正确但另一些页面不正确"
+        fix_example: |
+          // ❌ 错误: 在A页面加了新状态映射但B页面没加
+          // fileA.vue
+          getStatusLabel(status) {
+            const map = { draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回' }
+            return map[status] || status
+          }
+          // fileB.vue - 缺少 rejected 状态
+          getStatusLabel(status) {
+            const map = { draft: '草稿', pending: '待审批', approved: '已通过' }
+            return map[status] || status  // rejected 会显示英文原文
+          }
+          // ✅ 正确: 抽离到统一的 constants.js
+          // src/utils/constants.js
+          export const STATUS_MAP = { draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回' }
+          // 所有页面引用同一份映射
+        related_rules: ["dm-enum-convention"]
+        tags: ["ruoyi", "status", "dictionary", "frontend"]
+
+      - id: PATTERN-R012
+        name: "MyBatis多参数@Param缺失"
+        name_en: "Missing @Param annotation for MyBatis multi-parameter methods"
+        description: "Mapper方法有多个参数但未使用@Param注解，导致MyBatis参数绑定异常"
+        trigger: "Mapper接口方法有2个以上参数"
+        prevention: "Mapper方法有2个以上参数时，每个参数必须添加@Param注解"
+        severity: critical
+        detection:
+          - "运行时报MyBatis参数绑定异常(BindingException)"
+          - "Mapper方法有多个参数但无@Param注解"
+          - "XML中的#{param}无法匹配到方法参数"
+        fix_example: |
+          // ❌ 错误: 多参数未加@Param
+          List<EvalProject> selectByStatusAndDept(String status, Long deptId);
+          // ✅ 正确: 每个参数加@Param
+          List<EvalProject> selectByStatusAndDept(@Param("status") String status, @Param("deptId") Long deptId);

@@ -115,6 +115,11 @@ metadata:
 - [ ] 若依数据权限是否配置(PATTERN-R003)
 - [ ] 若依参数校验是否添加@Validated(PATTERN-R005)
 - [ ] 若依XSS防护是否添加@Xss(PATTERN-R006)
+- [ ] 前端API路径是否与后端Controller完整路径一致(PATTERN-R008)
+- [ ] 文件上传接口的参数类型是否正确(PATTERN-R009)
+- [ ] 状态流转操作是否记录了审批日志(PATTERN-R010)
+- [ ] 新增状态值是否在所有映射文件中同步(PATTERN-R011)
+- [ ] MyBatis多参数方法是否添加了@Param(PATTERN-R012)
 
 ### 🇺🇸 Bug Pattern Library Matching
 > Full pattern definitions in `config/bug-patterns.yaml`, below is a checklist summary
@@ -130,6 +135,11 @@ metadata:
 - [ ] RuoYi data scope is configured (PATTERN-R003)
 - [ ] RuoYi parameter validation uses @Validated (PATTERN-R005)
 - [ ] RuoYi XSS protection uses @Xss (PATTERN-R006)
+- [ ] Frontend API paths match backend Controller complete paths (PATTERN-R008)
+- [ ] File upload API parameter types are correct (PATTERN-R009)
+- [ ] State transition operations record approval logs (PATTERN-R010)
+- [ ] New status values are synchronized in all mapping files (PATTERN-R011)
+- [ ] MyBatis multi-parameter methods have @Param annotations (PATTERN-R012)
 
 ### 🇨🇳 UX一致性
 - [ ] 表单组件是否与PRD中的组件映射一致(Select/Radio/DatePicker等)
@@ -239,6 +249,11 @@ Invoke **software-architect** (if architecture issues detected): Module boundary
 | PATTERN-R003 | ☐是 ☐否 | | 若依数据权限 |
 | PATTERN-R005 | ☐是 ☐否 | | 若依参数校验 |
 | PATTERN-R006 | ☐是 ☐否 | | 若依XSS防护 |
+| PATTERN-R008 | ☐是 ☐否 | | API路径拼接一致性 |
+| PATTERN-R009 | ☐是 ☐否 | | 附件参数类型 |
+| PATTERN-R010 | ☐是 ☐否 | | 审批日志记录 |
+| PATTERN-R011 | ☐是 ☐否 | | 状态字典同步 |
+| PATTERN-R012 | ☐是 ☐否 | | MyBatis多参数@Param |
 
 ### UX一致性审查结果
 | 检查项 | 是否通过 | 说明 |
@@ -286,6 +301,11 @@ Output to `docs/reviews/review-{timestamp}.md`:
 | PATTERN-R003 | ☐Yes ☐No | | RuoYi data scope |
 | PATTERN-R005 | ☐Yes ☐No | | RuoYi parameter validation |
 | PATTERN-R006 | ☐Yes ☐No | | RuoYi XSS protection |
+| PATTERN-R008 | ☐Yes ☐No | | API path concatenation consistency |
+| PATTERN-R009 | ☐Yes ☐No | | File upload parameter type |
+| PATTERN-R010 | ☐Yes ☐No | | Approval log recording |
+| PATTERN-R011 | ☐Yes ☐No | | Status dictionary sync |
+| PATTERN-R012 | ☐Yes ☐No | | MyBatis multi-param @Param |
 
 ### UX Consistency Review Results
 | Check Item | Passed? | Notes |
