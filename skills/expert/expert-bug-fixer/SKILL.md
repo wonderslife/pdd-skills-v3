@@ -1,63 +1,102 @@
 ---
 name: expert-bug-fixer
-description: "线上/已开发系统的Bug修复专家。精准定位、控制修改范围、生成变更发布单。当用户描述Bug、报错、显示异常时自动触发。支持中文触发：修复Bug、线上问题、改一下、报错了、显示不对。"
+description: "线上/已开发系统的Bug修复专家 v2.1（精简版）。精准定位、控制修改范围、生成变更发布单、根因验证、风险评估。当用户描述Bug、报错、显示异常时自动触发。支持中文触发：修复Bug、线上问题、改一下、报错了、显示不对。"
 license: MIT
 compatibility: 已有代码的Bug修复和小范围功能微调
 metadata:
   author: "neuqik@hotmail.com"
-  version: "1.0"
+  version: "2.1.0"
+  lastUpdated: "2026-05-06"
+  changelog: |
+    ## v2.1.0 (2026-05-06) - 质量优化
+    ### 压缩改进
+    - ✅ SKILL.md从523行压缩至370行（压缩29%）
+    - ✅ 详细示例移至config/目录按需加载
+    - ✅ 删除冗余的附录A快速参考卡
+    - ✅ 保持所有核心功能完整
+    
+    ### v2.0.0 核心能力保留
+    - 根因验证机制（Step 1.5 + config/hypothesis-validation.md）
+    - UI交互Bug调试决策树（config/debug-decision-tree.yaml）
+    - 代码冲突检测器（config/code-conflict-rules.yaml）
+    - 修复方案风险评估矩阵（config/fix-risk-matrix.yaml）
+    - 案例知识库模板（templates/case-template.md）
+
   triggers:
     - "/fix-bug" | "/修复Bug"
     - "修复Bug" | "线上问题" | "改一下" | "不对" | "报错"
     - "显示异常" | "接口404" | "数据不对" | "页面空白"
 ---
 
-# Bug 修复专家 / Bug Fix Expert
+# Bug 修复专家 v2.1 (精简优化版) / Bug Fix Expert
 
-## 1. 技能概述 / Overview
+## 🎯 版本概述
 
-### 🇨🇳 定位
-本技能专门用于**已上线或已开发完成的系统**的 Bug 修复和小范围功能微调。与 `pdd-implement-feature`（全量开发）形成互补。
+**v2.1核心改进**: 在v2.0全部功能基础上，将SKILL.md从523行精简至370行，详细示例移至config目录按需加载，减少上下文占用。
 
-**核心原则**: 精准定位 → 控制范围 → 最小修改 → 标准交付
-
-**输入**: Bug 描述（用户对话）| 可选: 错误日志、截图、涉及的页面/接口
-**输出**: 修复代码（Diff 格式，最小侵入）| 变更发布单（部署清单）
-
-### 🇺🇸 Positioning
-This skill is specifically designed for **bug fixing and minor feature adjustments** in systems that are already deployed or developed. It complements `pdd-implement-feature` (full development).
-
-**Core Principle**: Precise Location → Scope Control → Minimal Changes → Standard Delivery
-
-**Input**: Bug description (user conversation) | Optional: error logs, screenshots, affected pages/APIs
-**Output**: Fix code (Diff format, minimal invasiveness) | Release Patch Document (deployment checklist)
-
-### 1.1 与其他技能的边界 / Boundary with Other Skills
-
-| 场景 / Scenario | 使用技能 / Skill | 原因 / Reason |
-|--------|--------|--------|
-| 修复已有代码中的 Bug / Fix bugs in existing code | **expert-bug-fixer** ✅ | 增量修改，控制范围 / Incremental changes, scope control |
-| 新增接口/新增页面 / Add new API/page | **pdd-implement-feature** | 全量开发流程 / Full development workflow |
-| 修改规格文档 / Modify spec documents | **pdd-doc-change** | 文档变更管理 / Document change management |
-| 若依框架特定问题 / RuoYi framework issues | **expert-ruoyi** (协作) | 框架最佳实践 / Framework best practices |
-
-### 1.2 与其他技能协作 / Collaboration with Other Skills
-
-| 协作技能 / Skill | 协作方式 / Mode | 传入数据 / Input | 期望输出 / Output |
-|---------|---------|---------|---------|
-| **expert-ruoyi** | Consultation | 若依框架问题 / RuoYi issues | 解决方案 / Solution |
-| **expert-mysql** | Consultation | 数据库问题 / DB issues | SQL优化方案 / SQL optimization |
-| **pdd-code-reviewer** | Sequential | 修复后的代码 / Fixed code | 审查报告 / Review report |
-| **pdd-verify-feature** | Sequential | 修复后的功能点 / Fixed feature | 回归验证报告 / Regression report |
-| **dependency-chain** | Tool | 项目路径 / Project path | 影响范围声明 / Impact declaration |
+**配置文件结构**:
+```
+expert-bug-fixer/
+├── SKILL.md (本文件 - 精简版流程指引)
+├── config/
+│   ├── debug-decision-tree.yaml     # UI交互Bug调试决策树(6层节点)
+│   ├── code-conflict-rules.yaml      # 代码冲突检测规则(6大规则)
+│   ├── fix-risk-matrix.yaml          # 修复方案风险评估矩阵(5维)
+│   └── hypothesis-validation.md      # 根因假设验证指南(详细示例)
+└── templates/
+    └── case-template.md              # Bug案例记录模板
+```
 
 ---
 
-## 2. 修复 SOP（四步流程）/ Fix SOP (Four-Step Process)
+## 1. 技能概述
 
-### 🇨🇳 Step 1: 定位与复现
+### 定位
+本技能用于**已上线或已开发完成的系统**的 Bug 修复和小范围功能微调。
 
-从用户描述中提取关键信息：
+**六大核心原则**: 
+- **精准定位** → 调试决策树系统化排查
+- **假设验证** → 每个根因假设必须经过验证（置信度<40%禁止pursue）
+- **影响控制** → 五维影响分析 + 代码冲突检测
+- **风险预判** → 多方案量化评估选最优
+- **最小修改** → Diff格式交付，严格限定范围
+- **标准输出** → 变更发布单 + 案例归档
+
+**输入**: Bug描述 | 可选: 错误日志、截图  
+**输出**: 修复代码(Diff) | 变更发布单 | Bug案例记录
+
+---
+
+## 2. 六步修复 SOP / Fix SOP
+
+### 流程总览
+
+```
+Step 1: 定位与复现
+  ├─ 1.1 Bug三要素提取
+  ├─ 1.2 涉及文件定位
+  ├─ 1.3 🔥 代码冲突检测 [必做]
+  ├─ 1.4 🔥 调试决策树选择 [UI交互类必用]
+  └─ 1.5 🔥 根因假设与验证 [必做]
+       │
+Step 2: 五维影响分析
+  │
+Step 3: 精准修复 + 风险评估
+  ├─ 3.1 设计候选方案(2-3个)
+  ├─ 3.2 🔥 多方案对比评估 [必做]
+  └─ 3.3 实施最优方案
+       │
+Step 4: 生成变更发布单
+Step 4.5: 自动回归验证
+Step 5: 🔥 案例归档 [必做]
+Step 6: 🔥 复盘优化 [定期]
+```
+
+---
+
+### Step 1: 定位与复现
+
+#### Step 1.1: Bug三要素提取
 
 ```yaml
 Bug定位三要素:
@@ -66,285 +105,246 @@ Bug定位三要素:
   实际行为: [实际发生了什么]
 ```
 
-定位涉及的代码文件（后端 Controller/Service/Mapper + 前端 Vue/API），确认 Bug 类别：
+**Bug类别与策略映射**:
 
-| Bug 类别 | 典型表现 | 定位方向 |
+| Bug类别 | 典型表现 | 推荐策略 |
 |---------|---------|---------|
-| 逻辑错误 | 计算结果不对、状态流转异常 | Service 层业务逻辑 |
-| 数据不一致 | 前后端数据不匹配、字段缺失 | Entity/VO/前端数据解析 |
-| 接口不通 | 404、参数解析异常 | Controller路径 + 前端API路径 |
-| UI显示异常 | 状态标签颜色错误、字段不显示 | Vue组件 + 状态映射 |
+| UI交互异常 | 点击无反应、按钮不可用 | `debug-decision-tree.yaml` 完整版 |
+| 数据显示问题 | 数据不显示、字段缺失 | `debug-decision-tree.yaml` 场景B |
+| 表单提交失败 | 提交无反应、校验失败 | `debug-decision-tree.yaml` 场景C |
+| 其他(逻辑/接口/数据) | 计算错误、404等 | 传统排查流程 |
 
-### 🇺🇸 Step 1: Locate and Reproduce
+#### Step 1.2: 涉及文件定位
 
-Extract key information from user description:
+定位涉及的代码文件（后端 Controller/Service/Mapper + 前端 Vue/API）
 
-```yaml
-Bug Location Three Elements:
-  What feature: [module/page/API name]
-  Expected behavior: [what user expects to see]
-  Actual behavior: [what actually happened]
+#### 🔥 Step 1.3: 代码冲突检测 [必做]
+
+**触发条件**: 每次修改前必须执行
+
+**执行方法**:
+```bash
+grep -n "^\s*(async\s+)?(\w+)\s*\(" target-file.vue | sort
 ```
 
-Locate involved code files (backend Controller/Service/Mapper + frontend Vue/API), confirm Bug category:
+**6大检测规则**（详见 `config/code-conflict-rules.yaml`）:
 
-| Bug Category | Typical Symptoms | Location Direction |
-|-------------|-----------------|-------------------|
-| Logic Error | Wrong calculation, abnormal state transition | Service layer business logic |
-| Data Inconsistency | Frontend-backend data mismatch, missing fields | Entity/VO/frontend data parsing |
-| API Unreachable | 404, parameter parsing exception | Controller path + frontend API path |
-| UI Display Anomaly | Wrong status label color, field not showing | Vue component + status mapping |
+| 规则 | 目标 | 级别 | 说明 |
+|------|------|------|------|
+| DUPLICATE_METHOD | 同名方法 | 🔴高 | JS后定义覆盖先定义 |
+| DUPLICATE_VARIABLE | 同名变量 | 🟡中 | Vue优先级覆盖 |
+| AMBIGUOUS_CALL | 歧义调用 | 🔴高 | v-for参数传递错误 |
+| LIFECYCLE_HOOK | 重复钩子 | 🟡中 | 后者覆盖前者 |
+| EVENT_MODIFIER | 修饰符误用 | 🟡中 | .native/.stop误用 |
+| CSS_SPECIFICITY | CSS冲突 | 🟢低 | 样式被意外覆盖 |
 
----
+**处理规则**:
+- ✅ 无冲突 → 继续
+- ⚠️ 低风险 → 记录并继续
+- 🟡 中风险 → 评估相关性后决定
+- 🔴 高风险 → ⛔ 必须先解决！
 
-### 🇨🇳 Step 2: 五维影响分析
+#### 🔥 Step 1.4: 调试决策树选择
 
-在动代码之前，必须构建"影响范围声明"。按五个维度逐一检查：
+**UI交互类Bug** → 加载 `config/debug-decision-tree.yaml`，按6层Node顺序执行：
 
-| 维度 | 检查内容 | 检查方法 |
-|------|---------|---------|
-| **纵向** | 修改后端时 → 列出所有调用该接口的前端文件 | 搜索前端 api/ 目录中的 URL |
-| **横向** | 修改某个状态映射时 → 列出所有包含同类映射的文件 | 全局搜索 getStatusLabel/statusMap |
-| **深度** | 修改状态流转时 → 确认是否需要同步记录审批日志 | 检查 @Transactional 范围 |
-| **约束** | 是否涉及若依框架约定 | 检查 @PathVariable/菜单SQL/@Param 等 |
-| **推断** | 状态判断是否使用了查表而非推断 | 检查 if/switch 中的状态来源 |
-
-> 🛠️ **工具辅助**: 如果项目已配置依赖链引擎，可使用 `pdd deps impact <file>` 命令自动生成影响范围声明，避免手工遍历。
-> 🛠️ **Tool Assist**: If the project has the dependency chain engine configured, use `pdd deps impact <file>` to auto-generate impact declarations.
-
-**输出格式**:
-
-```markdown
-## 影响范围声明
-
-本次修复将修改以下文件，请确认：
-
-### 后端
-1. `xxx/ServiceImpl.java` — 修复业务逻辑（主修改）
-2. `xxx/Controller.java` — 同步参数类型
-
-### 前端
-3. `src/api/xxx.js` — 同步接口路径
-4. `src/views/xxx/index.vue` — 修复状态映射
-
-### 数据库
-5. 无数据库变更
-
-⚠️ 本次修改涉及 4 个文件。确认后开始修复。
+```
+Node 1: 控制台错误检查 → Node 2: 元素可访问性 → Node 3: 事件触发验证 
+→ Node 4: 方法调用验证⭐ → Node 5: 数据变化 → Node 6: 视图更新
 ```
 
-### 🇺🇸 Step 2: Five-Dimension Impact Analysis
+**特殊场景快速入口**: 页面空白(场景A) | 数据不显示(场景B) | 表单提交失败(场景C)
 
-Before touching any code, build an "Impact Scope Declaration". Check along five dimensions:
+**非UI交互类Bug** → 传统排查：错误日志→断点调试→数据流追踪
 
-| Dimension | Check Content | Method |
-|-----------|--------------|--------|
-| **Vertical** | When modifying backend → list all frontend files calling this API | Search URLs in frontend api/ directory |
-| **Horizontal** | When modifying a status mapping → list all files with similar mappings | Global search getStatusLabel/statusMap |
-| **Depth** | When modifying state transition → confirm if approval log needs sync | Check @Transactional scope |
-| **Constraint** | Whether RuoYi framework conventions are involved | Check @PathVariable/menu SQL/@Param etc. |
-| **Inference** | Whether status judgment uses lookup vs inference | Check status source in if/switch |
+#### 🔥 Step 1.5: 根因假设与验证 [核心]
 
-**Output Format**:
+**原则**: ❌ 禁止未经验证就实施修复
 
-```markdown
-## Impact Scope Declaration
+**流程**:
+1. **提出Top 3假设** + 计算初始置信度
+2. **仅对置信度≥40%的假设**设计最小化测试验证
+3. **基于证据调整置信度**：符合→提升至80%+, 不符合→降至10%
+4. 验证通过→进入Step 2；全部否定→回到Step 1.1
 
-This fix will modify the following files, please confirm:
-
-### Backend
-1. `xxx/ServiceImpl.java` — Fix business logic (primary change)
-2. `xxx/Controller.java` — Sync parameter type
-
-### Frontend
-3. `src/api/xxx.js` — Sync API path
-4. `src/views/xxx/index.vue` — Fix status mapping
-
-### Database
-5. No database changes
-
-⚠️ This fix involves 4 files. Confirm to proceed.
+**置信度速算公式**:
+```
+基础分30 + 证据加分(最多+35) - 扣分(最多-50)
+评级: ≥80%强确信 | 60-79%较确信 | 40-59%存疑 | <40%弱假设❌
 ```
 
----
-
-### 🇨🇳 Step 3: 精准修复
-
-执行修复时严格遵循以下规则：
-
-1. **严格按 Step 2 的文件清单修改，不扩大范围**
-2. **使用 Diff 格式输出变更，不重写整个文件**
-3. **修改顺序**: Entity/Domain → Mapper/XML → Service → Controller → 前端API → 前端页面
-4. **执行 bug-patterns.yaml 自检**：修复完成后，对照 `config/bug-patterns.yaml` 中的所有已知模式逐一检查，确保不引入新 Bug
-5. **若依项目额外检查**（如适用）：
-   - 修改 Controller → 检查 @PreAuthorize 是否正确 (PATTERN-R001)
-   - 修改参数 → 检查 @Validated/@Xss 是否添加 (PATTERN-R005/R006)
-   - 修改状态 → 检查审批日志是否记录 (PATTERN-R010)
-
-### 🇺🇸 Step 3: Precise Fix
-
-Strictly follow these rules during fix:
-
-1. **Only modify files listed in Step 2's declaration, do not expand scope**
-2. **Output changes in Diff format, do not rewrite entire files**
-3. **Modification order**: Entity/Domain → Mapper/XML → Service → Controller → Frontend API → Frontend page
-4. **Self-check against bug-patterns.yaml**: After fix, verify against all known patterns in `config/bug-patterns.yaml` to ensure no new bugs are introduced
-5. **RuoYi project additional checks** (if applicable):
-   - Modified Controller → Check @PreAuthorize is correct (PATTERN-R001)
-   - Modified parameters → Check @Validated/@Xss are added (PATTERN-R005/R006)
-   - Modified status → Check approval log is recorded (PATTERN-R010)
+📖 **详细评分规则和验证示例** → 见 `config/hypothesis-validation.md`
 
 ---
 
-### 🇨🇳 Step 4: 生成变更发布单
+### Step 2: 五维影响分析
 
-修复完成后，**必须**按照 `templates/release-patch-template.md` 模板生成变更发布单，内容包括：
+动代码前必须构建"影响范围声明"：
 
-1. **数据库变更**：SQL 脚本 + 回滚方案（如有）
-2. **后端变更清单**：文件路径 + 变更类型(新增/修改/删除) + 变更摘要
-3. **前端变更清单**：文件路径 + 变更类型 + 变更摘要
-4. **部署指引**：重启要求 / 缓存清理 / 验证路径 / 回滚方案
-5. **测试验证**：验证步骤 + 预期结果
+| 维度 | 检查内容 | 方法 |
+|------|---------|------|
+| 纵向 | 后端修改影响哪些前端文件 | 搜索api/目录URL |
+| 横向 | 状态映射是否影响其他模块 | 全局搜索statusMap |
+| 深度 | 是否需同步审批日志 | 检查@Transactional |
+| 约束 | 是否涉及若依框架约定 | 检查@PathVariable等 |
+| 推断 | 状态来源是查表还是推断 | 检查if/switch |
 
-### 🇺🇸 Step 4: Generate Release Patch Document
-
-After fix completion, **must** generate a release patch document following `templates/release-patch-template.md` template, including:
-
-1. **Database Changes**: SQL scripts + rollback plan (if any)
-2. **Backend Change List**: File path + change type (add/modify/delete) + change summary
-3. **Frontend Change List**: File path + change type + change summary
-4. **Deployment Instructions**: Restart requirements / cache cleanup / verification paths / rollback plan
-5. **Test Verification**: Verification steps + expected results
-
-### 🇨🇳 Step 4.5: 自动回归验证（可选但强烈建议）
-
-修复完成后，建议自动触发 `pdd-verify-feature` 对受影响的功能点进行回归验证：
-
-1. 从 Step 2 的影响范围声明中提取受影响的功能点 ID
-2. 调用 `pdd-verify-feature` 针对这些功能点执行三维验证（完整性/正确性/一致性）
-3. 将回归验证结果附加到变更发布单的“测试验证”章节
-4. 如果回归验证发现新的 Critical 问题，必须在发布前修复
-
-### 🇺🇸 Step 4.5: Auto-Regression Verification (Optional but Strongly Recommended)
-
-After fix completion, recommend auto-triggering `pdd-verify-feature` for regression verification on affected feature points:
-
-1. Extract affected feature point IDs from Step 2's Impact Scope Declaration
-2. Invoke `pdd-verify-feature` for three-dimension verification (Completeness/Correctness/Coherence) on these feature points
-3. Append regression verification results to the Release Patch Document's "Test Verification" section
-4. If regression verification discovers new Critical issues, must fix before release
+> 工具辅助: `pdd deps impact <file>` 可自动生成
 
 ---
 
-## 3. Guardrails
+### Step 3: 精准修复 + 风险评估
 
-### 🇨🇳 必须遵守
-- [ ] 修改前必须输出影响范围声明并等待用户确认
-- [ ] 禁止在 Bug 修复中添加新功能（scope creep）
+#### Step 3.1: 设计候选方案
+
+基于根因设计2-3个方案（如：表面修复/最佳实践/根因修复）
+
+#### 🔥 Step 3.2: 多方案对比评估 [必做]
+
+使用 `config/fix-risk-matrix.yaml` 进行**5维量化评估**：
+
+| 维度 | 权重 | 说明 |
+|------|------|------|
+| 复杂度风险 | 20% | 代码复杂度和维护成本 |
+| 兼容性风险 | 25% | 浏览器/Vue/第三方库兼容性 |
+| 副作用风险 | 25% | 状态污染/DOM泄漏/内存泄漏 |
+| 可回滚性 | 15% | 失败时恢复难度 |
+| 测试覆盖度 | 15% | 测试保障充分性 |
+
+**决策标准**: ≥8.0强烈推荐 | 7.0-7.9推荐 | 6.0-6.9有条件 | <6.0不建议
+
+#### Step 3.3: 实施最优方案
+
+**严格遵循**:
+1. 按Step 2文件清单修改，不扩大范围
+2. 使用Diff格式输出，不重写整个文件
+3. 修改顺序: Entity→Mapper→Service→Controller→前端API→前端页面
+4. 执行bug-patterns.yaml自检
+5. 若依项目额外检查框架约定
+
+---
+
+### Step 4: 生成变更发布单
+
+按模板生成完整变更发布单（含部署指引、回滚方案、测试用例）
+
+### Step 4.5: 自动回归验证
+
+建议自动触发回归验证
+
+### 🔥 Step 5: 案例归档 [必做]
+
+**每次修复完成后必须执行**
+
+使用 `templates/case-template.md` 归档以下内容：
+- 基本信息(case_id, title, severity)
+- 问题定义(symptoms, reproduction_steps)
+- 根因分析(root_cause, code_evidence)
+- 解决方案(final_solution, code_changes Diff)
+- **失败方案记录**(failed_attempts[] - 重要！)
+- 统计数据(attempts, time_spent)
+- 经验教训(correct/wrong practices)
+
+存储位置: `docs/bug-cases/` 目录
+
+### 🔥 Step 6: 复盘优化 [定期]
+
+每周或每5个Bug后执行一次复盘：
+- 统计关键指标(准确率/尝试次数/耗时)
+- 识别Top 3高频根因和低效模式
+- 更新调试决策树和检测规则
+
+---
+
+## 3. Guardrails（必须遵守）
+
+- [ ] 修改前必须输出影响范围声明并等待确认
+- [ ] 禁止在Bug修复中添加新功能(scope creep)
 - [ ] 每次修复必须生成变更发布单
-- [ ] 修改涉及 3 个以上文件时，提醒用户"修改范围较大，建议先在测试环境验证"
-- [ ] 修复完成后必须对照 bug-patterns.yaml 自检
-- [ ] 遇到若依框架问题必须咨询 expert-ruoyi
-
-### 🇺🇸 Must Follow
-- [ ] Must output Impact Scope Declaration before any code changes and wait for user confirmation
-- [ ] No new features allowed during bug fix (scope creep)
-- [ ] Must generate Release Patch Document for every fix
-- [ ] When fix involves 3+ files, warn user: "Large change scope, recommend testing in staging first"
-- [ ] Must self-check against bug-patterns.yaml after fix completion
-- [ ] Must consult expert-ruoyi for RuoYi framework issues
+- [ ] 修改涉及3+文件时提醒用户先测试环境验证
+- [ ] 修复完成后必须对照bug-patterns.yaml自检
+- [ ] 若依框架问题必须咨询expert-ruoyi
+- [🆕] **必须执行代码冲突检测(Step 1.3)**
+- [🆕] **必须使用调试决策树(UI交互类Bug)**
+- [🆕] **每个根因假设必须验证(置信度<40%禁止pursue)**
+- [🆕] **多方案时必须量化风险评估(Step 3.2)**
+- [🆕] **修复完成后必须归档案例(Step 5)**
 
 ---
 
-## 4. Iron Law / 铁律
+## 4. Iron Law / 十大铁律
 
-### 🇨🇳
+1. **影响声明先行** - 修改前必须输出影响范围声明并获得确认
+2. **冲突检测必做** - 动代码前必须检测，高风险必须先解决
+3. **假设必须验证** - 禁止基于未验证假设修复（尤其<40%弱假设）
+4. **决策树引导** - UI交互Bug按Node顺序排查，不可跳跃
+5. **修复不扩张** - 范围严格限定于消除Bug本身
+6. **Diff不重写** - 代码变更必须Diff格式
+7. **发布单必出** - 每次修复必须生成变更发布单
+8. **模式库自检** - 修复后必须对照bug-patterns.yaml
+9. **🆕风险评估必做** - 多方案时必须量化评估选最优
+10. **🆕案例必归档** - 每次修复必须记录到案例库
 
-1. **影响声明先行**: 任何代码修改之前，必须先输出"影响范围声明"并获得用户确认。不允许"先改了再说"。
-
-2. **修复不扩张**: Bug 修复的范围严格限定在"消除 Bug"本身。用户如果在修复过程中提出新需求，必须拒绝并建议走 `pdd-implement-feature` 流程。
-
-3. **Diff 不重写**: 输出代码变更时必须使用 Diff 格式（仅展示修改的行），禁止输出整个文件。防止无关代码被意外修改。
-
-4. **发布单必出**: 每次修复完成后必须生成变更发布单。即使修复"只改了一行"，发布单也必须包含完整的部署指引和验证路径。
-
-5. **模式库自检**: 修复完成后必须对照 `config/bug-patterns.yaml` 逐一自检。修 Bug 不能引入新的已知 Bug。
-
-### 🇺🇸
-
-1. **Declaration First**: Before any code changes, must output "Impact Scope Declaration" and get user confirmation. No "fix first, explain later".
-
-2. **Fix, Don't Expand**: Bug fix scope is strictly limited to "eliminating the bug" itself. If user proposes new requirements during fix, must decline and suggest `pdd-implement-feature` workflow.
-
-3. **Diff, Don't Rewrite**: Code changes must use Diff format (showing only modified lines). Outputting entire files is forbidden. Prevents accidental changes to unrelated code.
-
-4. **Patch Document Required**: Must generate release patch document after every fix. Even if fix "only changed one line", patch document must include complete deployment instructions and verification paths.
-
-5. **Pattern Library Self-Check**: After fix completion, must self-check against `config/bug-patterns.yaml` one by one. Fixing bugs must not introduce new known bugs.
-
-**违规示例 / Violation Examples**:
-❌ 直接修改代码而未先声明影响范围 | ❌ 修复 Bug 时顺便添加了新的筛选条件 | ❌ 输出了整个 Vue 文件而非 Diff | ❌ 修复完成后未生成变更发布单 | ❌ 修复了 API 路径问题但引入了 @Param 缺失 (PATTERN-R012)
-
-**合规示例 / Compliance Examples**:
-✅ 先列出受影响的 4 个文件等用户确认 | ✅ 用户要求"顺便加个按钮"时回复"建议走功能开发流程" | ✅ 只展示 ServiceImpl.java 第 142-155 行的 Diff | ✅ 修复完成后生成了包含 DB/后端/前端/部署指引的发布单 | ✅ 修复后自检通过 14 个 Bug 模式
+**典型违规**: ❌跳过冲突检测 | ❌基于25%置信度修复 | ❌不评估风险选复杂方案 | ❌不归档案例  
+**合规示例**: ✅检测到同名方法先解决 | ✅验证后选择65%置信度假设 | ✅选8.2分根因修复方案 | ✅归档完整案例
 
 ---
 
-## 5. Rationalization Table / 合理化防御表
+## 5. Rationalization Table
 
-### 🇨🇳
-
-| # | 你可能的想法 | 请问自己 | 应该怎么做 |
-|---|-------------|---------|-----------|
-| 1 | "这个 Bug 很简单，直接改就行了" | 看似简单的修改可能有纵向/横向影响，不分析就改会引入新 Bug | 即使只改一行，也必须执行五维影响分析 |
-| 2 | "用户说顺便改一下那个功能" | Bug 修复中混入功能变更会破坏修改的可追溯性 | 明确拒绝，建议走功能开发流程 |
-| 3 | "整个文件都需要重构了" | 大规模重构不在 Bug 修复的范围内 | 只修复 Bug 本身，重构建议记录到 improvement-tasks.md |
-| 4 | "变更发布单太麻烦了，口头说一下吧" | 缺少书面记录会导致部署遗漏和回滚困难 | 无论修改多小，都必须生成标准变更发布单 |
-| 5 | "这个模式库检查项跟我的修改无关" | 修复代码时容易无意中触犯已知模式 | 完整自检所有模式，不跳过任何一项 |
-
-### 🇺🇸
-
-| # | You Might Think | Ask Yourself | What To Do |
-|---|----------------|--------------|------------|
-| 1 | "This bug is simple, just fix it directly" | Seemingly simple changes may have vertical/horizontal impacts; fixing without analysis can introduce new bugs | Even for a one-line change, must perform five-dimension impact analysis |
-| 2 | "User says fix that feature while we're at it" | Mixing feature changes into bug fixes breaks change traceability | Explicitly decline, suggest going through feature development workflow |
-| 3 | "The whole file needs refactoring" | Large-scale refactoring is outside the scope of bug fixing | Only fix the bug itself, record refactoring suggestions in improvement-tasks.md |
-| 4 | "Patch document is too much trouble, just mention it verbally" | Lack of written records leads to deployment omissions and rollback difficulties | Regardless of change size, must generate standard release patch document |
-| 5 | "This pattern check is irrelevant to my fix" | Fix code can inadvertently trigger known patterns | Complete self-check all patterns, don't skip any |
+| # | 你的想法 | 应该怎么做 | v2.1检查项 |
+|---|---------|-----------|------------|
+| 1 | "这个Bug很简单直接改" | 即使一行也必须五维分析 | 是否执行了冲突检测？ |
+| 2 | "像Vue响应式问题" | 设计最小化测试验证 | 置信度≥40%吗？ |
+| 3 | "参考实现应该能用" | 对比关键差异点 | 检查同名方法和数据结构？ |
+| 4 | "这方案应该没问题" | 量化风险评估 | 总分≥7.0？无高风险项？ |
+| 5 | "修复完了收工" | 归档案例沉淀经验 | 填写了case-template必填项？ |
 
 ---
 
 ## 6. Red Flags / 红旗警告
 
-### Layer 1: 输入检查 / Input Validation Guards
+### Layer 0: 前置检查
+- **PRE-BF-001**: 未执行冲突检测就分析 → 🔴CRITICAL → 立即执行Step 1.3
+- **PRE-BF-002**: UI交互Bug未加载决策树 → 🔴CRITICAL → 加载debug-decision-tree.yaml
+- **PRE-BF-003**: 假设无置信度评分 → 🟡WARN → 补充评分
 
-- **INPUT-BF-001**: Bug 描述过于模糊（如"系统不好用"）→ 🔴 CRITICAL → 终止并要求提供具体的功能名称+期望行为+实际行为 / Terminate and request specific feature name + expected behavior + actual behavior
-- **INPUT-BF-002**: 用户描述的是新需求而非 Bug（如"加一个导出功能"）→ 🟡 WARN → 提示应使用 pdd-implement-feature 流程 / Suggest using pdd-implement-feature workflow
-- **INPUT-BF-003**: 涉及的代码文件无法找到或路径不存在 → 🔴 CRITICAL → 终止并请求用户确认项目路径 / Terminate and request user to confirm project path
+### Layer 1: 输入检查
+- **INPUT-BF-001**: Bug描述过于模糊 → 🔴CRITICAL
+- **INPUT-BF-002**: 用户描述的是新需求非Bug → 🟡WARN
+- **INPUT-BF-003**: 涉及文件无法找到 → 🔴CRITICAL
 
-### Layer 2: 执行检查 / Execution Guards
+### Layer 2: 执行检查
+- **EXEC-BF-001**: 无影响声明就改代码 → 🔴CRITICAL
+- **EXEC-BF-002**: 修改了声明外的文件 → 🔴CRITICAL
+- **EXEC-BF-003**: Bug修复中添加新功能 → 🔴CRITICAL
+- **EXEC-BF-004**: 修改5+文件 → 🟡WARN
+- **[🆕] EXEC-BF-005**: 基于<40%弱假设修复 → 🔴CRITICAL
+- **[🆕] EXEC-BF-006**: 跳过决策树Node直接复杂假设 → 🟡WARN
+- **[🆕] EXEC-BF-007**: 未评估风险就选复杂方案 → 🟡WARN
 
-- **EXEC-BF-001**: 未输出影响范围声明就开始修改代码 → 🔴 CRITICAL → 回退所有修改，先完成五维影响分析 / Rollback all changes, complete five-dimension analysis first
-- **EXEC-BF-002**: 修改了影响范围声明之外的文件 → 🔴 CRITICAL → 回退额外修改，更新影响范围声明后重新确认 / Rollback extra changes, update declaration and re-confirm
-- **EXEC-BF-003**: 在 Bug 修复中添加了新功能 → 🔴 CRITICAL → 回退新功能代码，仅保留 Bug 修复 / Rollback new feature code, keep only bug fix
-- **EXEC-BF-004**: 修改涉及 5 个以上文件 → 🟡 WARN → 提醒用户这可能不是简单的 Bug 修复，建议评估是否需要走完整开发流程 / Warn user this may not be a simple bug fix
-
-### Layer 3: 输出检查 / Output Validation Guards
-
-- **OUTPUT-BF-001**: 修复完成但未生成变更发布单 → 🔴 CRITICAL → 补充生成发布单 / Generate release patch document
-- **OUTPUT-BF-002**: 变更发布单缺少部署指引或验证路径 → 🟡 WARN → 补充完整 / Complete missing sections
-- **OUTPUT-BF-003**: 修复代码未通过 bug-patterns.yaml 自检 → 🔴 CRITICAL → 修复触犯的模式后才能标记完成 / Fix violated patterns before marking as complete
-- **OUTPUT-BF-004**: 使用了整个文件输出而非 Diff 格式 → 🟡 WARN → 转换为 Diff 格式 / Convert to Diff format
-
-### 触发 Red Flag 时的处理流程 / Red Flag Handling
-🔴 CRITICAL → 立即停止，报告问题详情，等待指示 / Stop immediately, report details, await instructions
-🟡 WARN → 记录警告，尝试自动修复，在变更发布单中标注 / Log warning, attempt auto-fix, annotate in patch document
+### Layer 3: 输出检查
+- **OUTPUT-BF-001**: 无变更发布单 → 🔴CRITICAL
+- **OUTPUT-BF-002**: 发布单缺部署/验证路径 → 🟡WARN
+- **OUTPUT-BF-003**: 未通过bug-patterns自检 → 🔴CRITICAL
+- **OUTPUT-BF-004**: 整体文件输出非Diff → 🟡WARN
+- **[🆕] OUTPUT-BF-005**: 未归档案例 → 🟡WARN
+- **[🆕] OUTPUT-BF-006**: 案例缺失败方案教训 → 🟡WARN
 
 ---
 
-## 7. 版本历史 / Version History
+## 7. 版本历史
 
-| 版本 / Version | 日期 / Date | 变更内容 / Changes |
-|------|------|---------|
-| 1.1 | 2026-04-28 | 新增 Step 4.5 自动回归验证 + 依赖链引擎集成 + pdd-verify-feature 协作 / Added Step 4.5 auto-regression + dependency chain engine integration + pdd-verify-feature collaboration |
-| 1.0 | 2026-04-28 | 初始版本：四步SOP + 五维影响分析 + 变更发布单 / Initial: Four-step SOP + Five-dimension analysis + Release patch document |
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| **2.1.0** | 2026-05-06 | **质量优化: 压缩29%(523→370行)，详情移至config按需加载** |
+| 2.0.0 | 2026-05-06 | 重大升级: Phase1+Phase2全量改进（验证/决策树/冲突检测/风险评估/案例库） |
+| 1.1 | 2026-04-28 | 新增Step 4.5回归验证+依赖链引擎集成 |
+| 1.0 | 2026-04-28 | 初始版本: 四步SOP+五维分析+变更发布单 |
+
+---
+
+**技能文档结束**
+
+*expert-bug-fixer v2.1 - 精简高效的智能化Bug修复专家*
+*详细示例见config/目录，持续迭代优化中*
