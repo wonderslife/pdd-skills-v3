@@ -1,14 +1,15 @@
 # PDD-Skills v3.0
 
-[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg null)](https://github.com/pdd-skills/pdd-skills)
+[![Version](https://img.shields.io/badge/version-3.1.2-blue.svg null)](https://github.com/pdd-skills/pdd-skills)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg null)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg null)](LICENSE)
 [![Patterns](https://img.shields.io/badge/bug_patterns-14-purple.svg null)](config/bug-patterns.yaml)
 [![Gate](https://img.shields.io/badge/gate_rules-30-critical.svg null)](config/prd-rules.yaml)
+[![Skills](https://img.shields.io/badge/skills-41+-brightgreen.svg null)](skills/)
 
 > **PRD 驱动的 AI 原生软件开发工作流框架**
 >
-> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**双脚手架**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
+> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**41+ 技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
 
 ***
 
@@ -230,14 +231,15 @@ scaffolds/python-fullstack/
 
 | 指标          | 数值                                            |
 | ----------- | --------------------------------------------- |
-| **版本**      | v3.1.0                                        |
-| **核心技能**    | 11 个（全双语 🇨🇳🇺🇸）                            |
-| **专家技能**    | 4 个（安全 + 性能 + 若依 + Activiti）                                  |
-| **PR技能**    | 5 个（模板引擎 + 多轮审查 + PR创建/审查/合并）                 |
+| **版本**      | v3.1.2                                        |
+| **核心技能**    | 12 个（全双语 🇨🇳🇺🇸）                            |
+| **专家技能**    | 12 个（安全/性能/MySQL/若依/若依权限/Activiti/Vue3/微服务/Bug修复/测试/架构） |
+| **熵减技能**    | 4 个（审计 + 架构约束 + 代码质量 + 自动重构）              |
+| **OpenSpec技能**| 10 个（变更管理全生命周期）                         |
+| **PR技能**    | 7 个（模板引擎 + 多轮审查 + PR创建/审查/合并/批量/任务管理）    |
 | **Bug模式库**  | 14 个（7通用 + 7若依专用），集中式管理 `config/bug-patterns.yaml` |
 | **PRD规则**   | 30 条（6大类），集中式管理 `config/prd-rules.yaml`      |
 | **质量门控**    | 4级（Blocker/Critical/Warning/Info）+ 0-100评分    |
-| **脚手架模板**   | 2 个（Python Fullstack + 若依RuoYi）               |
 | **协议支持**    | RESTful + MCP + gRPC + SSE                    |
 | **SDK 语言**  | JavaScript + Python                           |
 
@@ -399,7 +401,7 @@ pdd config --get key                              # 读取配置项
 
 ### Phase 2: 核心能力增强
 
-11 个核心技能 + 五大行为塑造机制。
+12 个核心技能 + 五大行为塑造机制。
 
 #### 核心技能列表
 
@@ -416,6 +418,7 @@ pdd config --get key                              # 读取配置项
 | `pdd-doc-gardener`      | 文档清理与维护     | ✅  |
 | `pdd-entropy-reduction` | 技术债务治理      | ✅  |
 | `official-doc-writer`   | 党政机关公文生成    | ✅  |
+| `pdd-vm`                | PDD Visual Manager 可视化监控 | ✅  |
 
 #### 行为塑造三层防御
 
@@ -444,9 +447,39 @@ pdd config --get key                              # 读取配置项
 | ---------------------- | --------------------------------------- | -------------------------------------- |
 | **expert-security**    | SQL注入 / XSS / CSRF / 命令注入 / 路径遍历 / SSRF | OWASP Top 10 2021 完整覆盖，8 条安全铁律         |
 | **expert-performance** | CPU / 内存 / I/O / 网络 / 锁竞争诊断             | HikariCP / Redis多级缓存 / G1 GC调优 / P99指标 |
+| **expert-mysql**       | SQL优化 / 索引设计 / 表结构分析 / 慢查询诊断         | MySQL官方文档参考，执行计划分析，索引优化建议          |
 | **expert-ruoyi**       | 若依框架全流程开发 / 代码生成 / 权限配置 / 菜单管理          | 7个若依Bug模式(PATTERN-R001~R007) + Spec模板参考 |
+| **expert-ruoyi-permission** | 若依框架权限配置 / 权限校验失败诊断 / 菜单按钮权限 | 四端一致原则 + @PreAuthorize + v-hasPermi |
 | **expert-activiti**    | Activiti 7工作流引擎 / BPMN 2.0 / 流程部署管理      | 流程设计规范 + BPMN校验规则                       |
+| **expert-vue3**        | Vue3 组件开发 / 状态管理 / 性能优化 / 组合式 API     | Vue3 生态最佳实践，响应式系统深度解析                 |
+| **expert-springcloud** | 微服务架构 / 服务治理 / 配置中心 / 网关路由           | Spring Cloud Alibaba 全栈解决方案               |
+| **expert-bug-fixer**   | Bug 根因分析 / 修复方案生成 / 回归测试建议           | 智能诊断 + 修复策略推荐                            |
+| **expert-testcases**   | 测试用例设计 / 边界值分析 / 覆盖率优化              | 多维度测试策略，自动化测试生成                       |
+| **software-architect** | 架构模式设计 / 技术选型 / 性能权衡 / 可扩展性规划       | 生产级架构设计，60+ 界面组件模式参考                  |
+| **software-engineer**  | 代码实现 / 重构优化 / 设计模式应用 / 测试驱动开发       | 生产级代码，清洁架构，错误处理完善                    |
+| **system-architect**   | 系统架构设计 / 模块化设计 / 安全最佳实践 / 代码规范      | PEP8/ESLint 标准，项目初始化，技术栈选择              |
 
+### Phase 3.5: 熵减治理系统
+
+> **对抗系统腐化，持续偿还技术债务**
+
+PDD 熵减体系通过 4 个协同技能，实现从审计到重构的闭环治理：
+
+| 熵减技能 | 职责 | 触发场景 |
+|---------|------|---------|
+| **expert-entropy-auditor** | 技术债务审计 / PRD一致性检查 / AI残渣检测 | 每周定时审计、PR合并后、代码提交后 |
+| **expert-arch-enforcer** | 架构约束检查 / 依赖方向验证 / 模块边界监控 | 代码提交后自动触发、架构检查请求 |
+| **expert-code-quality** | 代码审查 / 重构建议 / 设计模式应用 / SOLID原则 | 代码审查请求、质量改进需求 |
+| **expert-auto-refactor** | 自动化重构 / 消除重复 / 简化复杂度 / 模式归集 | 熵减审计后、重构任务分配 |
+
+**治理流程**:
+
+```
+entropy-auditor (审计发现) → arch-enforcer (约束检查) → code-quality (质量评估) → auto-refactor (自动修复)
+        ↑                                                                            |
+        └──────────────────────── 持续监控循环 ←──────────────────────────────────────┘
+```
+  
 ### Phase 4: 平台化建设
 
 将核心能力暴露为标准化接口，支持远程调用和多语言接入。
@@ -1023,18 +1056,35 @@ skills/
 │   ├── pdd-entropy-reduction/
 │   └── official-doc-writer/
 │
-├── expert/                  # 专家技能 (按需加载)
+├── expert/                  # 专家技能 (12个，按需加载)
 │   ├── expert-security/    # 安全审计专家
 │   ├── expert-performance/ # 性能优化专家
+│   ├── expert-mysql/       # MySQL数据库专家
 │   ├── expert-ruoyi/       # 若依框架专家 (含Bug模式库R001~R007)
-│   └── expert-activiti/    # Activiti工作流专家
+│   ├── expert-ruoyi-permission/ # 若依权限配置专家
+│   ├── expert-activiti/    # Activiti工作流专家
+│   ├── expert-vue3/        # Vue3前端专家
+│   ├── expert-springcloud/ # SpringCloud微服务专家
+│   ├── expert-bug-fixer/   # Bug修复专家
+│   ├── expert-testcases/   # 测试用例专家
+│   ├── software-architect/ # 软件架构师
+│   ├── software-engineer/  # 软件工程师
+│   └── system-architect/   # 系统架构师
 │
-├── pr/                      # PR与交付技能
+├── entropy/                 # 熵减治理技能 (4个)
+│   ├── expert-entropy-auditor/   # 技术债务审计
+│   ├── expert-arch-enforcer/     # 架构约束强制
+│   ├── expert-code-quality/      # 代码质量专家
+│   └── expert-auto-refactor/     # 自动重构专家
+│
+├── pr/                      # PR与交付技能 (7个)
 │   ├── pdd-template-engine/    # PRD感知动态模板引擎
-│   ├── pdd-multi-review/       # 三轮代码审查
+│   ├── pdd-multi-review/       # 多轮代码审查
 │   ├── pdd-pr-create/          # PR创建
 │   ├── pdd-pr-review/          # PR审查
-│   └── pdd-pr-merge/           # PR合并
+│   ├── pdd-pr-merge/           # PR合并
+│   ├── pdd-pr-batch/           # 批量PR处理
+│   └── pdd-task-manager/       # 任务管理
 │
 ├── openspec/                # OpenSpec 协作技能
 │   ├── openspec-explore/
@@ -1582,56 +1632,30 @@ pdd-skills-v3/
 │               ├── on-phase-change.js
 │               └── on-quality-alert.js
 │
-├── scaffolds/                  # ★ 脚手架模板系统 (v3.0.1+ 新增)
-│   └── python-fullstack/      # Python 全栈模板 (FastAPI + Vue3)
-│       ├── template_config.yaml    # 模板元数据 & Hooks & 变量配置
-│       ├── README.md               # 模板使用指南
-│       ├── docs/                   # 4份架构设计文档
-│       │   ├── architecture-design.md
-│       │   ├── database-design.md
-│       │   ├── api-design.md
-│       │   └── deployment-guide.md
-│       ├── backend/                # 后端代码 (FastAPI + SQLAlchemy)
-│       │   ├── app/core/           # 核心模块 (权限/OAuth/工作流)
-│       │   ├── app/api/            # API 路由层
-│       │   ├── app/models/         # 数据模型
-│       │   ├── app/schemas/        # 请求/响应模型
-│       │   ├── app/services/       # 业务逻辑层
-│       │   ├── alembic/            # 数据库迁移
-│       │   └── tests/              # 单元 & 集成测试
-│       ├── frontend/               # 前端代码 (Vue3 + Vite + TS)
-│       │   ├── src/views/          # 页面组件 (响应式布局)
-│       │   ├── src/components/     # UI 组件库
-│       │   ├── src/stores/         # Pinia 状态管理
-│       │   ├── src/api/            # API 请求封装
-│       │   └── tailwind.config.js  # 6档断点配置
-│       ├── docker-compose.yml      # 一键部署编排
-│       └── .github/workflows/      # CI 流水线
-│
-├── skills/                    # 技能文件
-│   ├── core/                   # 11 个核心技能
-│   ├── expert/                 # 2 个专家技能
-│   └── openspec/               # 10 个 OpenSpec 技能
+├── skills/                    # 技能文件 (41+ 个)
+│   ├── core/                   # 12 个核心技能
+│   ├── expert/                 # 11 个专家技能
+│   ├── entropy/                # 4 个熵减技能
+│   ├── openspec/               # 10 个 OpenSpec 技能
+│   └── pr/                     # 7 个 PR 技能
 │
 ├── scripts/                   # 工具脚本
 │   ├── linter/                # PRD Linter 工具链
 │   │   ├── prd-linter.js      # PRD Linter 引擎
-│   │   ├── prd-rules.yaml     # (符号链接→config/)
-│   │   ├── gate-engine.js     # 4级门控引擎 (读取config/gate-config.yaml)
 │   │   ├── report-generator.js# 报告生成器
-│   │   └── run-linters.js     # Linter运行器 (集成Gate Engine)
-│   ├── openapi-contract-sync.js # OpenAPI契约同步工具
-│   ├── skill-linter.py        # Skill 文件检查器
-│   ├── i18n-checker.js         # 双语合规检查
-│   └── token-analyzer.js       # Token 分析
+│   │   └── run-linters.js     # Linter运行器
+│   ├── cso-analyzer.js        # CSO 触发准确率分析
+│   ├── eval-runner.js         # Evals 测试运行器
+│   ├── i18n-checker.js        # 双语合规检查
+│   ├── token-analyzer.js      # Token 分析
+│   └── windows-compat-check.js # Windows 兼容性检查
 │
-├── docs/                       # 社区文档 (~10,700 行)
-│   ├── user-guide/
-│   ├── developer-guide/
-│   ├── api-reference/
-│   ├── operations/
-│   ├── plugin-market/
-│   └── tasks.md               # 任务跟踪 (153/100%)
+├── docs/                       # 项目文档
+│   ├── i18n-spec.md           # i18n 规范
+│   ├── lessons.md             # 经验教训
+│   ├── tasks.md               # 任务跟踪
+│   ├── token-checklist.md     # Token 检查清单
+│   └── vm-tasks.md            # VM 任务清单
 │
 ├── templates/                 # 项目模板
 ├── config/                    # 配置中心 (Single Source of Truth)
@@ -1645,7 +1669,7 @@ pdd-skills-v3/
 │   ├── ruff.toml              # Python Ruff配置
 │   └── sqlfluff.cfg           # SQL SQLFluff配置
 ├── hooks/                     # Hook 配置
-└── package.json               # v3.1.0
+└── package.json               # v3.1.2
 ```
 
 ***
@@ -1730,8 +1754,9 @@ CLI 参数 > 环境变量 > .pddrc.local > .pddrc > defaults
 
 | 版本         | 日期         | 重要变更                                                                                                                                            |
 | ---------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **v3.1.0** | 2026-04-15 | **智能能力+生态集成**: Bug模式库集中化(14模式), PRD Linter扩展(30规则6大类), 4级门控引擎(Blocker/Critical/Warning/Info), OpenAPI契约同步, PRD感知动态模板, MVP分层交付策略, 上下文注入+微验证, expert-ruoyi+expert-activiti专家技能, 若依RuoYi脚手架支持, 种子数据分层设计 |
-| **v3.0.2** | 2026-04-12 | **脚手架系统发布**: python-fullstack 全栈模板(FastAPI+Vue3), 数据权限引擎, OAuth2六平台认证, 工作流状态机引擎, 响应式前端, 4份架构设计文档, Docker一键部署, CI流水线 |
+| **v3.1.2** | 2026-04-10 | **技能生态大扩展**: 新增 7 个专家技能(expert-mysql/expert-vue3/expert-springcloud/expert-bug-fixer/expert-testcases/software-architect/software-engineer/system-architect), 新增 4 个熵减技能(entropy-auditor/arch-enforcer/code-quality/auto-refactor), PR技能扩展至7个(新增pdd-pr-batch/pdd-task-manager), 核心技能增至12个(pdd-vm), 总计41+技能 |
+| **v3.1.1** | 2026-04-08 | **Windows兼容性+项目结构优化**: 添加 Windows 终端兼容支持, 优化项目初始化流程, 更新目录结构规范, 完善 .npmignore 配置 |
+| **v3.1.0** | 2026-04-05 | **智能能力+生态集成**: Bug模式库集中化(14模式), PRD Linter扩展(30规则6大类), 4级门控引擎(Blocker/Critical/Warning/Info), OpenAPI契约同步, PRD感知动态模板, MVP分层交付策略, 上下文注入+微验证, expert-ruoyi+expert-activiti专家技能, 若依RuoYi脚手架支持, 种子数据分层设计 |
 | **v3.0.1** | 2026-04-07 | **PDD Visual Manager 发布**: Web Dashboard + Terminal TUI 双形态可视化监控, 11个REST API端点, SSE实时推送, Canvas图表引擎, ANSI TUI组件库 |
 | **v3.0.0** | 2026-04-05 | **正式发布版**: 6大Phase全部完成 + 插件系统 + OpenClaw + gRPC + Python SDK + 暂缓清零                                                             |
 | v2.x       | 2026-03    | 内部迭代版本: MCP/SDK/缓存/Token/质量/迭代                                                                                                                  |
@@ -1754,9 +1779,9 @@ CLI 参数 > 环境变量 > .pddrc.local > .pddrc > defaults
 ***
 
 <p align="center">
-  <b>PDD-Skills v3.1 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
+  <b>PDD-Skills v3.1.2 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
 </p>
 
 <p align="center">
-  <sub>14 Bug Patterns ✅ · 30 PRD Rules ✅ · 4-Level Gate ✅ · Dual Scaffold ✅</sub>
+  <sub>41+ Skills ✅ · 14 Bug Patterns ✅ · 30 PRD Rules ✅ · 4-Level Gate ✅ · 4 Entropy Skills ✅</sub>
 </p>
