@@ -1,0 +1,289 @@
+# 资产评估核准申请列表查看 - E2E测试
+#
+# 📋 用途: 验证复杂业务导航和数据验证能力
+# 🎯 场景: 登录 → 进入资产评估系统 → 导航到核准申请 → 查看记录数量
+# 🔗 业务系统: 资产处置与评估管理系统 (通过统一门户SSO)
+# ⚠️ 复杂度: 中等（涉及多级菜单导航、表格数据验证）
+
+test_id: "ASSET-EVAL-002-approval-list"
+title: "资产评估核准申请列表查看"
+priority: "P0"
+tags: ["资产评估", "核准申请", "菜单导航", "数据验证", "E2E", "试点验证"]
+author: "PDD Team (v1.0.1 试点用例)"
+
+# 前置状态感知（继承登录流程的配置）
+context_check:
+  login_url: "http://uniportal.sjjk.com.cn"
+  home_indicator: "统一门户（新）"
+  credentials:
+    username: "${TEST_USER}"
+    password: "${TEST_PASS}"
+  captcha_required: false
+  sso_target_system: "资产评估系统"     # SSO目标系统名称
+  sso_home_indicator: "资产管理"       # SSO后的业务系统首页特征
+
+# 测试步骤
+steps:
+
+  # ===== 步骤 1：打开统一门户（如果未登录）=====
+  - step: 1
+    desc: "打开统一门户（如未登录则执行登录）"
+    action: navigate_or_login
+    url: "${LOGIN_URL:-http://uniportal.sjjk.com.cn}"
+    # Agent会根据context_check判断是否需要登录
+    # 如果已登录，此步只做导航；如果未登录，自动插入登录子流程
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: text_contains
+        expected: "统一门户"
+        confidence: high
+
+  # ===== 步骤 2：点击"资产评估系统"进入业务系统 =====
+  - step: 2
+    desc: "在门户首页找到并点击'资产评估系统'图标/链接"
+    action: click
+    target: "资产评估系统"
+    locator:
+      uid_cache_key: "asset_eval_system_link"
+      # 可能是图标、文字链接或卡片，使用语义匹配
+    wait_after:
+      type: navigation              # 等待SSO跳转完成
+      timeout: 15000                # SSO可能较慢
+    assertions:
+      # 断言 1：页面跳转到业务系统
+      - type: url_changes            # URL发生了变化（从门户跳到业务系统）
+        confidence: high
+      # 断言 2：业务系统首页加载
+      - type: text_contains
+        expected: "资产管理"         # 或其他业务系统标志
+        confidence: high
+      # 网络校验：SSO Token验证
+      - type: network_called
+        url_pattern: "/sso/*|/auth/*|/oauth/*"  # SSO相关接口
+        method: GET
+        response_code: [200, 302, 301]  # 允许重定向
+        confidence: medium
+
+  # ===== 步骤 3：展开左侧菜单"资产评估" =====
+  - step: 3
+    desc: "在左侧菜单栏找到并展开'资产评估'菜单项"
+    action: click
+    target: "资产评估菜单"
+    locator:
+      uid_cache_key: "menu_asset_eval"
+    wait_after:
+      type: time
+      duration: 500                # 菜单展开动画
+    assertions:
+      - type: element_visible
+        target: "资产评估子菜单"     # 展开后应该出现子菜单
+        confidence: high
+      - type: menu_expanded
+        target: "资产评估"
+        confidence: medium
+
+  # ===== 步骤 4：点击下级菜单"资产评估核准" =====
+  - step: 4
+    desc: "在展开的子菜单中点击'资产评估核准'"
+    action: click
+    target: "资产评估核准"
+    locator:
+      uid_cache_key: "menu_asset_eval_approval"
+    wait_after:
+      type: time
+      duration: 1000               # 页面切换
+    assertions:
+      - type: text_contains
+        expected: "资产评估核准"     # 页面标题或面包屑
+        confidence: high
+
+  # ===== 步骤 5：点击"核准申请"进入列表页 =====
+  - step: 5
+    desc: "在资产评估核准页面中点击'核准申请'菜单项或标签"
+    action: click
+    target: "核准申请"
+    locator:
+      uid_cache_key: "menu_approval_apply"
+    wait_after:
+      type: time
+      duration: 2000               # 表格数据加载
+    assertions:
+      - type: page_title_contains
+        expected: "核准申请"         # 页面主标题
+        confidence: high
+      - type: element_visible
+        target: "搜索条件区域"       # 应该有筛选表单
+        confidence: high
+      - type: element_visible
+        target: "数据表格"           # 应该有结果表格
+        confidence: high
+
+  # ===== 步骤 6：验证搜索条件字段完整性 =====
+  - step: 6
+    desc: "验证核准申请页面的搜索条件是否包含必要字段"
+    action: assert_form_fields
+    target: "搜索表单"
+    expected_fields:
+      - "项目名称"                   # 文本输入框
+      - "申请编号"                   # 文本输入框
+      - "申请单位"                   # 下拉选择或文本
+      - "申请日期范围"               # 日期选择器
+      - "查询按钮"                   # 按钮
+      - "重置按钮"                   # 按钮（可选）
+      - "新增按钮"                   # 新增操作按钮
+      - "导出按钮"                   # 导出操作按钮（可选）
+    assertions:
+      - type: all_fields_present
+        missing_fields_action: "warn"  # 缺少字段时警告而非失败
+        confidence: high
+
+  # ===== 步骤 7：获取并记录列表数据量 =====
+  - step: 7
+    desc: "读取核准申请列表中的记录数量并记录"
+    action: extract_data
+    target: "数据表格"
+    extraction:
+      type: table_row_count
+      selector: "tbody tr"           # 或其他表格行选择器
+    output_variable: "record_count"   # 将结果存储为变量
+    assertions:
+      - type: value_greater_than_or_equal
+        variable_name: "record_count"
+        min_value: 0                  # 至少有0条记录（允许空列表）
+        confidence: high
+      - type: element_visible
+        target: "分页组件"             # 通常会有分页
+        confidence: medium             # 分页可能不存在（数据少时）
+
+  # ===== 步骤 8：验证表格列头完整性 =====
+  - step: 8
+    desc: "验证数据表格的列头是否包含必要的业务字段"
+    action: assert_table_headers
+    target: "数据表格"
+    expected_headers:
+      - "序号"
+      - "项目名称"
+      - "申请编号"
+      - "申请单位"
+      - "申请日期"
+      - "状态"
+      - "操作"                        # 操作列（查看/编辑/删除等）
+    assertions:
+      - type: headers_match
+        allow_extra: true             # 允许有额外的列
+        missing_headers_action: "fail"
+        confidence: high
+
+  # ===== 步骤 9：截图保存当前状态 =====
+  - step: 9
+    desc: "截取核准申请列表页面的全屏截图作为证据"
+    action: screenshot
+    name: "approval-list-fullpage-{timestamp}.png"
+    fullPage: true                    # 包含滚动区域
+    annotations:
+      - "记录数: {record_count}"       # 在图上标注记录数
+      - "时间戳: {timestamp}"
+    assertions:
+      - type: file_exists
+        confidence: high
+
+  # ===== 步骤 10：（可选）点击第一行查看详情 =====
+  - step: 10
+    desc: "如果有记录，点击第一行的'查看'按钮进入详情页"
+    action: conditional_click
+    condition: "{record_count} > 0"   # 只有当有记录时才执行
+    target: "第一行查看按钮"
+    locator:
+      uid_cache_key: "btn_view_first_record"
+    fallback_action: "skip"           # 无记录时跳过此步
+    assertions:
+      - type: page_title_contains
+        expected: "核准申请详情"       # 或类似的详情页标题
+        confidence: high
+      - type: element_visible
+        target: "详细信息区域"         # 详情内容区
+        confidence: high
+
+# 后置清理
+teardown:
+  - action: screenshot
+    name: "approval-list-final-{timestamp}.png"
+    fullPage: true
+  - action: export_data
+    format: json
+    output: "approval-list-data-{timestamp}.json"
+    data:
+      - record_count: "{record_count}"
+      - execution_time: "{total_duration}"
+      - status: "{overall_status}"
+  - action: log
+    message: |
+      核准申请列表测试完成
+      记录数: {record_count}
+      总耗时: {total_duration}
+      整体状态: {overall_status}
+
+# 元数据
+metadata:
+  created_by: "testcase-modeler v1.0.1"
+  test_environment: "staging"
+  browser: "chromium"
+  viewport: "1920x1080"
+  estimated_duration: "45-90s"
+  complexity: "medium"                # 涉及多级菜单导航
+  dependencies:
+    - "统一门户服务可用"
+    - "SSO单点登录正常工作"
+    - "资产评估系统可访问"
+    - "测试账号有'资产评估核准'菜单权限"
+  business_flow:
+    - "门户登录"
+    - "SSO跳转"
+    - "三级菜单导航"
+    - "列表数据展示"
+  risk_level: "low"                  # 只读操作，不影响生产数据
+  data_sensitivity: "low"            # 列表数据脱敏处理
+
+# 性能基准（用于回归对比）
+performance_baselines:
+  page_load_portal:
+    max_time: 5000ms                 # 门户加载 < 5s
+  sso_redirect:
+    max_time: 10000ms                # SSO跳转 < 10s
+  menu_navigation:
+    max_time: 3000ms                 # 菜单响应 < 3s
+  list_load:
+    max_time: 8000ms                 # 列表数据加载 < 8s
+  total_execution:
+    max_time: 90000ms                # 总耗时 < 90s
+
+# 变体说明
+variants:
+  - name: "带筛选条件的查询"
+    description: "验证搜索功能"
+    additions:
+      - step: 6.5 (insert after step 6)
+        action: fill
+        target: "项目名称输入框"
+        value: "测试项目"
+      - step: 6.6
+        action: click
+        target: "查询按钮"
+      - modify step 7 assertion to check filtered results
+
+  - name: "分页功能验证"
+    description: "验证翻页功能"
+    precondition: "record_count > 20"
+    additions:
+      - step: 8.5
+        action: click
+        target: "下一页按钮"
+      - verify new data loaded (different from first page)
+
+  - name: "无权限访问"
+    description: "验证权限控制"
+    modifications:
+      - use account without '资产评估核准' permission
+      - expect: menu item not visible or access denied error

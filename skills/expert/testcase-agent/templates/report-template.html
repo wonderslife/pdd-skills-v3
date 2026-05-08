@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDD Test Report - {test_id}</title>
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --success-color: #52c41a;
+            --error-color: #ff4d4f;
+            --warning-color: #faad14;
+            --bg-color: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #262626;
+            --text-secondary: #8c8c8c;
+            --border-color: #d9d9d9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header-meta {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background-color: #fafafa;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .summary-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-pass {
+            background-color: #f6ffed;
+            color: var(--success-color);
+            border: 1px solid #b7eb8f;
+        }
+        
+        .status-fail {
+            background-color: #fff2f0;
+            color: var(--error-color);
+            border: 1px solid #ffccc7;
+        }
+        
+        .status-partial {
+            background-color: #fffbe6;
+            color: var(--warning-color);
+            border: 1px #ffe58f;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .step-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .step-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .step-info {
+            flex: 1;
+            margin-left: 15px;
+        }
+        
+        .step-desc {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        
+        .step-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .step-status {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .step-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border-color);
+        }
+        
+        .detail-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .screenshot-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .screenshot-img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .screenshot-img:hover {
+            transform: scale(1.02);
+        }
+        
+        .assertion-result {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        
+        .assertion-pass {
+            background-color: #f6ffed;
+            border-left: 3px solid var(--success-color);
+        }
+        
+        .assertion-fail {
+            background-color: #fff2f0;
+            border-left: 3px solid var(--error-color);
+        }
+        
+        .diagnosis-box {
+            background-color: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .diagnosis-title {
+            font-weight: 600;
+            color: var(--warning-color);
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            background-color: #fafafa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        @media (max-width: 768px) {
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .detail-row {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .header, .content, .footer {
+                padding: 15px;
+            }
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+            
+            .screenshot-img {
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📋 PDD Test Report</h1>
+            <div class="header-meta">
+                <div>Test ID: <strong>{test_id}</strong></div>
+                <div>Title: {title}</div>
+                <div>Generated: {generated_at}</div>
+                <div>Agent Version: PDD Test Skill v1.0.0</div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div class="summary-item">
+                <div class="summary-value">{total_steps}</div>
+                <div class="summary-label">Total Steps</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: var(--success-color);">{steps_passed} ✓</div>
+                <div class="summary-label">Passed</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: var(--error-color);">{steps_failed} ✗</div>
+                <div class="summary-label">Failed</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">{pass_rate}%</div>
+                <div class="summary-label">Pass Rate</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">{total_duration}</div>
+                <div class="summary-label">Duration</div>
+            </div>
+            <div class="summary-item">
+                <span class="status-badge status-{overall_status}">{overall_status}</span>
+            </div>
+        </div>
+
+        <!-- Steps Detail -->
+        <div class="content">
+            <h2 class="section-title">📝 Execution Details</h2>
+            
+            <!-- Steps will be dynamically generated here -->
+            <div id="steps-container">
+                <!-- Example Step Card Template -->
+                <!--
+                <div class="step-card">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-info">
+                            <div class="step-desc">Step Description</div>
+                            <div class="step-meta">action: navigate • target: URL • duration: 245ms</div>
+                        </div>
+                        <div class="step-status status-pass">✓ PASS</div>
+                    </div>
+                    <div class="step-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Action:</span>
+                            <span>navigate</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Target:</span>
+                            <span>http://example.com</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Duration:</span>
+                            <span>245ms</span>
+                        </div>
+                        
+                        <div class="assertion-result assertion-pass">
+                            ✓ Assertion Passed: text_contains "Welcome"
+                        </div>
+                        
+                        <div class="screenshot-container">
+                            <img src="step_1_screenshot.png" alt="Step 1 Screenshot" class="screenshot-img">
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>PDD Test Skill v1.0.0 | Generated by AI Agent | {generated_at}</p>
+            <p>This report was automatically generated during test execution.</p>
+        </div>
+    </div>
+
+    <script>
+        // Screenshot lightbox
+        document.querySelectorAll('.screenshot-img').forEach(img => {
+            img.addEventListener('click', function() {
+                if (this.requestFullscreen) {
+                    this.requestFullscreen();
+                }
+            });
+        });
+
+        // Print functionality
+        function printReport() {
+            window.print();
+        }
+
+        // Export to PDF hint
+        console.log('Tip: Use Ctrl+P to print or save as PDF');
+    </script>
+</body>
+</html>

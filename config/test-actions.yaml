@@ -1,0 +1,712 @@
+# PDD Test Skill - 动作配置文件
+# 文件位置: config/test-actions.yaml
+# 用途: 定义所有可用的测试动作，支持用户自定义扩展
+#
+# 使用说明:
+#   1. 每个动作包含: display, patterns, mcp, params
+#   2. patterns 用于自然语言匹配（支持 {变量} 占位符）
+#   3. mcp 指向 Chrome DevTools MCP 的实际工具名
+#   4. 用户可在此文件中添加自定义动作
+
+# ============================================================
+# 一、页面导航类动作
+# ============================================================
+
+navigate:
+  display: "打开页面"
+  description: "导航到指定URL或执行页面操作"
+  patterns:
+    - "打开 {url}"
+    - "访问 {url}"
+    - "导航到 {url}"
+    - "跳转到 {url}"
+    - "打开网址 {url}"
+  mcp: mcp_Chrome_DevTools_MCP_navigate_page
+  params:
+    - name: url
+      type: string
+      required: true
+      description: "目标 URL 地址"
+  examples:
+    - "打开 http://uniportal.sjjk.com.cn"
+    - "访问 http://localhost:8080/login"
+
+navigate_back:
+  display: "返回上一页"
+  description: "浏览器后退操作"
+  patterns:
+    - "返回"
+    - "后退"
+    - "回到上一页"
+    - "返回上一步"
+  mcp: mcp_Chrome_DevTools_MCP_navigate_page
+  params:
+    - name: type
+      type: string
+      default: "back"
+      description: "固定值：back"
+
+navigate_forward:
+  display: "前进一页"
+  description: "浏览器前进操作"
+  patterns:
+    - "前进"
+    - "下一步"
+    - "前往下一页"
+  mcp: mcp_Chrome_DevTools_MCP_navigate_page
+  params:
+    - name: type
+      type: string
+      default: "forward"
+      description: "固定值：forward"
+
+reload:
+  display: "刷新页面"
+  description: "重新加载当前页面"
+  patterns:
+    - "刷新"
+    - "重新加载"
+    - "刷新页面"
+    - "reload"
+  mcp: mcp_Chrome_DevTools_MCP_navigate_page
+  params:
+    - name: type
+      type: string
+      default: "reload"
+      description: "固定值：reload"
+
+# ============================================================
+# 二、表单操作类动作
+# ============================================================
+
+click:
+  display: "点击元素"
+  description: "点击页面上的按钮、链接、复选框等元素"
+  patterns:
+    - "点击 {target}"
+    - "选择 {target}"
+    - "按一下 {target}"
+    - "单击 {target}"
+    - "双击 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_click
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "目标元素的文本描述或 UID"
+    - name: dblClick
+      type: boolean
+      default: false
+      description: "是否双击（默认 false）"
+  examples:
+    - "点击登录按钮"
+    - "选择资产评估系统"
+    - "单击提交按钮"
+
+fill:
+  display: "填写输入框"
+  description: "在文本框、密码框等输入元素中填入内容"
+  patterns:
+    - "输入 {value} 到 {target}"
+    - "在 {target} 输入 {value}"
+    - "填写 {target} 为 {value}"
+    - "{target} 填入 {value}"
+  mcp: mcp_Chrome_DevTools_MCP_fill
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "目标输入框的描述（如'用户名输入框'）"
+    - name: value
+      type: string
+      required: true
+      description: "要输入的值（敏感信息使用环境变量 ${VAR}）"
+  examples:
+    - "输入 yuanye 到用户名输入框"
+    - "在密码框输入 ${TEST_PASS}"
+
+fill_form:
+  display: "批量填写表单"
+  description: "一次性填写多个表单字段"
+  patterns:
+    - "填写表单"
+    - "依次填写以下字段"
+    - "批量填写"
+    - "填写登录信息"
+  mcp: mcp_Chrome_DevTools_MCP_fill_form
+  params:
+    - name: fields
+      type: array
+      required: true
+      description: "字段数组，每项包含 target 和 value"
+  examples:
+    - "填写表单 [用户名: admin, 密码: 123456]"
+
+select_option:
+  display: "下拉选择"
+  description: "在下拉框中选择选项"
+  patterns:
+    - "选择下拉框 {target} 的 {option}"
+    - "在 {target} 中选择 {option}"
+    - "下拉选择 {option}"
+  mcp: mcp_Chrome_DevTools_MCP_fill
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "下拉框的描述"
+    - name: value
+      type: string
+      required: true
+      description: "要选择的选项值"
+  examples:
+    - "选择下拉框 状态 的 已启用"
+    - "在下拉框中选择 北京"
+
+checkbox:
+  display: "勾选/取消勾选"
+  description: "操作复选框或开关"
+  patterns:
+    - "勾选 {target}"
+    - "取消勾选 {target}"
+    - "选中 {target}"
+    - "关闭 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_click
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "复选框的描述"
+    - name: checked
+      type: boolean
+      default: true
+      description: "true=勾选, false=取消勾选"
+
+# ============================================================
+# 三、文件操作类动作
+# ============================================================
+
+upload_file:
+  display: "上传文件"
+  description: "上传本地文件到指定上传控件"
+  patterns:
+    - "上传文件 {path} 到 {target}"
+    - "上传 {path}"
+    - "选择文件 {path}"
+  mcp: mcp_Chrome_DevTools_MCP_upload_file
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "文件上传按钮或区域"
+    - name: path
+      type: filepath
+      required: true
+      description: "本地文件路径（绝对路径或相对路径）"
+  examples:
+    - "上传文件 C:/test.pdf 到附件上传按钮"
+    - "上传 ./data/test.xlsx"
+
+download_file:
+  display: "下载文件"
+  description: "触发文件下载操作"
+  patterns:
+    - "下载 {target}"
+    - "导出 {target}"
+    - "保存文件 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_click
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "下载按钮或链接的描述"
+
+# ============================================================
+# 四、断言验证类动作
+# ============================================================
+
+assert_text:
+  display: "文本断言"
+  description: "验证页面包含指定文本内容"
+  patterns:
+    - "验证页面包含 {text}"
+    - "检查显示 {text}"
+    - "确认出现 {text}"
+    - "应该看到 {text}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: text
+      type: string
+      required: true
+      description: "期望出现的文本内容"
+  assertion_type: text_contains
+  examples:
+    - "验证页面包含 欢迎登录"
+    - "检查显示 资产处置及评估系统"
+
+assert_not_text:
+  display: "文本不存在断言"
+  description: "验证页面不包含指定文本"
+  patterns:
+    - "验证页面不包含 {text}"
+    - "不应该显示 {text}"
+    - "确认没有 {text}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: text
+      type: string
+      required: true
+      description: "不应该出现的文本"
+  assertion_type: text_not_contains
+
+assert_visible:
+  display: "元素可见性断言"
+  description: "验证指定元素在页面上可见"
+  patterns:
+    - "验证 {target} 可见"
+    - "检查 {target} 显示"
+    - "确认 {target} 出现"
+    - "{target} 应该存在"
+  mcp: mcp_Chrome_DevTools_MCP_take_snapshot
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "要验证的目标元素描述"
+  assertion_type: element_visible
+
+assert_hidden:
+  display: "元素隐藏断言"
+  description: "验证指定元素不可见或已隐藏"
+  patterns:
+    - "验证 {target} 隐藏"
+    - "检查 {target} 不显示"
+    - "确认 {target} 消失"
+    - "{target} 应该消失"
+  mcp: mcp_Chrome_DevTools_MCP_take_snapshot
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "要验证的目标元素"
+  assertion_type: element_hidden
+
+assert_count:
+  display: "记录数断言"
+  description: "验证列表或表格中的记录数量"
+  patterns:
+    - "确认有 {count} 条记录"
+    - "记录数量应该是 {count}"
+    - "列表应该有 {count} 项"
+    - "表格行数为 {count}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: count
+      type: number
+      required: true
+      description: "期望的记录数量"
+    - name: min_count
+      type: number
+      description: "最小记录数（可选，用于至少N条的场景）"
+  assertion_type: count_at_least
+
+assert_url:
+  display: "URL 断言"
+  description: "验证当前页面 URL 符合预期"
+  patterns:
+    - "验证地址是 {url}"
+    - "URL 应该包含 {url}"
+    - "应该在 {url} 页面"
+  mcp: mcp_Chrome_DevTools_MCP_list_pages
+  params:
+    - name: url
+      type: string
+      required: true
+      description: "期望的 URL 或 URL 片段"
+  assertion_type: url_contains
+
+# ============================================================
+# 五、网络校验类动作（深度验证）
+# ============================================================
+
+verify_network:
+  display: "网络请求校验"
+  description: "验证特定的 API 请求是否被调用及其响应状态"
+  patterns:
+    - "验证接口 {url_pattern} 被调用"
+    - "检查 API 返回 {code}"
+    - "网络请求 {method} {url}"
+    - "接口 {url} 应该返回 {status_code}"
+  mcp: mcp_Chrome_DevTools_MCP_list_network_requests
+  params:
+    - name: url_pattern
+      type: string
+      required: true
+      description: "API URL 匹配模式（支持通配符 *）"
+    - name: method
+      type: string
+      default: "POST"
+      description: "HTTP 方法 (GET/POST/PUT/DELETE)"
+    - name: response_code
+      type: number
+      default: 200
+      description: "期望的 HTTP 响应状态码"
+    - name: response_body_contains
+      type: string
+      description: "响应体应包含的内容（可选）"
+  assertion_type: network_called
+  examples:
+    - "验证接口 /api/user/login 被调用"
+    - "检查 API /api/save 返回 200"
+
+verify_no_network_error:
+  display: "无网络错误校验"
+  description: "验证没有发生网络错误（4xx/5xx）"
+  patterns:
+    - "验证没有网络错误"
+    - "所有请求都成功"
+    - "没有失败的 API 调用"
+  mcp: mcp_Chrome_DevTools_MCP_list_network_requests
+  params: []
+  assertion_type: no_network_errors
+
+# ============================================================
+# 六、等待操作类动作
+# ============================================================
+
+wait_for:
+  display: "等待元素出现"
+  description: "等待指定文本或元素出现在页面上"
+  patterns:
+    - "等待 {text} 出现"
+    - "等待加载 {text}"
+    - "等一下直到 {text} 显示"
+    - "等待页面加载完成"
+  mcp: mcp_Chrome_DevTools_MCP_wait_for
+  params:
+    - name: text
+      type: string
+      required: true
+      description: "等待出现的文本内容"
+    - name: timeout
+      type: number
+      default: 10000
+      description: "超时时间（毫秒），默认 10 秒"
+  examples:
+    - "等待 欢迎登录 出现"
+    - "等待加载 资产评估系统"
+
+wait_for_navigation:
+  display: "等待页面跳转"
+  description: "等待页面导航或新窗口打开"
+  patterns:
+    - "等待页面跳转"
+    - "等待新页面打开"
+    - "等待跳转完成"
+    - "等一下页面切换"
+  mcp: mcp_Chrome_DevTools_MCP_list_pages
+  params:
+    - name: timeout
+      type: number
+      default: 10000
+      description: "超时时间（毫秒）"
+
+wait_for_time:
+  display: "固定时间等待"
+  description: "强制等待指定的时间（慎用，优先使用 wait_for）"
+  patterns:
+    - "等待 {duration} 秒"
+    - "暂停 {duration} 秒"
+    - "sleep {duration}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: duration
+      type: number
+      required: true
+      description: "等待时间（秒）"
+  script: |
+    async (ms) => {
+      await new Promise(resolve => setTimeout(resolve, ms));
+      return `Waited ${ms}ms`;
+    }
+
+# ============================================================
+# 七、截图操作类动作
+# ============================================================
+
+screenshot:
+  display: "截图保存"
+  description: "对当前页面或指定元素进行截图"
+  patterns:
+    - "截图"
+    - "截个图"
+    - "截图保存为 {name}"
+    - "拍个屏幕快照"
+  mcp: mcp_Chrome_DevTools_MCP_take_screenshot
+  params:
+    - name: name
+      type: string
+      default: "screenshot-{timestamp}.png"
+      description: "截图文件名（可选，默认自动生成）"
+    - name: fullPage
+      type: boolean
+      default: false
+      description: "是否全页截图（默认 false 只截可视区域）"
+  examples:
+    - "截图"
+    - "截图保存为 login-success.png"
+
+screenshot_element:
+  display: "元素截图"
+  description: "对指定元素进行局部截图"
+  patterns:
+    - "截图 {target}"
+    - "给 {target} 截图"
+    - "拍下 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_take_screenshot
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "要截图的元素描述或 UID"
+    - name: name
+      type: string
+      description: "输出文件名"
+
+# ============================================================
+# 八、滚动操作类动作
+# ============================================================
+
+scroll:
+  display: "滚动页面"
+  description: "在页面中进行上下左右滚动"
+  patterns:
+    - "滚动到 {direction}"
+    - "向下滚动"
+    - "向上滚动"
+    - "滚到底部"
+    - "滚动到顶部"
+    - "滚动 {target} 到可视区"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: direction
+      type: string
+      required: true
+      description: "滚动方向: up/down/top/bottom/left/right/element"
+    - name: target
+      type: element
+      description: "当 direction=element 时，指定要滚动到的目标元素"
+  script_map:
+    down: "() => window.scrollTo(0, document.body.scrollHeight)"
+    up: "() => window.scrollTo(0, 0)"
+    bottom: "() => window.scrollTo(0, document.body.scrollHeight)"
+    top: "() => window.scrollTo(0, 0)"
+
+scroll_to_element:
+  display: "滚动到元素"
+  description: "将指定元素滚动到可视区域内"
+  patterns:
+    - "滚动到 {target}"
+    - "让 {target} 可见"
+    - "查看 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "要滚动到的目标元素"
+
+# ============================================================
+# 九、高级交互类动作
+# ============================================================
+
+hover:
+  display: "鼠标悬停"
+  description: "将鼠标移动到指定元素上（不点击）"
+  patterns:
+    - "悬停在 {target}"
+    - "鼠标移到 {target}"
+    - "hover {target}"
+  mcp: mcp_Chrome_DevTools_MCP_hover
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "目标元素描述"
+
+drag_drop:
+  display: "拖拽操作"
+  description: "将一个元素拖拽到另一个位置"
+  patterns:
+    - "拖拽 {source} 到 {target}"
+    - "把 {source} 拖到 {target}"
+    - "拖动 {source} 放到 {target}"
+  mcp: mcp_Chrome_DevTools_MCP_drag
+  params:
+    - name: source
+      type: element
+      required: true
+      description: "源元素（被拖拽的元素）"
+    - name: target
+      type: element
+      required: true
+      description: "目标元素（放置位置）"
+
+right_click:
+  display: "右键点击"
+  description: "对元素进行右键点击以唤出上下文菜单"
+  patterns:
+    - "右键点击 {target}"
+    - "右击 {target}"
+    - "在 {target} 上右键"
+  mcp: mcp_Chrome_DevTools_MCP_click
+  params:
+    - name: target
+      type: element
+      required: true
+      description: "目标元素"
+    - name: button
+      type: string
+      default: "right"
+      description: "固定值：right"
+
+press_key:
+  display: "按键操作"
+  description: "模拟键盘按键（如 Enter、Tab、Escape 等）"
+  patterns:
+    - "按下 {key}"
+    - "按 {key} 键"
+    - "敲击 {key}"
+    - "按回车"
+    - "按 Tab"
+    - "按 Escape 取消"
+  mcp: mcp_Chrome_DevTools_MCP_press_key
+  params:
+    - name: key
+      type: string
+      required: true
+      description: "按键名称（Enter/Tab/Escape/Space/ArrowUp 等）"
+  key_map:
+    回车: "Enter"
+    换行: "Enter"
+    Tab: "Tab"
+    制表符: "Tab"
+    Escape: "Escape"
+    取消: "Escape"
+    空格: "Space"
+    上: "ArrowUp"
+    下: "ArrowDown"
+    左: "ArrowLeft"
+    右: "ArrowRight"
+  examples:
+    - "按下 Enter"
+    - "按 Escape 取消对话框"
+
+type_text:
+  display: "逐字输入"
+  description: "模拟键盘逐字输入（适用于特殊输入场景）"
+  patterns:
+    - "逐字输入 {text}"
+    - "打字 {text}"
+    - "输入文字 {text}"
+  mcp: mcp_Chrome_DevTools_MCP_type_text
+  params:
+    - name: text
+      type: string
+      required: true
+      description: "要输入的文本内容"
+    - name: submitKey
+      type: string
+      description: "输入后是否按提交键（Enter/Tab 等）"
+
+switch_tab:
+  display: "切换标签页"
+  description: "在多个浏览器标签页之间切换"
+  patterns:
+    - "切换到第 {index} 个标签"
+    - "切换标签页"
+    - "打开新标签页"
+  mcp: mcp_Chrome_DevTools_MCP_select_page
+  params:
+    - name: pageId
+      type: number
+      description: "标签页 ID 或索引"
+
+close_tab:
+  display: "关闭标签页"
+  description: "关闭当前或指定的浏览器标签页"
+  patterns:
+    - "关闭当前标签"
+    - "关闭第 {index} 个标签"
+  mcp: mcp_Chrome_DevTools_MCP_close_page
+  params:
+    - name: pageId
+      type: number
+      description: "要关闭的标签页 ID"
+
+# ============================================================
+# 十、自定义脚本执行
+# ============================================================
+
+execute_script:
+  display: "执行 JavaScript"
+  description: "在页面上下文中执行自定义 JavaScript 代码"
+  patterns:
+    - "执行脚本 {script}"
+    - "运行 JS {script}"
+    - "evaluate {expression}"
+  mcp: mcp_Chrome_DevTools_MCP_evaluate_script
+  params:
+    - name: function
+      type: string
+      required: true
+      description: "要执行的 JavaScript 函数（箭头函数格式）"
+  security_warning: "⚠️ 此动作可执行任意代码，请确保脚本来源可信"
+
+get_console_logs:
+  display: "获取控制台日志"
+  description: "读取浏览器的 console 日志输出"
+  patterns:
+    - "查看控制台日志"
+    - "获取日志"
+    - "检查 console 输出"
+    - "有没有报错"
+  mcp: mcp_Chrome_DevTools_MCP_list_console_messages
+  params:
+    - name: types
+      type: array
+      default: ["error", "warn"]
+      description: "要获取的日志类型（log/warn/error/info）"
+
+# ============================================================
+# 扩展指南
+# ============================================================
+#
+# 如何添加自定义动作：
+#
+# 1. 在此文件末尾添加新的动作定义块：
+#    your_custom_action:
+#      display: "动作显示名称"
+#      patterns:
+#        - "自然语言模式1 {param}"
+#        - "自然语言模式2 {param}"
+#      mcp: 实际MCP工具名
+#      params:
+#        - name: param1
+#          type: string|number|boolean|element|array|filepath
+#          required: true/false
+#          description: "参数说明"
+#
+# 2. 保存后，testcase-modeler 和 testcase-agent 会自动识别新动作
+#
+# 3. 在 YAML 测试用例中使用：
+#    steps:
+#      - step: N
+#        action: your_custom_action
+#        ...
+#
+# 注意事项：
+# - 动作名必须使用 snake_case 格式
+# - patterns 支持中文和英文
+# - mcp 字段必须指向实际存在的 Chrome DevTools MCP 工具
+# - 敏感参数（如密码）应使用环境变量 ${VAR_NAME}

@@ -1,0 +1,188 @@
+# 资产评估申请 - 正常路径测试
+# 示例用例：演示完整的 YAML 结构和最佳实践
+
+test_id: "ASSET-EVAL-001-apply-normal"
+title: "资产评估申请正常提交流程"
+priority: "P0"
+tags: ["资产评估", "申请流程", "正常路径", "E2E"]
+author: "通过对话录入（示例）"
+
+# 前置状态感知
+context_check:
+  login_url: "http://uniportal.sjjk.com.cn"
+  home_indicator: "统一门户（新）"
+  credentials:
+    username: "${TEST_USER}"
+    password: "${TEST_PASS}"
+  captcha_required: false
+
+# 测试步骤
+steps:
+  # ===== 步骤 1：打开统一门户 =====
+  - step: 1
+    desc: "打开统一门户登录页面"
+    action: navigate
+    url: "http://uniportal.sjjk.com.cn"
+    assertion:
+      type: text_contains
+      expected: "欢迎登录"
+
+  # ===== 步骤 2：输入用户名 =====
+  - step: 2
+    desc: "输入用户名"
+    action: fill
+    target: "用户名输入框"
+    value: "${TEST_USER}"
+    locator:
+      uid_cache_key: "username_input"
+    assertion:
+      type: field_filled
+
+  # ===== 步骤 3：输入密码 =====
+  - step: 3
+    desc: "输入密码"
+    action: fill
+    target: "密码输入框"
+    value: "${TEST_PASS}"
+    isSensitive: true
+    locator:
+      uid_cache_key: "password_input"
+    assertion:
+      type: field_filled
+
+  # ===== 步骤 4：点击登录按钮 =====
+  - step: 4
+    desc: "点击登录按钮"
+    action: click
+    target: "登录按钮"
+    locator:
+      uid_cache_key: "login_button"
+    wait_after:
+      type: navigation
+      timeout: 10000
+    assertion:
+      type: text_contains
+      expected: "统一门户（新）"
+
+  # ===== 步骤 5：进入资产评估系统 =====
+  - step: 5
+    desc: "点击资产评估系统入口"
+    action: click
+    target: "资产评估系统"
+    locator:
+      uid_cache_key: "asset_eval_system_link"
+    wait_after:
+      type: navigation
+      timeout: 8000
+    assertion:
+      type: text_contains
+      expected: "资产处置及评估系统"
+
+  # ===== 步骤 6：展开一级菜单"资产评估" =====
+  - step: 6
+    desc: "展开左侧菜单'资产评估'"
+    action: click
+    target: "资产评估菜单"
+    locator:
+      uid_cache_key: "menu_asset_eval"
+    assertion:
+      type: element_visible
+      expected: "资产评估核准"
+
+  # ===== 步骤 7：展开二级菜单"资产评估核准" =====
+  - step: 7
+    desc: "展开子菜单'资产评估核准'"
+    action: click
+    target: "资产评估核准"
+    locator:
+      uid_cache_key: "menu_asset_eval_approval"
+    assertion:
+      type: element_visible
+      expected: "核准申请"
+
+  # ===== 步骤 8：点击"核准申请"页面 =====
+  - step: 8
+    desc: "点击'核准申请'菜单项，打开列表页"
+    action: click
+    target: "核准申请"
+    locator:
+      uid_cache_key: "menu_approval_apply"
+    wait_after:
+      type: navigation
+      timeout: 5000
+    assertion:
+      type: text_contains
+      expected: "项目名称"
+
+  # ===== 步骤 9：点击"新增"按钮 =====
+  - step: 9
+    desc: "点击新增按钮，打开申请表单"
+    action: click
+    target: "新增申请按钮"
+    locator:
+      uid_cache_key: "btn_add_new"
+    assertion:
+      type: element_visible
+      expected: "项目名称"
+
+  # ===== 步骤 10：填写项目名称 =====
+  - step: 10
+    desc: "填写项目名称字段"
+    action: fill
+    target: "项目名称输入框"
+    value: "${TEST_PROJECT_NAME}"
+    locator:
+      uid_cache_key: "input_project_name"
+    assertion:
+      type: field_filled
+
+  # ===== 步骤 11：填写评估金额 =====
+  - step: 11
+    desc: "填写评估金额"
+    action: fill
+    target: "金额输入框"
+    value: "${TEST_AMOUNT}"
+    locator:
+      uid_cache_key: "input_amount"
+    assertion:
+      type: field_filled
+
+  # ===== 步骤 12：选择评估类型（下拉框）=====
+  - step: 12
+    desc: "选择评估类型为'整体资产评估'"
+    action: select_option
+    target: "评估类型下拉框"
+    option: "整体资产评估"
+    locator:
+      uid_cache_key: "select_eval_type"
+    assertion:
+      type: element_text
+      expected: "整体资产评估"
+
+  # ===== 步骤 13：点击提交按钮 =====
+  - step: 13
+    desc: "点击提交按钮，保存申请信息"
+    action: click
+    target: "提交按钮"
+    locator:
+      uid_cache_key: "btn_submit"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      # 断言 1：显示成功提示
+      - type: toast_visible
+        expected: "保存成功"
+        confidence: high
+      # 断言 2：网络请求校验（深度验证）
+      - type: network_called
+        url_pattern: "/api/asset-eval/apply*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+# 后置清理
+teardown:
+  - action: screenshot
+    name: "apply-normal-result-{timestamp}.png"
+    fullPage: true
