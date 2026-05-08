@@ -60,7 +60,6 @@ pdd-skills-v3/
 │   │   ├── expert-mysql/
 │   │   ├── expert-security/
 │   │   ├── expert-performance/
-│   │   ├── expert-testcases/
 │   │   ├── expert-ruoyi-permission/
 │   │   ├── software-architect/
 │   │   ├── software-engineer/

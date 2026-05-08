@@ -4,3 +4,5 @@
 .pdd/cache/
 .specs/.cache/
 *.pdd-report.md
+node_modules/
+docs/pdd-skills-v3-整体分析报告.md

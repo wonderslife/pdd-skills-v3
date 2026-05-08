@@ -1,1 +1,0 @@
-{"name": "expert-testcases", "version": "1.0.0", "category": "expert", "description": "E2E test case generation expert. Automatically generates 6-level test case sets (API/Integration/UI/E2E/Boundary/Performance) with runnable pytest code from source code or PRD.", "triggers": ["生成测试用例", "写测试", "E2E测试", "API测试", "集成测试", "回归测试", "测试覆盖率", "测试数据"]}

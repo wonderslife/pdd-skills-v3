@@ -276,7 +276,6 @@ pdd vm export --format csv # 导出数据 / Export data
 | **expert-vue3** | Vue3 组件开发/状态管理/性能优化 | Vue3 生态最佳实践 |
 | **expert-springcloud** | 微服务架构/服务治理/配置中心/网关路由 | Spring Cloud Alibaba 全栈解决方案 |
 | **expert-bug-fixer** | Bug 根因分析/修复方案生成/回归测试建议 | 智能诊断 + 修复策略推荐 |
-| **expert-testcases** | 测试用例设计/边界值分析/覆盖率优化 | 多维度测试策略，自动化测试生成 |
 | **software-architect** | 架构模式设计/技术选型/性能权衡 | 生产级架构设计，60+ 界面组件模式 |
 | **software-engineer** | 代码实现/重构优化/设计模式应用 | 生产级代码，清洁架构 |
 | **system-architect** | 系统架构设计/模块化设计/安全最佳实践 | PEP8/ESLint 标准，项目初始化 |
@@ -442,7 +441,6 @@ skills/
 │   ├── expert-vue3/        # Vue3前端 / Vue3 frontend
 │   ├── expert-springcloud/ # SpringCloud微服务 / Microservices
 │   ├── expert-bug-fixer/   # Bug修复 / Bug fixing
-│   ├── expert-testcases/   # 测试用例 / Test cases
 │   ├── software-architect/ # 软件架构 / Software architecture
 │   ├── software-engineer/  # 软件工程 / Software engineering
 │   └── system-architect/   # 系统架构 / System architecture
