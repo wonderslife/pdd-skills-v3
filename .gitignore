@@ -1,9 +1,78 @@
-.pdd/cache/reports/linter-report-1775185289318.md
+# ============================================================
+# AI Test Framework - Git 忽略配置
+# ============================================================
 
-# PDD
-.pdd/cache/
-.specs/.cache/
-*.pdd-report.md
-node_modules/
-docs/pdd-skills-v3-整体分析报告.md
-docs/superpowers/specs/2026-05-08-pdd-test-skill-design.md
+# ---- 环境变量和敏感信息（绝对禁止提交！）----
+.env.local
+.env.production
+*.env.secret
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ---- 虚拟环境 ----
+venv/
+ENV/
+env/
+.venv/
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ---- 测试产物 ----
+test-result/
+snapshots/
+*.png
+*.jpg
+screenshots/
+coverage/
+htmlcov/
+.coverage
+.pytest_cache/
+
+# ---- 日志 ----
+*.log
+logs/
+
+# ---- 操作系统 ----
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---- 临时文件 ----
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# ---- MCP 和浏览器数据 ----
+.mcp_cache/
+browser-data/
+user-data/
