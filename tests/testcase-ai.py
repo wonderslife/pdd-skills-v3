@@ -73,13 +73,37 @@ except ImportError:
 # ============================================================
 # MCP 配置区
 # ============================================================
+# Chrome DevTools MCP 连接参数（Incognito 隐私模式）
+# ============================================================
 
-SERVER_PARAMS = StdioServerParameters(
-    name="Chrome DevTools MCP",
-    command="npx",
-    args=["-y", "chrome-devtools-mcp@latest"],
-    env=None,
-)
+def _create_incognito_server_params() -> StdioServerParameters:
+    """创建使用隐私模式 Chrome 的 MCP 连接参数
+
+    chrome-devtools-mcp 通过 --chromeArg=VALUE 格式传递额外 Chrome 启动参数
+    参考: https://github.com/ChromeDevTools/chrome-devtools-mcp/pull/338
+
+    正确格式: --chromeArg=--incognito (不是 --chromeArg --incognito)
+    """
+    npx_args = [
+        "-y", "chrome-devtools-mcp@latest",
+        "--isolated",                    # 使用临时用户数据目录（类似 Incognito）
+        "--chromeArg=--incognito",       # 隐私模式
+        "--chromeArg=--no-first-run",
+        "--chromeArg=--no-default-browser-check",
+        "--chromeArg=--disable-sync",
+        "--chromeArg=--disable-extensions",
+        "--chromeArg=--window-size=1920,1080",
+    ]
+
+    return StdioServerParameters(
+        name="Chrome DevTools MCP (Incognito)",
+        command="npx",
+        args=npx_args,
+        env=None,
+    )
+
+
+SERVER_PARAMS = _create_incognito_server_params()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
