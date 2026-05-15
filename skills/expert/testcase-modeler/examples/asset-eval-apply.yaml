@@ -1,5 +1,5 @@
 # 资产评估申请 - 正常路径测试
-# 示例用例：演示完整的 YAML 结构和最佳实践
+# 示例用例：演示完整的 YAML 结构和最佳实践（v2.0 含 .env + el-select）
 
 test_id: "ASSET-EVAL-001-apply-normal"
 title: "资产评估申请正常提交流程"
@@ -65,7 +65,7 @@ steps:
     action: click
     target: "资产处置及评估系统"
     locator:
-      uid: "6_422"
+      uid_cache_key: "asset_eval_entry"   # v2.0: 使用缓存key而非硬编码uid
     wait_after:
       type: navigation
       timeout: 8000
@@ -73,35 +73,35 @@ steps:
       type: text_contains
       expected: "资产处置及评估系统"
 
-  # ===== 步骤 6：展开一级菜单（保留UID - 导航结构相对稳定）=====
+  # ===== 步骤 6：展开一级菜单 =====
   - step: 6
     desc: "展开左侧菜单'资产评估'"
     action: click
     target: "资产评估"
     locator:
-      uid: "7_22"
+      uid_cache_key: "menu_asset_eval"
     assertion:
       type: element_visible
       expected: "资产评估核准"
 
-  # ===== 步骤 7：展开二级菜单（保留UID - 导航结构相对稳定）=====
+  # ===== 步骤 7：展开二级菜单 =====
   - step: 7
     desc: "展开子菜单'资产评估核准'"
     action: click
     target: "资产评估核准"
     locator:
-      uid: "15_1"
+      uid_cache_key: "menu_asset_approval"
     assertion:
       type: element_visible
       expected: "核准申请"
 
-  # ===== 步骤 8：点击"核准申请"页面（保留UID - 导航链接稳定）=====
+  # ===== 步骤 8：点击"核准申请"页面 =====
   - step: 8
     desc: "点击'核准申请'菜单项，打开列表页"
     action: click
     target: "核准申请"
     locator:
-      uid: "23_1"
+      uid_cache_key: "menu_apply_page"
     wait_after:
       type: navigation
       timeout: 5000
@@ -109,7 +109,7 @@ steps:
       type: text_contains
       expected: "项目名称"
 
-  # ===== 步骤 9：点击"新增"按钮（去UID - 靠文本匹配）=====
+  # ===== 步骤 9：点击"新增"按钮 =====
   - step: 9
     desc: "点击新增按钮，打开申请表单"
     action: click
@@ -118,7 +118,7 @@ steps:
       type: element_visible
       expected: "项目名称"
 
-  # ===== 步骤 10：填写项目名称（去UID - 靠placeholder精确匹配）=====
+  # ===== 步骤 10：填写项目名称（P1 精确文本匹配）=====
   - step: 10
     desc: "填写项目名称字段"
     action: fill
@@ -127,7 +127,7 @@ steps:
     assertion:
       type: field_filled
 
-  # ===== 步骤 11：填写评估金额（去UID - 靠placeholder精确匹配）=====
+  # ===== 步骤 11：填写评估金额（spinbutton 数字输入框）=====
   - step: 11
     desc: "填写评估金额"
     action: fill
@@ -136,17 +136,17 @@ steps:
     assertion:
       type: field_filled
 
-  # ===== 步骤 12：选择评估方法（去UID - 靠placeholder精确匹配）=====
+  # ===== 步骤 12：选择评估方法（el-select 多选框 — select_option 动作）=====
   - step: 12
     desc: "选择评估方法为'市场法'"
     action: select_option
     target: "请选择评估方法"
-    option: "市场法"
+    option: "市场法"                # 中文显示名，框架自动处理 el-select
     assertion:
       type: element_text
       expected: "市场法"
 
-  # ===== 步骤 13：点击提交按钮（去UID - 靠文本匹配）=====
+  # ===== 步骤 13：点击提交按钮 =====
   - step: 13
     desc: "点击提交按钮，保存申请信息"
     action: click

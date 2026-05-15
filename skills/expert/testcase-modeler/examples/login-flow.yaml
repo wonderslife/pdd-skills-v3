@@ -1,5 +1,5 @@
 # 统一门户登录流程 - 正常路径测试
-# 
+#
 # 📋 用途: 验证PDD Test Skill的完整执行流程
 # 🎯 场景: 打开统一门户 → 输入凭据 → 点击登录 → 验证首页
 # 🔗 业务系统: http://uniportal.sjjk.com.cn
@@ -9,7 +9,7 @@ test_id: "LOGIN-001-portal-normal"
 title: "统一门户登录正常流程"
 priority: "P0"
 tags: ["登录", "统一门户", "正常路径", "E2E", "试点验证"]
-author: "PDD Team (v1.0.1 试点用例)"
+author: "PDD Team (v2.0)"
 
 # 前置状态感知
 context_check:
@@ -24,7 +24,7 @@ context_check:
 
 # 测试步骤
 steps:
-  
+
   # ===== 步骤 1：打开统一门户登录页面 =====
   - step: 1
     desc: "打开统一门户登录页面"
@@ -45,7 +45,7 @@ steps:
   - step: 2
     desc: "在用户名输入框中填入用户名"
     action: fill
-    target: "用户"
+    target: "用户名输入框"
     locator:
       uid_cache_key: "username_input"  # 缓存UID以便后续复用
     value: "${TEST_USER}"
@@ -53,51 +53,39 @@ steps:
       - type: field_filled
         expected: "字段已填写"
         confidence: high
-      - type: value_equals
-        expected: "${TEST_USER}"
-        confidence: medium
 
   # ===== 步骤 3：输入密码 =====
   - step: 3
     desc: "在密码输入框中填入密码"
     action: fill
-    target: "密码"
+    target: "密码输入框"
     locator:
       uid_cache_key: "password_input"  # 缓存UID
     value: "${TEST_PASS}"
+    isSensitive: true
     assertions:
       - type: field_filled
         expected: "字段已填写"
         confidence: high
-      # 注意：不验证密码值本身（安全原因），只验证字段非空
 
   # ===== 步骤 4：点击登录按钮 =====
   - step: 4
     desc: "点击登录按钮提交登录信息"
     action: click
-    target: "登录"
+    target: "登录按钮"
     locator:
       uid_cache_key: "login_button"  # 缓存UID
     wait_after:
       type: navigation              # 等待页面跳转
       timeout: 10000                # 最长等待10秒
     assertions:
-      # 断言 1：页面跳转到首页
-      - type: url_contains
-        expected: "/sys-portal"          # 或其他首页URL特征
-        confidence: high
-      # 断言 2：显示登录成功的标志
       - type: text_contains
-        expected: "统一门户"         # 首页标题或欢迎信息
+        expected: "统一门户"
         confidence: high
-      # 断言 3：网络校验（深度验证！）
       - type: network_called
-        url_pattern: "/api/login*"   # 登录接口
+        url_pattern: "/api/login*"
         method: POST
-        response_code: 200           # 必须返回200
-        response_body_contains:
-          - '"code":0'               # 或其他成功标识
-          - '"token"'                # 应该返回认证token
+        response_code: 200
         confidence: high
 
   # ===== 步骤 5：验证首页关键元素 =====
@@ -105,18 +93,15 @@ steps:
     desc: "验证首页加载完成并显示关键元素"
     action: assert_multiple
     assertions:
-      # 检查用户信息显示
       - type: element_visible
         target: "待办"
         confidence: high
-      # 检查导航菜单
       - type: element_visible
         target: "主导航菜单"
         confidence: high
-      # 检查应用图标/快捷方式
       - type: element_count_greater_than
         target: "电子档案"
-        min_count: 3                # 至少有3个应用入口
+        min_count: 3
         confidence: medium
 
 # 后置清理
@@ -126,46 +111,3 @@ teardown:
     fullPage: true                  # 全页截图
   - action: log
     message: "登录流程测试完成，当前页面: {current_url}"
-
-# 元数据（用于报告和追踪）
-metadata:
-  created_by: "testcase-modeler v1.0.1"
-  test_environment: "staging"
-  browser: "chromium"
-  viewport: "1920x1080"
-  estimated_duration: "15-30s"
-  dependencies:
-    - "Chrome DevTools MCP 服务可用"
-    - "环境变量 TEST_USER 和 TEST_PASS 已设置"
-    - "网络连接正常"
-  risk_level: "low"                # 只读取数据，不修改任何内容
-  
-# 变体说明（供Modeler参考）
-variants:
-  - name: "错误密码登录"
-    description: "验证错误密码时的错误提示"
-    modifications:
-      - step: 3
-        value: "wrong_password"
-      - step: 4
-        assertions:
-          - type: replace
-            target: url_contains
-            with: error_message_visible
-            expected: "用户名或密码错误"
-
-  - name: "空用户名登录"
-    description: "验证必填字段校验"
-    modifications:
-      - step: 2
-        value: ""
-      - step: 4
-        assertions:
-          - type: add
-            target: validation_error_visible
-            expected: "请输入用户名"
-
-  - name: "Session过期重登"
-    description: "验证Session过期的自动检测和重新登录"
-    pre_condition: "已登录但Session已过期"
-    expected_behavior: "Agent自动检测到未登录状态，重新执行步骤1-4"

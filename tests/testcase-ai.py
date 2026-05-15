@@ -3178,7 +3178,7 @@ async def run_all(targets: List[Dict], env_overrides: Dict[str, str] = None,
 
 def print_usage():
     print("=" * 70)
-    print("  AI Test Framework v2.1 - 通用 AI 测试框架 (含思维链)")
+    print("  AI Test Framework v2.1 - 通用 AI 测试框架 (含录制模式)")
     print("=" * 70)
     print()
     print("用法:")
@@ -3187,6 +3187,10 @@ def print_usage():
     print(f"  python testcase-ai.py <目录>                     运行目录")
     print(f"  python testcase-ai.py <yaml路径>                 运行单个文件")
     print(f"  python testcase-ai.py --continue                 失败后继续执行")
+    print()
+    print("🎬 录制模式 (交互式操作录制):")
+    print(f"  python testcase-ai.py --record                   录制到 testcases/recorded/")
+    print(f"  python testcase-ai.py --record <路径>             录制到指定路径")
     print()
     print("思维链选项:")
     print(f"  python testcase-ai.py --think <yaml>              启用 LLM 思维链")
@@ -3221,6 +3225,11 @@ def print_usage():
             print(f"     └─ {fi['filename']}")
 
 
+# ============================================================
+# Recorder Mode - delegated to tests/recorder.py (SRP extraction)
+# ============================================================
+
+
 if __name__ == "__main__":
     register_builtin_actions()
     register_builtin_assertions()
@@ -3229,6 +3238,19 @@ if __name__ == "__main__":
 
     if not args:
         print_usage()
+        sys.exit(0)
+
+    # ===== 录制模式（优先于其他模式）=====
+    if "--record" in args:
+        args.remove("--record")
+        output = args[0] if args else "testcases/recorded/testcase.yaml"
+        if not output.endswith((".yaml", ".yml")):
+            output = os.path.join(output, "testcase.yaml") if not output.endswith(".yaml") else output
+        import importlib.util
+        _spec = importlib.util.spec_from_file_location("recorder", os.path.join(os.path.dirname(__file__), "recorder.py"))
+        _recorder = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_recorder)
+        asyncio.run(_recorder.run_record_mode(output))
         sys.exit(0)
 
     targets = []
