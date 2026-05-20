@@ -28,6 +28,23 @@ import asyncio
 import json
 import os
 import re
+from pathlib import Path
+
+
+def _safe_json_dumps(obj, **kwargs):
+    """JSON序列化，自动处理非标准类型（date/datetime/bytes等）"""
+    def _default(o):
+        if hasattr(o, 'isoformat'):
+            return o.isoformat()
+        if isinstance(o, (bytes, bytearray)):
+            return o.decode('utf-8', errors='replace')
+        if hasattr(o, '__dict__'):
+            return o.__dict__
+        return str(o)
+    try:
+        return json.dumps(obj, **kwargs)
+    except (TypeError, ValueError):
+        return json.dumps(obj, default=_default, **kwargs)
 import shutil
 import sys
 import time
@@ -92,8 +109,18 @@ def _create_incognito_server_params() -> StdioServerParameters:
         "--chromeArg=--no-default-browser-check",
         "--chromeArg=--disable-sync",
         "--chromeArg=--disable-extensions",
-        "--chromeArg=--window-size=1920,1080",
+        "--chromeArg=--disable-component-extensions-with-background-pages",
+        "--chromeArg=--disable-popup-blocking",
+        "--chromeArg=--ignore-certificate-errors",         # 忽略证书错误（HTTPS）
+        "--chromeArg=--ignore-certificate-errors-spki-list",
+        "--chromeArg=--disable-web-security",              # 允许跨域和不安全连接
+        "--chromeArg=--allow-running-insecure-content",    # 允许 HTTP 混合内容
+        "--chromeArg=--unsafely-treat-insecure-origin-as-secure",  # 将 HTTP 视为安全
     ]
+
+    viewport_w = os.environ.get("BROWSER_VIEWPORT_WIDTH") or os.environ.get("BROWSER_WIDTH", "1366")
+    viewport_h = os.environ.get("BROWSER_VIEWPORT_HEIGHT") or os.environ.get("BROWSER_HEIGHT", "768")
+    npx_args.append(f"--chromeArg=--window-size={viewport_w},{viewport_h}")
 
     return StdioServerParameters(
         name="Chrome DevTools MCP (Incognito)",
@@ -267,6 +294,127 @@ def resolve_env_vars(value):
         return resolved
 
     return re.sub(r"\$\{([^}]+)\}", replacer, value)
+
+
+def _resolve_includes(testcase: Dict, base_dir: str, depth: int = 0) -> Dict:
+    """解析 _include 字段，将共享步骤合并到当前测试用例
+    
+    Args:
+        testcase: 已加载的 YAML 字典
+        base_dir: 基础目录（用于解析相对路径）
+        depth: 当前递归深度（防止循环引用，最大3层）
+    
+    Returns:
+        合并后的 testcase 字典（steps 已包含被引用文件的步骤）
+    """
+    indent = "  " * depth
+    current_file = testcase.get("test_id", "?")
+    
+    from pathlib import Path
+    
+    log(f"{indent}[_include] 开始解析 | 文件={current_file} | 深度={depth}", 1)
+    
+    if depth > 3:
+        log(f"{indent}[_include] ❌ 超过最大嵌套深度(3)，停止递归", 2)
+        return testcase
+
+    include_path = testcase.get("_include")
+    if not include_path:
+        log(f"{indent}[_include] 无 _include 字段，跳过", 3)
+        return testcase
+
+    if not isinstance(include_path, str):
+        log(f"{indent}[_include] ❌ _include 必须是字符串路径，实际类型={type(include_path).__name__}", 2)
+        return testcase
+
+    resolved_path = Path(base_dir) / include_path
+    abs_path = str(resolved_path.resolve())
+    
+    if not resolved_path.exists():
+        log(f"{indent}[_include] ❌ 引用文件不存在: {abs_path}", 1)
+        del testcase["_include"]
+        return testcase
+
+    log(f"{indent}[_include] 📂 加载共享模块:", 1)
+    log(f"{indent}         路径: {abs_path}", 1)
+
+    with open(resolved_path, "r", encoding="utf-8") as _f:
+        included = yaml.safe_load(_f)
+
+    if not included or not isinstance(included, dict):
+        log(f"{indent}[_include] ❌ 引用文件格式错误(非dict或空): {include_path}", 2)
+        del testcase["_include"]
+        return testcase
+
+    included_id = included.get("test_id", "?")
+    log(f"{indent}[_include] 📋 共享模块 ID: {included_id}", 2)
+
+    included = _resolve_includes(included, str(resolved_path.parent), depth + 1)
+
+    included_steps = included.get("steps", [])
+    current_steps = testcase.get("steps", [])
+
+    log(f"{indent}[_include] ── 合并前统计 ──", 1)
+    log(f"{indent}         共享模块({included_id}) 步骤数: {len(included_steps)}", 1)
+    log(f"{indent}         当前文件({current_file}) 步骤数: {len(current_steps)}", 1)
+
+    if included_steps:
+        log(f"{indent}         共享步骤明细:", 2)
+        for i, s in enumerate(included_steps):
+            desc = s.get("desc", s.get("target", "?"))
+            action = s.get("action", "?")
+            step_num = s.get("step", "?")
+            log(f"{indent}           [{step_num}] {action}: {desc}", 2)
+
+    if current_steps:
+        log(f"{indent}         当前文件步骤明细:", 2)
+        for i, s in enumerate(current_steps):
+            desc = s.get("desc", s.get("target", "?"))
+            action = s.get("action", "?")
+            step_num = s.get("step", "?")
+            log(f"{indent}           [{step_num}] {action}: {desc}", 2)
+
+    merged_steps = list(included_steps) + list(current_steps)
+    step_offset = len(included_steps)
+    
+    renumbered = []
+    for idx, s in enumerate(merged_steps):
+        old_num = s.get("step", 0)
+        new_num = old_num
+        
+        source_tag = ""
+        if idx < step_offset:
+            source_tag = f"[共享:{included_id}]"
+        else:
+            source_tag = "[本文件]"
+            if old_num:
+                try:
+                    new_num = int(old_num) + step_offset
+                    s["step"] = new_num
+                except (TypeError, ValueError):
+                    pass
+        
+        desc = s.get("desc", s.get("target", "?"))
+        action = s.get("action", "?")
+        
+        renumbered.append(f"  #{new_num} {source_tag} {action}: {desc}")
+        
+        log(f"{indent}         → #{new_num} {source_tag} "
+            f"action={action} target='{s.get('target', '')}' "
+            f"(原编号={old_num})", 3)
+
+    testcase["steps"] = merged_steps
+    testcase["_included_from"] = include_path
+    del testcase["_include"]
+
+    log(f"{indent}[_include] ✅ 合并完成:", 1)
+    log(f"{indent}         总计: {len(merged_steps)} 步 (共享{len(included_steps)} + 本文件{len(current_steps)})", 1)
+    log(f"{indent}         步骤偏移量: +{step_offset}", 2)
+    log(f"{indent}         最终步骤序列:", 2)
+    for line in renumbered:
+        log(f"{indent}           {line}", 2)
+
+    return testcase
 
 
 def _load_env_from_file():
@@ -911,7 +1059,7 @@ class ThinkChainEngine:
         """格式化执行结果"""
         parts = [
             f"- MCP 工具: {result.mcp_tool}",
-            f"- 参数: {json.dumps(result.mcp_args, ensure_ascii=False)[:200]}",
+            f"- 参数: {_safe_json_dumps(result.mcp_args, ensure_ascii=False)[:200]}",
         ]
         if result.output:
             output_preview = result.output[:300] + "..." if len(result.output) > 300 else result.output
@@ -1577,6 +1725,7 @@ def _resolve_uid(step: Dict, parser, cache, prefer_role: Optional[str] = None,
                 require_interactive: Optional[bool] = None) -> Optional[str]:
     """统一UID解析（优先级从高到低）:
       P0: locator.uid       YAML强制定位，零开销
+      P0.5: locator.aria_label  通过aria-label属性定位（用于暴露后的隐藏元素）
       P1: target精确匹配    target文本与页面元素文本包含匹配
       P2: desc兜底          用步骤描述做模糊匹配
       P3: text_contains     最宽松的文本包含搜索
@@ -1590,6 +1739,16 @@ def _resolve_uid(step: Dict, parser, cache, prefer_role: Optional[str] = None,
             return direct_uid
         else:
             log(f"[Direct-UID-FAIL] uid={direct_uid} 不在当前页面元素中，降级到target匹配", 2)
+
+    aria_label = locator.get("aria-label") or locator.get("aria_label")
+    if aria_label:
+        for uid, elem in parser.elements.items():
+            elem_aria = getattr(elem, 'aria_label', None) or ''
+            if (elem.text and aria_label.lower() in elem.text.lower()) or \
+               (elem.name and aria_label.lower() in elem.name.lower()):
+                log(f"[ARIA-LABEL] '{aria_label}' -> {uid} (text='{elem.text[:30] if elem.text else ''}')", 2)
+                return uid
+        log(f"[ARIA-LABEL-FAIL] '{aria_label}' 未找到匹配元素", 2)
 
     if require_interactive is None:
         action = (step.get("action") or "").lower()
@@ -1733,7 +1892,7 @@ def _build_scroll_args(action, step, parser, cache) -> Dict:
     return {"function": scripts.get(direction, "() => window.scrollTo(0, 0)")}
 
 def _build_script_args(action, step, parser, cache) -> Dict:
-    fn = step.get("function", step.get("script", "() => {}"))
+    fn = step.get("function", step.get("script", step.get("value", "() => {}")))
     return {"function": fn}
 
 def _build_select_page_args(action, step, parser, cache) -> Dict:
@@ -1766,6 +1925,10 @@ def register_builtin_actions():
         ("choose", "fill", _build_select_option_args, True),
         ("upload_file", "upload_file", _build_upload_args, True),
         ("upload", "upload_file", _build_upload_args, True),
+        ("el_upload", "el_upload", _build_upload_args, True),
+        ("el_upload_file", "el_upload", _build_upload_args, True),
+        ("el_date", "fill", _build_fill_args, True),
+        ("el_date_picker", "fill", _build_fill_args, True),
         ("hover", "hover", _build_hover_args, True),
         ("drag_drop", "drag", _build_drag_args, True),
         ("press_key", "press_key", _build_press_key_args, False),
@@ -1986,6 +2149,12 @@ class ActionExecutor:
         if action_type == "assert_multiple":
             return await self._execute_assert_multiple(step, step_num, desc, start_time)
 
+        if action_type in ("el_upload", "el_upload_file"):
+            return await self._execute_el_upload(step, step_num, desc, start_time)
+
+        if action_type in ("el_date", "el_date_picker"):
+            return await self._execute_el_date(step, step_num, desc, start_time)
+
         mcp_entry = ActionRegistry.get(action_type)
 
         if not mcp_entry:
@@ -2058,7 +2227,7 @@ class ActionExecutor:
                 mcp_args["includeSnapshot"] = False
 
             log(f"  🔧 MCP工具: {mcp_tool_name}", 2)
-            log(f"  📝 参数: {json.dumps(mcp_args, ensure_ascii=False, indent=2)}", 2)
+            log(f"  📝 参数: {_safe_json_dumps(mcp_args, ensure_ascii=False, indent=2)}", 2)
 
             readonly_picker_result = None
             if action_type in ("select_option", "select", "choose") and "uid" in mcp_args:
@@ -2575,6 +2744,621 @@ class ActionExecutor:
                 return pu
         return None
 
+    async def _execute_el_upload(self, step: Dict, step_num: int,
+                                  desc: str, start_time: float) -> StepResult:
+        """Element UI el-upload 文件上传（增强版方法2 - 一步完成）
+
+        内部自动执行三步操作:
+          1. click 上传按钮
+          2. execute_script 暴露隐藏的 input[type=file]
+          3. upload_file 上传文件
+
+        YAML 用法:
+          - step: N
+            action: el_upload
+            target: 上传按钮文本或uid
+            path: C:\\path\\to\\file.docx
+            file_label: 核准申请文件    # 可选，用于定位文件输入框所在行
+            _locator:
+              uid: "60_370"              # 可选，上传按钮的uid
+            wait_after:
+              type: time
+              duration: 3000
+        """
+        log(f"  📎 [el_upload] Element UI 文件上传开始", 1)
+
+        target = step.get("target", "")
+        file_path = resolve_env_vars(step.get("path", ""))
+        file_label = step.get("file_label", step.get("row_label", ""))
+        locator = step.get("_locator", {}) or {}
+        button_uid = locator.get("uid")
+        wait_after = step.get("wait_after", {})
+        wait_duration = int(wait_after.get("duration", 2000)) if wait_after else 2000
+
+        if not file_path:
+            elapsed = int((time.time() - start_time) * 1000)
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_upload",
+                status=StepStatus.ERROR, mcp_tool="(el_upload)",
+                error="Missing required parameter: 'path' (file path to upload)",
+                duration_ms=elapsed,
+            )
+
+        log(f"  📎 [el_upload] 文件路径: {file_path}", 2)
+        if file_label:
+            log(f"  📎 [el_upload] 文件标签(行定位): {file_label}", 2)
+        if button_uid:
+            log(f"  📎 [el_upload] 按钮UID: {button_uid}", 2)
+
+        sub_steps = []
+
+        try:
+            await self._take_snapshot()
+            await asyncio.sleep(0.3)
+
+            step_start_time = time.time()
+            log(f"  📎 ═════════════════════ el_upload 开始 ═════════════════════", 1)
+            log(f"  📎 📋 参数: target='{target}' | file_label='{file_label}'", 2)
+            log(f"  📎 📁 文件: {os.path.basename(file_path)} (存在:{os.path.isfile(file_path)})", 2)
+            log(f"  📎 🔖 UID: {button_uid or '(未指定)'} | 等待: {wait_duration}ms | 元素数: {len(self.parser.elements)}", 2)
+
+            url_before = getattr(self, 'last_snapshot_url', '') or ''
+            log(f"  📎 🌐 执行前URL: {url_before} | 耗时: {(time.time()-step_start_time)*1000:.0f}ms", 2)
+
+            if url_before and ('/apply-list' in url_before or '/list' in url_before) and '/apply' not in url_before:
+                log(f"  📎 ⚠️ ═════ 检测到已在列表页！尝试提前恢复表单 ═════", 1)
+                try:
+                    await self._take_snapshot()
+                    new_btn_uid = None
+                    for uid, elem in self.parser.elements.items():
+                        elem_text = (elem.text or "") + (getattr(elem, 'description', '') or "")
+                        if elem.role == "button" and "新增" in elem_text:
+                            new_btn_uid = uid
+                            break
+                    if new_btn_uid:
+                        log(f"  📎 🔧 找到'新增'按钮 uid={new_btn_uid}，点击打开新表单...", 2)
+                        await self.session.call_tool("click", {"uid": new_btn_uid, "includeSnapshot": False})
+                        await asyncio.sleep(2000 / 1000.0)
+                        await self._take_snapshot()
+                        url_before = getattr(self, 'last_snapshot_url', '') or ''
+                        log(f"  📎 ✅ 表单页已恢复: {url_before}", 1)
+                        sub_steps.append("🔧提前恢复表单: ✅")
+                    else:
+                        log(f"  📎 ⚠️ 未找到'新增'按钮，继续执行(可能失败)", 2)
+                        sub_steps.append("🔧提前恢复: ❌未找到新增按钮")
+                except Exception as pre_err:
+                    log(f"  📎 ⚠️ 提前恢复异常: {pre_err}", 2)
+                    sub_steps.append(f"🔧提前恢复异常: {pre_err}")
+
+            sub_step_1 = f"[1/3] 点击上传按钮"
+            log(f"  📎 ── {sub_step_1} ──", 2)
+
+            click_uid = None
+            if button_uid:
+                if button_uid in self.parser.elements:
+                    click_uid = button_uid
+                    log(f"  📎 ✅ [P1-UID直击] 使用指定UID: {button_uid}", 2)
+                else:
+                    log(f"  📎 🔄 [UID漂移] '{button_uid}' 不在快照({len(self.parser.elements)}个元素)中，启动SmartMatch...", 2)
+                    click_uid = self._find_upload_button_uid(target, button_uid, file_label)
+                    if click_uid:
+                        log(f"  📎 ✅ [P2-SmartMatch] 后缀匹配成功: {button_uid} → {click_uid} (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 1)
+                    else:
+                        log(f"  📎 ⚠️ [P2-SmartMatch] 未匹配，将尝试[P3-JS按行点击]", 2)
+            else:
+                click_uid = _resolve_uid(step, self.parser, self.cache, require_interactive=True)
+                if click_uid:
+                    elem = self.parser.elements.get(click_uid)
+                    role = elem.role if elem else "?"
+                    log(f"  📎 解析到UID: {click_uid} (role={role})", 3)
+                    if role in ("radio", "checkbox"):
+                        log(f"  📎 ⚠️ 匹配到{role}而非button，尝试排除非button元素...", 2)
+                        click_uid = self._find_upload_button_uid(target, None, file_label)
+                        if click_uid:
+                            log(f"  📎 ✅ 重新匹配到UID: {click_uid}", 3)
+
+            if not click_uid:
+                if file_label:
+                    log(f"  📎 🔍 [P3-JS按行] 尝试按file_label='{file_label}'定位上传按钮...", 2)
+                    js_click_label = json.dumps(file_label, ensure_ascii=False).strip('"')
+                    js_click_fn = (
+                        "() => {"
+                        " var label = '" + js_click_label.replace("'", "\\'") + "';"
+                        " var rows = document.querySelectorAll('tr');"
+                        " for (var i = 0; i < rows.length; i++) {"
+                        "   if (rows[i].textContent.indexOf(label) !== -1) {"
+                        "     var btn = rows[i].querySelector('button');"
+                        "     if (!btn) {"
+                        "       var cells = rows[i].querySelectorAll('td');"
+                        "       for (var j = 0; j < cells.length; j++) {"
+                        "         if (cells[j].textContent.indexOf('上传') !== -1) {"
+                        "           btn = cells[j].querySelector('button');"
+                        "           if (btn) break;"
+                        "         }"
+                        "       }"
+                        "     }"
+                        "     if (btn) { btn.click(); return JSON.stringify({js_click:true,label:label}); }"
+                        "   }"
+                        " }"
+                        " return JSON.stringify({js_click:false,error:'row_not_found'});"
+                        "}"
+                    )
+                    js_click_result = await self.session.call_tool("evaluate_script", {"function": js_click_fn})
+                    js_click_content = self._extract_result_content(js_click_result)
+                    log(f"  📎 [P3-JS按行] 结果: {js_click_content[:150] if js_click_content else 'N/A'} (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 2)
+
+                    js_click_info = self._parse_json_from_mcp_response(js_click_content)
+                    if isinstance(js_click_info, dict) and js_click_info.get("js_click"):
+                        log(f"  📎 ✅ JS成功点击了 '{file_label}' 行的上传按钮", 2)
+                        sub_steps.append(f"{sub_step_1}: ✅(JS按行)")
+                        click_uid = None
+                    else:
+                        elapsed = int((time.time() - start_time) * 1000)
+                        return StepResult(
+                            step_num=step_num, desc=desc, action="el_upload",
+                            status=StepStatus.ERROR, mcp_tool="(el_upload)",
+                            error=f"Cannot find upload button for target='{target}' (UID stale, JS click also failed)",
+                            duration_ms=elapsed,
+                        )
+                else:
+                    elapsed = int((time.time() - start_time) * 1000)
+                    return StepResult(
+                        step_num=step_num, desc=desc, action="el_upload",
+                        status=StepStatus.ERROR, mcp_tool="(el_upload)",
+                        error=f"Cannot find upload button for target='{target}'",
+                        duration_ms=elapsed,
+                    )
+
+            if click_uid:
+                click_result = await self.session.call_tool("click", {
+                    "uid": click_uid,
+                    "includeSnapshot": False,
+                })
+                click_content = self._extract_result_content(click_result)
+                log(f"  📎 ✅ [MCP-click] UID={click_uid} 结果: {click_content[:60] if click_content else 'OK'} (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 2)
+            else:
+                log(f"  📎 ✅ [JS-click] 已通过JS完成按钮点击 (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 2)
+            sub_steps.append(f"{sub_step_1}: ✅")
+
+            await asyncio.sleep(0.5)
+
+            sub_step_2 = "[2/3] 暴露隐藏的文件输入框"
+            log(f"  📎 ── {sub_step_2} ── | label='{file_label or target}'", 2)
+
+            search_label = json.dumps(file_label or target, ensure_ascii=False).strip('"')
+            expose_ts = str(int(time.time() * 1000))
+
+            expose_fn = (
+                "() => {"
+                " var label = '" + search_label.replace("'", "\\'") + "';"
+                " var ts = '" + expose_ts + "';"
+                " var oldExposed = document.querySelectorAll('[data-el-upload-exposed]');"
+                " for (var oi = 0; oi < oldExposed.length; oi++) {"
+                "   oldExposed[oi].removeAttribute('data-el-upload-exposed');"
+                "   oldExposed[oi].removeAttribute('aria-label');"
+                "   oldExposed[oi].style.cssText = '';"
+                "   oldExposed[oi].setAttribute('type','file');"
+                " }"
+                " var rows = document.querySelectorAll('tr');"
+                " var fileInput = null;"
+                " var foundByRow = false;"
+                " for (var i = 0; i < rows.length; i++) {"
+                "   if (label && rows[i].textContent.indexOf(label) !== -1) {"
+                "     fileInput = rows[i].querySelector('input[type=file]');"
+                "     if (!fileInput) {"
+                "       fileInput = rows[i].closest('table') ? rows[i].closest('table').querySelector('input[type=file]') : null;"
+                "     }"
+                "     if (!fileInput) {"
+                "       fileInput = rows[i].parentElement ? rows[i].parentElement.querySelector('input[type=file]') : null;"
+                "     }"
+                "     foundByRow = !!fileInput;"
+                "     break;"
+                "   }"
+                " }"
+                " if (!fileInput) {"
+                "   var allInputs = document.querySelectorAll('input[type=file]');"
+                "   if (allInputs.length > 1 && label) {"
+                "     for (var ai = allInputs.length - 1; ai >= 0; ai--) {"
+                "       var pEl = allInputs[ai].closest('tr') || allInputs[ai].parentElement;"
+                "       if (pEl && pEl.textContent.indexOf(label) !== -1) {"
+                "         fileInput = allInputs[ai];"
+                "         foundByRow = true;"
+                "         break;"
+                "       }"
+                "     }"
+                "   }"
+                "   if (!fileInput && allInputs.length > 0) {"
+                "     fileInput = allInputs[allInputs.length - 1];"
+                "   }"
+                " }"
+                " if (!fileInput) return JSON.stringify({error:'no_file_input_found',found:false});"
+                " fileInput.style.cssText = 'position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;width:300px!important;height:40px!important;display:block!important;visibility:visible!important;opacity:1!important;z-index:2147483647!important;border:2px solid red!important;background:yellow!important;font-size:14px!important;padding:5px!important';"
+                " fileInput.setAttribute('data-el-upload-exposed','true');"
+                " fileInput.setAttribute('data-expose-ts',ts);"
+                " fileInput.setAttribute('aria-label','exposed-upload-' + ts);"
+                " fileInput.setAttribute('role','textbox');"
+                " fileInput.setAttribute('tabindex','0');"
+                " fileInput.removeAttribute('disabled');"
+                " fileInput.removeAttribute('hidden');"
+                " if (!fileInput.id) fileInput.id = 'exposed-file-input-' + ts;"
+                " var r = fileInput.getBoundingClientRect();"
+                " return JSON.stringify({found:true,id:fileInput.id,name:fileInput.name||'',exposed:true,ts:ts,w:r.width,h:r.height,foundByRow:foundByRow});"
+                "}"
+            )
+
+            script_result = await self.session.call_tool("evaluate_script", {"function": expose_fn})
+            script_content = self._extract_result_content(script_result)
+            log(f"  📎 [expose] 结果: {script_content[:200] if script_content else 'N/A'} (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 2)
+
+            expose_info = self._parse_json_from_mcp_response(script_content)
+
+            mcp_error = self._check_result_has_error(script_content) if script_content else True
+            js_success = isinstance(expose_info, dict) and expose_info.get("found")
+
+            if not js_success and mcp_error:
+                elapsed = int((time.time() - start_time) * 1000)
+                return StepResult(
+                    step_num=step_num, desc=desc, action="el_upload",
+                    status=StepStatus.ERROR, mcp_tool="(el_upload)",
+                    error=f"JS execution failed: {script_content[:200] if script_content else 'no response'}",
+                    output=script_content,
+                    duration_ms=elapsed,
+                )
+
+            if not js_success:
+                log(f"  📎 ⚠️ [2/3] 无法解析JS返回值但MCP未报错，继续尝试上传...", 2)
+
+            sub_steps.append(f"{sub_step_2}: ✅")
+
+            await asyncio.sleep(0.3)
+
+            await self._take_snapshot()
+
+            sub_step_3 = "[3/3] 执行文件上传"
+            log(f"  📎 ── {sub_step_3} ── | path={os.path.basename(file_path)}", 2)
+
+            upload_args = {"filePath": file_path}
+
+            exposed_uid = None
+            best_match = None
+            ts_marker = f"exposed-upload-{expose_ts}"
+            for uid, elem in self.parser.elements.items():
+                elem_text = ((elem.text or "") + " " + (elem.name or "") + " " + (getattr(elem, 'description', '') or "")).lower()
+                if ts_marker.lower() in elem_text:
+                    exposed_uid = uid
+                    log(f"  📎 精确匹配到时间戳标记的input: uid={uid}", 3)
+                    break
+                if "exposed-file-input" in elem_text:
+                    best_match = uid
+                if elem.role == "textbox" and ("file" in (elem.name or "").lower() or "upload" in elem_text):
+                    if not best_match:
+                        best_match = uid
+
+            if not exposed_uid and best_match:
+                exposed_uid = best_match
+                log(f"  📎 使用备选input: uid={best_match}（非精确匹配）", 3)
+
+            if exposed_uid:
+                upload_args["uid"] = exposed_uid
+                log(f"  📎 上传目标UID: {exposed_uid}", 3)
+
+            upload_args["includeSnapshot"] = False
+
+            upload_result = await self.session.call_tool("upload_file", upload_args)
+            upload_content = self._extract_result_content(upload_result)
+            log(f"  📎 ✅ [upload] 结果: {upload_content[:120] if upload_content else 'OK'} (耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 2)
+            sub_steps.append(f"{sub_step_3}: ✅")
+
+            if wait_duration > 0:
+                log(f"  📎 ⏳ 等待 {wait_duration}ms 让页面处理文件...", 2)
+                await asyncio.sleep(wait_duration / 1000.0)
+
+            sub_step_4 = "[4/3] 关闭文件选择窗口"
+            log(f"  📎 {sub_step_4}: 尝试关闭OS级文件对话框", 2)
+            try:
+                import ctypes
+                VK_ESCAPE = 0x1B
+                user32 = ctypes.windll.user32
+                result = user32.keybd_event(VK_ESCAPE, 0, 0, 0)
+                user32.keybd_event(VK_ESCAPE, 0, 2, 0)
+                await asyncio.sleep(0.5)
+                log(f"  📎 {sub_step_4}: Win32 keybd_event Escape 发送成功", 3)
+                sub_steps.append(f"{sub_step_4}: ✅(Win32)")
+            except Exception as win_err:
+                log(f"  📎 {sub_step_4} Win32失败({win_err})，尝试MCP press_key...", 3)
+                try:
+                    await self.session.call_tool("press_key", {"key": "Escape"})
+                    await asyncio.sleep(0.3)
+                    sub_steps.append(f"{sub_step_4}: ✅(MCP)")
+                except Exception as mcp_err:
+                    log(f"  📎 ⚠️ {sub_step_4} 所有方式均失败(可忽略)", 3)
+                    sub_steps.append(f"{sub_step_4}: ⚠️")
+
+            url_after = getattr(self, 'last_snapshot_url', '') or ''
+            total_elapsed = (time.time() - step_start_time) * 1000
+            log(f"  📎 🌐 执行后URL: {url_after} | 总耗时: {total_elapsed:.0f}ms", 2)
+
+            if url_before and url_after and url_before != url_after:
+                log(f"  📎 ⚠️ ═════ URL变化检测 ═════", 1)
+                log(f"  📎 ⚠️ 变化: {url_before}", 2)
+                log(f"  📎 ⚠️ →   {url_after}", 2)
+                if '/apply-list' in url_after or '/list' in url_after:
+                    log(f"  📎 🔧 检测到列表页跳转，启动自动恢复...", 1)
+                    try:
+                        await self._take_snapshot()
+                        new_btn_uid = None
+                        for uid, elem in self.parser.elements.items():
+                            elem_text = (elem.text or "") + (getattr(elem, 'description', '') or "")
+                            if elem.role == "button" and "新增" in elem_text:
+                                new_btn_uid = uid
+                                break
+                        if new_btn_uid:
+                            log(f"  📎 🔧 找到'新增'按钮 uid={new_btn_uid}，点击恢复表单...", 2)
+                            await self.session.call_tool("click", {"uid": new_btn_uid, "includeSnapshot": False})
+                            await asyncio.sleep(1500 / 1000.0)
+                            await self._take_snapshot()
+                            restored_url = getattr(self, 'last_snapshot_url', '') or ''
+                            if '/apply' in restored_url:
+                                log(f"  📎 ✅ 表单页恢复成功: {restored_url} (总耗时:{(time.time()-step_start_time)*1000:.0f}ms)", 1)
+                                sub_steps.append("🔧页面自动恢复: ✅")
+                            else:
+                                log(f"  📎 ⚠️ [el_upload] 恢复后URL: {restored_url}", 2)
+                                sub_steps.append("🔧页面自动恢复: ⚠️")
+                        else:
+                            log(f"  📎 ⚠️ [el_upload] 未找到'新增'按钮，无法自动恢复", 2)
+                            sub_steps.append("🔧页面恢复失败: ❌未找到新增按钮")
+                    except Exception as restore_err:
+                        log(f"  📎 ⚠️ [el_upload] 自动恢复异常: {restore_err}", 2)
+                        sub_steps.append(f"🔧页面恢复异常: {restore_err}")
+
+            elapsed = int((time.time() - start_time) * 1000)
+            log(f"  📎 ═════════════════════ el_upload 完成 ═════════════════════", 1)
+            log(f"  📎 📊 结果: ✅ 成功 | 文件: {os.path.basename(file_path)} | 总耗时: {elapsed}ms", 1)
+
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_upload",
+                status=StepStatus.SUCCESS, mcp_tool="(el_upload)",
+                mcp_args={"target": target, "filePath": file_path},
+                output=f"File uploaded successfully: {file_path}\nSub-steps: {' | '.join(sub_steps)}",
+                duration_ms=elapsed,
+                snapshot_before=self.last_snapshot_text,
+                snapshot_after=self.last_snapshot_text,
+                snapshot_path=self.last_snapshot_path,
+            )
+
+        except Exception as e:
+            tb_lines = traceback.format_exc().splitlines()
+            elapsed = int((time.time() - start_time) * 1000)
+            log(f"  📎 [el_upload] ❌ 异常: {e}", 1)
+            for tl in tb_lines[-6:]:
+                log(f"    {tl}", 3)
+
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_upload",
+                status=StepStatus.ERROR, mcp_tool="(el_upload)",
+                error=str(e),
+                output=f"Failed at: {' | '.join(sub_steps)}",
+                duration_ms=elapsed,
+            )
+
+    async def _execute_el_date(self, step: Dict, step_num: int,
+                                desc: str, start_time: float) -> StepResult:
+        """Element UI el-date-picker 日期选择器填写（一步完成）
+
+        内部自动执行三步操作:
+          1. click 日期输入框（打开日期选择面板）
+          2. sleep 等待面板渲染
+          3. fill 填入日期值
+
+        YAML 用法:
+          - step: N
+            action: el_date
+            target: 请选择评估基准日    # placeholder 或 label
+            value: '2026-05-10'         # 日期字符串
+            wait_after:
+              type: time
+              duration: 500             # 面板打开后等待时间(默认500ms)
+        """
+        log(f"  📅 [el_date] Element UI 日期选择器开始", 1)
+
+        target = step.get("target", "")
+        value = resolve_env_vars(step.get("value", ""))
+        wait_after = step.get("wait_after", {})
+        panel_wait = int(wait_after.get("duration", 500)) if wait_after else 500
+
+        if not value:
+            elapsed = int((time.time() - start_time) * 1000)
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_date",
+                status=StepStatus.ERROR, mcp_tool="(el_date)",
+                error="Missing required parameter: 'value' (date value to fill)",
+                duration_ms=elapsed,
+            )
+
+        log(f"  📅 [el_date] 目标: '{target}' | 值: '{value}' | 面板等待: {panel_wait}ms", 2)
+
+        sub_steps = []
+
+        try:
+            sub_step_1 = "[1/3] 点击日期输入框"
+            log(f"  📅 {sub_step_1}: target='{target}'", 2)
+
+            click_uid = _resolve_uid(step, self.parser, self.cache, require_interactive=True)
+            if not click_uid:
+                elapsed = int((time.time() - start_time) * 1000)
+                return StepResult(
+                    step_num=step_num, desc=desc, action="el_date",
+                    status=StepStatus.ERROR, mcp_tool="(el_date)",
+                    error=f"Cannot find date input element for target='{target}'",
+                    duration_ms=elapsed,
+                )
+
+            click_result = await self.session.call_tool("click", {"uid": click_uid, "includeSnapshot": False})
+            click_content = self._extract_result_content(click_result)
+            log(f"  📅 {sub_step_1} 结果: {click_content[:80] if click_content else 'OK'}", 2)
+            sub_steps.append(f"{sub_step_1}: ✅")
+
+            sub_step_2 = f"[2/3] 等待日期面板渲染 ({panel_wait}ms)"
+            await asyncio.sleep(panel_wait / 1000.0)
+            sub_steps.append(f"{sub_step_2}: ✅")
+
+            await self._take_snapshot()
+
+            sub_step_3 = "[3/3] 填入日期值"
+            log(f"  📅 {sub_step_3}: value='{value}'", 2)
+
+            fill_args = {"value": value}
+            if click_uid:
+                fill_args["uid"] = click_uid
+
+            fill_result = await self.session.call_tool("fill", fill_args)
+            fill_content = self._extract_result_content(fill_result)
+            log(f"  📅 {sub_step_3} 结果: {fill_content[:120] if fill_content else 'OK'}", 2)
+            sub_steps.append(f"{sub_step_3}: ✅")
+
+            elapsed = int((time.time() - start_time) * 1000)
+            log(f"  📅 [el_date] 完成 ({elapsed}ms)", 1)
+
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_date",
+                status=StepStatus.SUCCESS, mcp_tool="(el_date)",
+                mcp_args={"target": target, "value": value},
+                output=f"Date filled successfully: {value}\nSub-steps: {' | '.join(sub_steps)}",
+                duration_ms=elapsed,
+                snapshot_before=self.last_snapshot_text,
+                snapshot_after=self.last_snapshot_text,
+                snapshot_path=self.last_snapshot_path,
+            )
+
+        except Exception as e:
+            tb_lines = traceback.format_exc().splitlines()
+            elapsed = int((time.time() - start_time) * 1000)
+            log(f"  📅 [el_date] ❌ 异常: {e}", 1)
+            for tl in tb_lines[-6:]:
+                log(f"    {tl}", 3)
+
+            return StepResult(
+                step_num=step_num, desc=desc, action="el_date",
+                status=StepStatus.ERROR, mcp_tool="(el_date)",
+                error=str(e),
+                output=f"Failed at: {' | '.join(sub_steps)}",
+                duration_ms=elapsed,
+            )
+
+    def _find_upload_button_uid(self, target: str, preferred_uid: Optional[str] = None,
+                                  file_label: Optional[str] = None) -> Optional[str]:
+        """上下文感知的上传按钮定位（三级策略）
+
+        策略优先级:
+          P1: UID后缀模糊匹配 (60_370 -> *_370)
+          P2: file_label上下文定位 (找到"核准申请文件"行→取该行button"上传")
+          P3: 智能文本匹配 (排除radio/checkbox，优先button角色)
+        """
+        log(f"    [SmartMatch] target='{target}' preferred_uid={preferred_uid} file_label={file_label}", 3)
+
+        INTERACTIVE_ROLES = {"button", "link", "textbox", "combobox", "menuitem"}
+        TEXT_ONLY_ROLES = {"strong", "statictext", "inline textbox", "heading",
+                           "listitem", "paragraph", "label", "image"}
+
+        if preferred_uid:
+            uid_suffix = preferred_uid.split("_")[-1] if "_" in preferred_uid else preferred_uid
+            p1_candidates = []
+            for uid, elem in self.parser.elements.items():
+                if uid.endswith("_" + uid_suffix) or uid == uid_suffix:
+                    role = getattr(elem, 'role', '') or ''
+                    text = (getattr(elem, 'text', '') or '')[:40]
+                    log(f"    [SmartMatch-P1] UID后缀匹配: {uid} (role={role} text='{text}')", 3)
+                    if role in INTERACTIVE_ROLES:
+                        log(f"    [SmartMatch-P1] ✅ 找到交互元素: {uid}", 3)
+                        return uid
+                    elif role not in TEXT_ONLY_ROLES and role not in ("radio", "checkbox", "switch"):
+                        p1_candidates.append((uid, role, text))
+
+            if p1_candidates and not file_label:
+                uid, role, text = p1_candidates[0]
+                log(f"    [SmartMatch-P1] ⚠️ 使用非标准角色: {uid} (role={role})", 2)
+                return uid
+
+            if p1_candidates:
+                log(f"    [SmartMatch-P1] 后缀匹配到非交互元素({len(p1_candidates)}个)，降级到P2...", 3)
+
+        if file_label:
+            label_uids = []
+            for uid, elem in self.parser.elements.items():
+                text = (elem.text or "") + (elem.name or "") + (getattr(elem, 'description', '') or "")
+                if file_label.lower() in text.lower():
+                    label_uids.append((uid, elem))
+
+            if label_uids:
+                log(f"    [SmartMatch-P2] file_label '{file_label}' 匹配到 {len(label_uids)} 个元素:", 3)
+                for lu, le in label_uids:
+                    log(f"      uid={lu} role={le.role} text={(le.text or '')[:30]}", 3)
+
+                best_btn = self._find_nearest_button(label_uids, target)
+                if best_btn:
+                    return best_btn
+
+        candidates = []
+        for uid, elem in self.parser.elements.items():
+            if elem.role in ("radio", "checkbox", "switch"):
+                continue
+            text = (elem.text or "") + (elem.name or "")
+            is_interactive = elem.role in ("button", "link", "textbox", "combobox", "menuitem")
+            if target and target.lower() in text.lower() and is_interactive:
+                score = 0
+                if text.strip().lower() == target.strip().lower():
+                    score += 10
+                elif target.lower() in text.lower():
+                    score += 5
+                if elem.role == "button":
+                    score += 3
+                candidates.append((score, uid, elem))
+
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        if candidates:
+            _, best_uid, best_elem = candidates[0]
+            log(f"    [SmartMatch-P3] 最佳文本匹配: uid={best_uid} role={best_elem.role} text={best_elem.text[:30]}", 3)
+            return best_uid
+
+        log(f"    [SmartMatch] ❌ 未找到上传按钮", 2)
+        return None
+
+    def _find_nearest_button(self, anchor_elements: List[Tuple], target_text: str) -> Optional[str]:
+        """在锚点元素附近查找最近的 button"""
+        anchor_uids = {uid for uid, _ in anchor_elements}
+        best_match = None
+        best_distance = float('inf')
+
+        for uid, elem in self.parser.elements.items():
+            if elem.role != "button":
+                continue
+            text = (elem.text or "").strip()
+            if target_text and target_text.lower() not in text.lower():
+                continue
+
+            try:
+                uid_num = int(uid.split("_")[-1]) if "_" in uid else 0
+            except ValueError:
+                continue
+
+            min_anchor_dist = float('inf')
+            for auid, _ in anchor_elements:
+                try:
+                    auid_num = int(auid.split("_")[-1]) if "_" in auid else 0
+                except ValueError:
+                    continue
+                dist = abs(uid_num - auid_num)
+                if dist < min_anchor_dist:
+                    min_anchor_dist = dist
+
+            if min_anchor_dist < best_distance:
+                best_distance = min_anchor_dist
+                best_match = uid
+
+        if best_match:
+            log(f"    [NearestButton] 最近button: uid={best_match} 距离anchor={best_distance}", 3)
+        return best_match
+
     async def _execute_assert_multiple(self, step: Dict, step_num: int,
                                        desc: str, start_time: float) -> StepResult:
         action_type = "assert_multiple"
@@ -2690,6 +3474,89 @@ class ActionExecutor:
                 else:
                     content_parts.append(str(item))
         return "".join(content_parts)
+
+    @staticmethod
+    def _parse_json_from_mcp_response(text: str):
+        """从 MCP 响应文本中提取 JSON 对象（最大容错）
+
+        策略:
+          1. 正则提取 markdown 代码块
+          2. 多轮尝试 json.loads（包括二次解码）
+          3. 正则提取 key:value 作为兜底
+          4. 如果包含 found/exposed 等成功标记，返回 {"found": True}
+        """
+        if not text or not text.strip():
+            return {}
+        text = text.strip()
+
+        import re
+
+        code_block_match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', text, re.DOTALL)
+        if code_block_match:
+            text = code_block_match.group(1).strip()
+
+        text_clean = text.replace('\n', ' ').replace('\r', '')
+
+        def _try_parse(s):
+            s = s.strip()
+            if not s or len(s) < 3:
+                return None
+            for candidate in [s]:
+                try:
+                    result = json.loads(candidate)
+                    return result
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                try:
+                    cleaned = candidate.replace('\\n', ' ').replace('\\r', '').replace('\\t', ' ')
+                    result = json.loads(cleaned)
+                    return result
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            return None
+
+        def _try_double_parse(s):
+            first = _try_parse(s)
+            if isinstance(first, dict):
+                return first
+            if isinstance(first, list):
+                return {"_array": first}
+            if isinstance(first, str):
+                second = _try_parse(first)
+                if isinstance(second, dict):
+                    return second
+                if isinstance(second, list):
+                    return {"_array": second}
+            return first
+
+        result = _try_double_parse(text_clean)
+        if isinstance(result, dict):
+            return result
+
+        start = text_clean.find('{')
+        end = text_clean.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            candidate = text_clean[start:end + 1]
+            result = _try_double_parse(candidate)
+            if isinstance(result, dict):
+                return result
+
+        start = text_clean.find('[')
+        end = text_clean.rfind(']')
+        if start != -1 and end != -1 and end > start:
+            candidate = text_clean[start:end + 1]
+            result = _try_parse(candidate)
+            if isinstance(result, list):
+                return {"_array": result}
+
+        if re.search(r'"found"\s*:\s*true', text_clean) or \
+           re.search(r'"exposed"\s*:\s*true', text_clean) or \
+           re.search(r'found\s*:\s*true', text_clean):
+            log(f"    [MCP-Parse] 通过正则检测到成功标记", 3)
+            return {"found": True, "_parse_method": "regex_fallback"}
+
+        log(f"    [MCP-Parse] ⚠️ 无法提取JSON对象 (len={len(text_clean)}, has_found={'found' in text_clean.lower()})", 2)
+        return {}
 
     @staticmethod
     def _check_result_has_error(content: str) -> bool:
@@ -2854,7 +3721,7 @@ class ReportGenerator:
                            StepStatus.ERROR: "💥", StepStatus.RETRIED: "🔄"}.get(sr.status, "?")
                     df.write(f"### 步骤{sr.step_num}: {sr.desc} [{icon} {sr.status.value}]\n\n")
                     df.write(f"```\n动作: {sr.action}\n工具: {sr.mcp_tool}\n")
-                    df.write(f"参数: {json.dumps(sr.mcp_args, ensure_ascii=False, indent=2)}\n")
+                    df.write(f"参数: {_safe_json_dumps(sr.mcp_args, ensure_ascii=False, indent=2)}\n")
                     if sr.output:
                         out = sr.output[:600] + "..." if len(sr.output) > 600 else sr.output
                         df.write(f"结果: {out}\n")
@@ -2928,6 +3795,9 @@ async def run_single_testcase(yaml_path: str, result_dir: str = None,
     log(f"📂 加载: {yaml_path}", 1)
     with open(yaml_path, "r", encoding="utf-8") as f:
         testcase = yaml.safe_load(f)
+
+    base_dir = str(Path(yaml_path).parent)
+    testcase = _resolve_includes(testcase, base_dir)
 
     test_id = testcase.get("test_id", "UNKNOWN")
     title = testcase.get("title", "未命名")
@@ -3080,7 +3950,14 @@ async def run_single_testcase(yaml_path: str, result_dir: str = None,
                 result.steps.append(sr)
 
                 if sr.status in (StepStatus.FAILED, StepStatus.ERROR, StepStatus.FAILED_ASSERT):
-                    if on_fail_strategy == "stop":
+                    is_critical = (
+                        step.get("assertion", {}).get("critical", False) or
+                        step.get("critical", False)
+                    )
+                    if is_critical:
+                        log(f"\n🛑 步骤{step_num}关键断言失败，立即终止执行", 1)
+                        break
+                    elif on_fail_strategy == "stop":
                         log(f"\n⛔ 步骤{step_num}失败，终止执行 (策略: stop)", 1)
                         break
                     elif on_fail_strategy == "retry":

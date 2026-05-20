@@ -1,0 +1,62 @@
+test_id: asset_eval_open-1
+title: 打开系统，确保资产评估核准申请页面可以打开
+priority: P1
+tags:
+- recorded
+- auto-generated
+author: "Testcase Recorder v1.6 (refactored: login extracted)"
+_include: login-flow.yaml
+
+context_check:
+  login_url: ${TEST_URL}
+  home_indicator: ''
+  credentials:
+    username: ${TEST_USER}
+    password: ${TEST_PASS}
+    display_name: ${TEST_DISPLAY_NAME}
+  captcha_required: false
+  sso_enabled: false
+
+steps:
+- step: 7
+  desc: 展开左侧菜单'资产评估'
+  action: click
+  target: 资产评估
+  assertion:
+    type: element_visible
+    expected: 资产评估核准
+    confidence: high
+- step: 8
+  desc: 展开子菜单'资产评估核准'
+  action: click
+  target: 资产评估核准
+  assertion:
+    type: element_visible
+    expected: 核准申请
+    confidence: high
+- step: 9
+  desc: 点击'核准申请'菜单项，打开列表页
+  action: click
+  target: 核准申请
+  wait_after:
+    type: time
+    duration: 3000
+  assertion:
+    type: text_contains
+    expected: 新增
+    confidence: high
+
+teardown:
+- action: screenshot
+  name: recorded-result-{timestamp}.png
+  fullPage: true
+- action: log
+  message: '录制流程测试完成，当前页面: {current_url}'
+metadata:
+  created_by: testcase-recorder v1.6 (refactored)
+  test_environment: staging
+  browser: chromium
+  viewport: 1920x1080
+  estimated_duration: ~40s
+  risk_level: low
+  note: 步骤1-6从共享模块 asset/login-flow.yaml 引入，本文件仅包含步骤7-9菜单导航

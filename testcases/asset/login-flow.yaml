@@ -1,0 +1,76 @@
+# 资产处置及评估系统 - 登录流程（共享模块）
+#
+# 📋 用途: 被多个测试用例引用的公共登录步骤
+# 🔗 引用方式: 在 YAML 顶层添加 _include: "asset/login-flow.yaml"
+# ⚠️ 此文件不应单独执行，而是作为步骤库被包含
+
+test_id: "SHARED-LOGIN-asset-system"
+title: "资产系统登录流程（共享模块）"
+priority: "P0"
+tags: ["共享", "登录", "可复用"]
+author: "Extracted from asset_available.yaml"
+_shared: true
+
+context_check:
+  login_url: ${TEST_URL}
+  home_indicator: ''
+  credentials:
+    username: ${TEST_USER}
+    password: ${TEST_PASS}
+    display_name: ${TEST_DISPLAY_NAME}
+  captcha_required: false
+  sso_enabled: false
+
+steps:
+- step: 1
+  desc: 打开目标页面
+  action: navigate
+  url: ${TEST_URL}
+  wait_after:
+    type: time
+    duration: 2000
+  assertion:
+    type: text_contains
+    expected: '资产处置及评估系统'
+    confidence: high
+- step: 2
+  desc: 点击账号输入框
+  action: click
+  target: 请输入账号
+  assertion:
+    type: element_visible
+    confidence: medium
+- step: 3
+  desc: 填写账号
+  action: fill
+  target: 请输入账号
+  value: ${TEST_USER}
+  assertion:
+    type: field_filled
+    confidence: high
+- step: 4
+  desc: 填写密码
+  action: fill
+  target: 请输入密码
+  value: ${TEST_PASS}
+  isSensitive: true
+  assertion:
+    type: field_filled
+    confidence: high
+- step: 5
+  desc: 点击登录按钮
+  action: click
+  target: 登录
+  assertion:
+    type: element_visible
+    confidence: medium
+- step: 6
+  desc: 校验登录成功
+  action: assert_multiple
+  assertions:
+  - type: text_contains
+    expected: '${TEST_DISPLAY_NAME}'
+    confidence: high
+  - type: url_contains
+    expected: /index
+    confidence: medium
