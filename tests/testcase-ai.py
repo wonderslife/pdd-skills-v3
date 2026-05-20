@@ -90,32 +90,43 @@ except ImportError:
 # ============================================================
 # MCP 配置区
 # ============================================================
-# Chrome DevTools MCP 连接参数（Incognito 隐私模式）
+# Chrome DevTools MCP 连接参数（Isolated 隔离模式）
 # ============================================================
 
 def _create_incognito_server_params() -> StdioServerParameters:
-    """创建使用隐私模式 Chrome 的 MCP 连接参数
+    """创建使用隔离模式 Chrome 的 MCP 连接参数
 
     chrome-devtools-mcp 通过 --chromeArg=VALUE 格式传递额外 Chrome 启动参数
     参考: https://github.com/ChromeDevTools/chrome-devtools-mcp/pull/338
 
-    正确格式: --chromeArg=--incognito (不是 --chromeArg --incognito)
+    重要: --chromeArg 仅在 chrome-devtools-mcp 自己启动 Chrome 时生效，
+    如果连接到已存在的 Chrome 实例则参数会被忽略。
+
+    注意: 不使用 --incognito 参数！
+    原因: --incognito + --isolated 会导致 Chrome 打开两个窗口：
+    1) Incognito 窗口（无操作） 2) 普通窗口（实际操作在此）
+    这是因为 Puppeteer 连接的是浏览器默认目标页面而非 Incognito 页面。
+    --isolated 本身已提供隔离（临时用户数据目录），无需 --incognito。
     """
     npx_args = [
         "-y", "chrome-devtools-mcp@latest",
-        "--isolated",                    # 使用临时用户数据目录（类似 Incognito）
-        "--chromeArg=--incognito",       # 隐私模式
+        "--isolated",                    # 使用临时用户数据目录（隔离模式）
         "--chromeArg=--no-first-run",
         "--chromeArg=--no-default-browser-check",
         "--chromeArg=--disable-sync",
         "--chromeArg=--disable-extensions",
         "--chromeArg=--disable-component-extensions-with-background-pages",
         "--chromeArg=--disable-popup-blocking",
-        "--chromeArg=--ignore-certificate-errors",         # 忽略证书错误（HTTPS）
+        "--chromeArg=--ignore-certificate-errors",
         "--chromeArg=--ignore-certificate-errors-spki-list",
-        "--chromeArg=--disable-web-security",              # 允许跨域和不安全连接
-        "--chromeArg=--allow-running-insecure-content",    # 允许 HTTP 混合内容
-        "--chromeArg=--unsafely-treat-insecure-origin-as-secure",  # 将 HTTP 视为安全
+        "--chromeArg=--disable-web-security",
+        "--chromeArg=--allow-running-insecure-content",
+        "--chromeArg=--unsafely-treat-insecure-origin-as-secure",
+        "--chromeArg=--disable-password-manager-reauthentication",
+        "--chromeArg=--disable-features=PasswordLeakDetection",
+        "--chromeArg=--disable-features=SafeBrowsingPasswordProtectionTrigger",
+        "--chromeArg=--disable-save-password-bubble",
+        "--chromeArg=--password-store=basic",
     ]
 
     viewport_w = os.environ.get("BROWSER_VIEWPORT_WIDTH") or os.environ.get("BROWSER_WIDTH", "1366")
@@ -123,7 +134,7 @@ def _create_incognito_server_params() -> StdioServerParameters:
     npx_args.append(f"--chromeArg=--window-size={viewport_w},{viewport_h}")
 
     return StdioServerParameters(
-        name="Chrome DevTools MCP (Incognito)",
+        name="Chrome DevTools MCP (Isolated)",
         command="npx",
         args=npx_args,
         env=None,
