@@ -1,5 +1,6 @@
 test_id: asset_eval_open_add-1
 title: 资产评估核准申请 - 新增申请并填写表单
+on_fail: stop   # 失败立即终止
 priority: P1
 tags:
 - recorded

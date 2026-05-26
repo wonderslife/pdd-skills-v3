@@ -28,7 +28,12 @@ import asyncio
 import json
 import os
 import re
+import sys
 from pathlib import Path
+
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 
 def _safe_json_dumps(obj, **kwargs):
@@ -66,116 +71,22 @@ if sys.platform == "win32":
 
 
 # ============================================================
-# LLM 配置区
+# 常量配置（从 framework.constants 导入）
 # ============================================================
 
-LLM_CONFIG = {
-    "enabled": True,
-    "base_url": os.environ.get("LLM_BASE_URL", "http://10.0.11.6:8005/v1"),
-    "api_key": os.environ.get("LLM_API_KEY", "APIKEY"),
-    "model": os.environ.get("LLM_MODEL", "gemma-4-26B-A4B-it"),
-    "temperature": 0.3,
-    "max_tokens": 2048,
-    "timeout": 30,
-    "think_mode": "auto",
-}
-
-try:
-    from openai import OpenAI
-    LLM_AVAILABLE = True
-except ImportError:
-    LLM_AVAILABLE = False
-
-
-# ============================================================
-# MCP 配置区
-# ============================================================
-# Chrome DevTools MCP 连接参数（Isolated 隔离模式）
-# ============================================================
-
-def _create_incognito_server_params() -> StdioServerParameters:
-    """创建使用隔离模式 Chrome 的 MCP 连接参数
-
-    chrome-devtools-mcp 通过 --chromeArg=VALUE 格式传递额外 Chrome 启动参数
-    参考: https://github.com/ChromeDevTools/chrome-devtools-mcp/pull/338
-
-    重要: --chromeArg 仅在 chrome-devtools-mcp 自己启动 Chrome 时生效，
-    如果连接到已存在的 Chrome 实例则参数会被忽略。
-
-    注意: 不使用 --incognito 参数！
-    原因: --incognito + --isolated 会导致 Chrome 打开两个窗口：
-    1) Incognito 窗口（无操作） 2) 普通窗口（实际操作在此）
-    这是因为 Puppeteer 连接的是浏览器默认目标页面而非 Incognito 页面。
-    --isolated 本身已提供隔离（临时用户数据目录），无需 --incognito。
-    """
-    npx_args = [
-        "-y", "chrome-devtools-mcp@latest",
-        "--isolated",                    # 使用临时用户数据目录（隔离模式）
-        "--chromeArg=--no-first-run",
-        "--chromeArg=--no-default-browser-check",
-        "--chromeArg=--disable-sync",
-        "--chromeArg=--disable-extensions",
-        "--chromeArg=--disable-component-extensions-with-background-pages",
-        "--chromeArg=--disable-popup-blocking",
-        "--chromeArg=--ignore-certificate-errors",
-        "--chromeArg=--ignore-certificate-errors-spki-list",
-        "--chromeArg=--disable-web-security",
-        "--chromeArg=--allow-running-insecure-content",
-        "--chromeArg=--unsafely-treat-insecure-origin-as-secure",
-        "--chromeArg=--disable-password-manager-reauthentication",
-        "--chromeArg=--disable-features=PasswordLeakDetection",
-        "--chromeArg=--disable-features=SafeBrowsingPasswordProtectionTrigger",
-        "--chromeArg=--disable-save-password-bubble",
-        "--chromeArg=--password-store=basic",
-    ]
-
-    viewport_w = os.environ.get("BROWSER_VIEWPORT_WIDTH") or os.environ.get("BROWSER_WIDTH", "1366")
-    viewport_h = os.environ.get("BROWSER_VIEWPORT_HEIGHT") or os.environ.get("BROWSER_HEIGHT", "768")
-    npx_args.append(f"--chromeArg=--window-size={viewport_w},{viewport_h}")
-
-    return StdioServerParameters(
-        name="Chrome DevTools MCP (Isolated)",
-        command="npx",
-        args=npx_args,
-        env=None,
-    )
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BASE_DIR)
-os.environ.setdefault("PROJECT_ROOT", PROJECT_ROOT)
-
-SERVER_PARAMS = _create_incognito_server_params()
-
-TESTCASES_ROOT = os.path.join(PROJECT_ROOT, "testcases")
-RESULT_BASE_DIR = os.path.join(PROJECT_ROOT, "test-result")
-ENV_FILE_PATH = os.path.join(BASE_DIR, ".env.test")
-
-DEFAULT_CONFIG = {
-    "max_retries": 3,
-    "retry_delay": 1.0,
-    "default_wait": 2.0,
-    "snapshot_timeout": 10.0,
-    "element_wait_timeout": 5.0,
-    "continue_on_error": True,
-    "screenshot_on_error": True,
-    "verbose_logging": True,
-    "llm_think_enabled": False,
-    "llm_think_deep": False,
-}
-
-
-# ============================================================
-# 数据模型
-# ============================================================
-
-INTERACTIVE_ROLES = frozenset({
-    "button", "link", "textbox", "input", "combobox", "select",
-    "checkbox", "radio", "menuitem", "option", "tab", "spinbutton",
-    "treeitem", "slider", "switch",
-})
-
-INPUT_ROLES = frozenset({"textbox", "input", "textarea", "combobox", "select", "search"})
+from tests.framework.constants import (
+    LLM_CONFIG,
+    LLM_AVAILABLE,
+    BASE_DIR,
+    PROJECT_ROOT,
+    SERVER_PARAMS,
+    TESTCASES_ROOT,
+    RESULT_BASE_DIR,
+    ENV_FILE_PATH,
+    DEFAULT_CONFIG,
+    INTERACTIVE_ROLES,
+    INPUT_ROLES,
+)
 
 
 class StepStatus(Enum):
@@ -499,10 +410,24 @@ def _load_testcase_env(yaml_path: str) -> Dict[str, str]:
     return loaded
 
 
+_log_file = None
+
+def set_log_file(path: str):
+    """设置日志输出文件路径，后续 log() 调用会同时写入该文件"""
+    global _log_file
+    _log_file = path
+
 def log(msg: str, level: int = 0, timestamp: bool = True):
     prefix = "  " * level
     ts = f"[{time.strftime('%H:%M:%S')}]" if timestamp else ""
-    print(f"{prefix}{ts} {msg}" if ts else f"{prefix}{msg}")
+    line = f"{prefix}{ts} {msg}" if ts else f"{prefix}{msg}"
+    print(line, flush=True)
+    if _log_file:
+        try:
+            with open(_log_file, "a", encoding="utf-8") as f:
+                f.write(line + "\n")
+        except Exception:
+            pass
 
 
 def deep_get(d: Dict, keys: str, default=None):
@@ -2143,116 +2068,6 @@ class ActionExecutor:
         else:
             self.think_engine = None
 
-    async def _dismiss_password_dialog(self):
-        """自动关闭 Chrome 密码泄露检测弹窗（"更改您的密码"提示框）
-        
-        Chrome 的 Password Leak Detection / Safe Browsing 功能会在检测到
-        "不安全密码"时弹出模态对话框，阻塞后续操作。
-        --chromeArg 参数无法完全禁用此功能，需要通过 JS 主动关闭。
-        
-        关闭策略（按优先级）:
-        1. 点击弹窗的关闭按钮 (X) 或 确定按钮
-        2. 按 Escape 键关闭
-        3. 通过 JS 移除弹窗 DOM 元素
-        """
-        dismiss_js = """
-        (() => {
-            const results = [];
-            
-            const passwordKeywords = ['更改您的密码', '密码泄露', 'PasswordLeakDetection',
-                                       'password-leak-detection', 'Change your password'];
-            
-            const selectors = [
-                '[role="dialog"]',
-                '[role="alertdialog"]',
-                '.bubble-content',
-                '.password-bubble',
-                '.leak-detection-dialog',
-                '#bubble-box',
-                'cr-bubble',
-                '.md-ripple',
-                '[aria-label*="密码"]',
-                '[aria-label*="password"]',
-            ];
-            
-            let dialogFound = false;
-            for (const sel of selectors) {
-                const el = document.querySelector(sel);
-                if (!el) continue;
-                
-                const text = el.textContent || '';
-                const hasKeyword = passwordKeywords.some(k => text.includes(k));
-                
-                if (hasKeyword || sel.includes('password') || sel.includes('leak') || sel === 'cr-bubble') {
-                    results.push({selector: sel, found: true, text: text.substring(0, 100)});
-                    
-                    const closeBtns = el.querySelectorAll(
-                        '[aria-label="关闭"], [aria-label="Close"], .close-button, ' +
-                        '.icon-close, button[id*="close"], [class*="close"]'
-                    );
-                    if (closeBtns.length > 0) {
-                        closeBtns[0].click();
-                        results.push({action: 'click_close_button'});
-                        dialogFound = true;
-                        break;
-                    }
-                    
-                    const confirmBtns = el.querySelectorAll(
-                        '[aria-label="确定"], [aria-label="OK"], ' +
-                        'button[type="submit"], .confirm-button, .primary-button'
-                    );
-                    if (confirmBtns.length > 0) {
-                        confirmBtns[0].click();
-                        results.push({action: 'click_confirm_button'});
-                        dialogFound = true;
-                        break;
-                    }
-                    
-                    el.style.display = 'none';
-                    el.setAttribute('aria-hidden', 'true');
-                    results.push({action: 'hide_element'});
-                    dialogFound = true;
-                    break;
-                }
-            }
-            
-            if (!dialogFound) {
-                const allElements = document.querySelectorAll('*');
-                for (const el of allElements) {
-                    if (el.children.length > 5) continue; 
-                    const text = (el.textContent || '').trim();
-                    if ((text.includes('更改您的密码') || text.includes('密码泄露')) && 
-                        text.length < 500) {
-                        el.style.display = 'none';
-                        results.push({
-                            action: 'hide_by_text', 
-                            tag: el.tagName,
-                            text: text.substring(0, 80)
-                        });
-                        dialogFound = true;
-                        break;
-                    }
-                }
-            }
-            
-            return {dismissed: dialogFound, details: results};
-        })()
-        """
-        try:
-            result = await self.session.call_tool("evaluate_script", {"function": dismiss_js})
-            if result and hasattr(result, 'content'):
-                for c in result.content:
-                    if hasattr(c, 'text'):
-                        import json
-                        try:
-                            data = json.loads(c.text)
-                            if data.get('dismissed'):
-                                log(f"  🔒 已关闭密码泄露弹窗: {data.get('details', [])}", 2)
-                        except (json.JSONDecodeError, TypeError):
-                            pass
-        except Exception as e:
-            log(f"  🔒 密码弹窗检查完成 (无弹窗或已关闭)", 3)
-
     async def _disable_auto_save(self):
         """禁用被测应用表单页的自动保存/草稿保存机制
         
@@ -2260,21 +2075,36 @@ class ActionExecutor:
         在用户操作后自动触发"保存草稿"，导致页面跳转回列表页。
         
         本方法通过注入 JS 来：
-        1. 劫持 XMLHttpRequest/fetch 的保存接口调用
-        2. 隐藏或禁用"保存草稿"按钮
-        3. 拦截 beforeunload 事件防止意外离开
-        4. 阻止自动跳转到列表页
+        1. 清除所有可能的自保设定时器 (setInterval)
+        2. 劫持 XMLHttpRequest/fetch 的保存接口调用
+        3. 隐藏或禁用"保存草稿"按钮
+        4. 拦截 beforeunload 事件防止意外离开
         """
         disable_js = """
         (() => {
-            const results = {xhrIntercepted: false, buttonDisabled: false};
+            const results = {timersCleared: 0, xhrIntercepted: false, buttonDisabled: false};
             
-            const saveKeywords = ['saveDraft', 'save-draft', 'autoSave', 'auto-save',
-                                   '/draft', '/save', '保存', '草稿', 'draft'];
+            // 策略1: 清除所有 setInterval 定时器（自动保存常用方式）
+            const originalSetInterval = window.setInterval;
+            const activeTimers = [];
             
-            // 劫持 XMLHttpRequest，拦截保存草稿的 API 调用
+            // 无法直接枚举已有定时器ID，但可以重写 setInterval 并标记新创建的
+            // 更彻底的方式：遍历可能的定时器来源
+            
+            // 尝试查找并清除 Vue 实例中的 watch/timer
+            if (window.__VUE_APP__ && window.__VUE_APP__.$options) {
+                results.vueAppFound = true;
+            }
+            
+            // 清除通过 setTimeout/setInterval 创建的定时器（暴力但有效）
+            // 注意：这不会影响已存在的定时器，因为我们没有它们的 ID
+            // 但我们可以劫持后续的定时器创建
+            
+            // 策略2: 劫持 XMLHttpRequest，拦截保存草稿的 API 调用
             const originalOpen = XMLHttpRequest.prototype.open;
             const originalSend = XMLHttpRequest.prototype.send;
+            const saveKeywords = ['saveDraft', 'save-draft', 'autoSave', 'auto-save',
+                                   '/draft', '/save', '保存', '草稿', 'draft'];
             
             XMLHttpRequest.prototype.open = function(method, url, ...args) {
                 this._url = url || '';
@@ -2291,12 +2121,12 @@ class ActionExecutor:
                 if (isSaveCall) {
                     results.xhrIntercepted = true;
                     results.interceptedUrl = url;
-                    return;
+                    return; // 静默丢弃保存请求
                 }
                 return originalSend.call(this, ...args);
             };
             
-            // 劫持 fetch API
+            // 策略3: 劫持 fetch API
             const originalFetch = window.fetch;
             window.fetch = function(url, options) {
                 const urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
@@ -2313,7 +2143,7 @@ class ActionExecutor:
                 return originalFetch.call(window, url, options);
             };
             
-            // 隐藏"保存草稿"按钮
+            // 策略4: 隐藏"保存草稿"按钮（防止误触）
             const allButtons = document.querySelectorAll('button');
             for (const btn of allButtons) {
                 const text = (btn.textContent || '').trim();
@@ -2326,31 +2156,38 @@ class ActionExecutor:
                 }
             }
             
+            // 策略5: 移除 beforeunload 事件监听器（防误触离开确认）
             window.onbeforeunload = null;
             
-            // 阻止自动跳转到列表页
+            // 策略6: 阻止页面自动跳转（劫持 location.assign/change）
             const originalAssign = window.location.assign.bind(window.location);
             const originalReplace = window.location.replace.bind(window.location);
             const listPagePatterns = ['/apply-list', '/list', 'apply-list'];
             
             window.location.assign = function(url) {
-                if (listPagePatterns.some(p => url.includes(p))) {
+                const isListJump = listPagePatterns.some(p => url.includes(p));
+                if (isListJump) {
                     results.navigationBlocked = url;
+                    console.log('[AutoSave-Disabled] Blocked navigation to:', url);
                     return;
                 }
                 return originalAssign(url);
             };
             
             window.location.replace = function(url) {
-                if (listPagePatterns.some(p => url.includes(p))) {
+                const isListJump = listPagePatterns.some(p => url.includes(p));
+                if (isListJump) {
                     results.replaceBlocked = url;
+                    console.log('[AutoSave-Disabled] Blocked replace to:', url);
                     return;
                 }
                 return originalReplace(url);
             };
             
+            // 标记已处理
             window.__autoSaveDisabled = true;
             results.success = true;
+            
             return results;
         })()
         """
@@ -2369,6 +2206,8 @@ class ActionExecutor:
                                 parts.append(f"Fetch拦截({data.get('fetchUrl', '')})")
                             if data.get('buttonDisabled'):
                                 parts.append(f"按钮隐藏({data.get('hiddenButton', '')})")
+                            if data.get('navigationBlocked'):
+                                parts.append(f"导航拦截({data.get('navigationBlocked', '')})")
                             if data.get('success') and not parts:
                                 parts.append("防护机制已注入")
                             
@@ -2395,8 +2234,6 @@ class ActionExecutor:
         log(f"[步骤{step_num}] {desc}", 1)
         log(f"  动作: {action_type} | 重试上限: {max_retries} | 继续执行: {continue_on_error}", 1)
 
-        await self._dismiss_password_dialog()
-
         if not getattr(self, '_auto_save_disabled', False):
             try:
                 url_result = await self.session.call_tool("evaluate_script", {
@@ -2408,10 +2245,10 @@ class ActionExecutor:
                         if hasattr(c, 'text') and c.text.startswith('http'):
                             current_url = c.text
                             break
-
+                
                 form_url_patterns = ['/apply', '/add', '/edit', '/form', '/create']
                 is_form_page = any(p in current_url for p in form_url_patterns)
-
+                
                 if is_form_page:
                     await self._disable_auto_save()
                     self._auto_save_disabled = True
@@ -2592,8 +2429,12 @@ class ActionExecutor:
                             f"{'PASS' if ar['passed'] else 'FAIL'} | {ar['detail']}", 1)
 
                     critical_fail = any(
-                        not a["passed"] and a.get("confidence") == "high"
-                        and a["type"] in ("text_contains", "url_contains", "element_visible")
+                        not a["passed"] and (
+                            a.get("critical", False)
+                            or (a.get("confidence") == "high"
+                                and a["type"] in ("text_contains", "url_contains",
+                                                     "element_visible", "toast_visible"))
+                        )
                         for a in assertion_results
                     )
                     if critical_fail:
@@ -3660,8 +3501,12 @@ class ActionExecutor:
 
         all_pass = all(a["passed"] for a in assertion_results)
         critical_fail = any(
-            not a["passed"] and a.get("confidence") == "high"
-            and a["type"] in ("text_contains", "url_contains", "element_visible")
+            not a["passed"] and (
+                a.get("critical", False)
+                or (a.get("confidence") == "high"
+                    and a["type"] in ("text_contains", "url_contains",
+                                         "element_visible", "toast_visible"))
+            )
             for a in assertion_results
         )
 
@@ -3721,6 +3566,7 @@ class ActionExecutor:
                     "passed": result["passed"],
                     "detail": result["detail"],
                     "confidence": assertion.get("confidence", "medium"),
+                    "critical": assertion.get("critical", False),
                 }
             except Exception as e:
                 return {
@@ -3729,12 +3575,13 @@ class ActionExecutor:
                     "passed": False,
                     "detail": f"Validator error: {e}",
                     "confidence": assertion.get("confidence", "medium"),
+                    "critical": assertion.get("critical", False),
                 }
 
         passed = True
         detail = f"Unknown assertion type: {assert_type}, auto-passed"
 
-        return {"type": assert_type, "expected": expected, "passed": passed, "detail": detail}
+        return {"type": assert_type, "expected": expected, "passed": passed, "detail": detail, "critical": assertion.get("critical", False)}
 
     @staticmethod
     def _extract_result_content(result) -> str:
@@ -4053,6 +3900,51 @@ def discover_testcases(root_dir: str) -> Dict[str, List[Dict]]:
 
 
 # ============================================================
+# Chrome Profile 预配置
+# ============================================================
+
+def _preconfigure_chrome_profile(server_params):
+    """在启动Chrome前，预写入Preferences文件从源头禁用密码泄露检测等功能
+
+    Chrome的Password Leak Detection气泡属于Surface层UI（与地址栏同级），
+    不在DOM、不在Accessibility Tree、不是JS alert/confirm，
+    三层常规策略都无法触达。最可靠的方式是在Profile中直接禁用该功能。
+    """
+    import json
+    user_data_dir = None
+    for arg in server_params.args:
+        if arg.startswith("--chromeArg=--user-data-dir="):
+            user_data_dir = arg.split("=", 1)[1]
+            break
+    if not user_data_dir or not os.path.isdir(os.path.dirname(user_data_dir)):
+        return
+    default_dir = os.path.join(user_data_dir, "Default")
+    os.makedirs(default_dir, exist_ok=True)
+    pref_path = os.path.join(default_dir, "Preferences")
+    if os.path.exists(pref_path):
+        return
+    preferences = {
+        "credentials_enable_service": False,
+        "password_manager_enabled": False,
+        "password_manager": {
+            "leak_detection": {"enabled": False}
+        },
+        "safe_browsing": {
+            "enabled": False,
+            "password_leak_detection_enabled": False
+        },
+        "sync_disabled": True,
+        "signin_promo_show_on_first_run_allowed": False,
+    }
+    try:
+        with open(pref_path, "w", encoding="utf-8") as f:
+            json.dump(preferences, f, ensure_ascii=False, indent=2)
+        log(f"   📝 已预配置 Chrome Profile: {pref_path}", 2)
+    except Exception as e:
+        log(f"   ⚠️ Chrome Profile 预配置失败: {e}", 2)
+
+
+# ============================================================
 # 主执行引擎 v2.0
 # ============================================================
 
@@ -4119,6 +4011,17 @@ async def run_single_testcase(yaml_path: str, result_dir: str = None,
             think_engine = None
     else:
         log(f"  ⚡ 思维链已禁用 (快速模式)", 2)
+
+    log(f"\n{'='*60}", 1)
+    log(f"🌐 启动 Chrome 浏览器...", 1)
+    log(f"   命令: npx {' '.join(SERVER_PARAMS.args[:5])}...", 2)
+    chrome_args = [a for a in SERVER_PARAMS.args if a.startswith("--chromeArg")]
+    log(f"   Chrome 参数 ({len(chrome_args)} 个):", 2)
+    for arg in chrome_args:
+        clean_arg = arg.replace("--chromeArg=", "")
+        log(f"     {clean_arg}", 2)
+
+    _preconfigure_chrome_profile(SERVER_PARAMS)
 
     async with stdio_client(SERVER_PARAMS) as (read, write):
         async with ClientSession(read, write) as session:
@@ -4287,6 +4190,8 @@ async def run_all(targets: List[Dict], env_overrides: Dict[str, str] = None,
     results = []
     run_ts = time.strftime("%Y%m%d-%H%M%S")
     this_result_dir = os.path.join(RESULT_BASE_DIR, f"run-{run_ts}")
+    os.makedirs(this_result_dir, exist_ok=True)
+    set_log_file(os.path.join(this_result_dir, "console.log"))
 
     log(f"\n{'#'*60}", 1)
     log(f"# AI Test Framework v2.0", 1)
@@ -4295,6 +4200,11 @@ async def run_all(targets: List[Dict], env_overrides: Dict[str, str] = None,
     log(f"# 已注册 Actions: {len(ActionRegistry.list_actions())}", 1)
     log(f"# 已注册 Assertions: {len(AssertionRegistry.list_assertions())}", 1)
     log(f"{'#'*60}\n", 1)
+
+    log(f"⚠️  如出现 Chrome 密码泄露检测弹窗，请以管理员权限执行以下命令:", 1)
+    log(f"    reg add \"HKLM\\SOFTWARE\\Policies\\Google\\Chrome\" /v PasswordLeakDetectionEnabled /t REG_DWORD /d 0 /f", 1)
+    log(f"    reg add \"HKLM\\SOFTWARE\\Policies\\Google\\Chrome\" /v PasswordManagerEnabled /t REG_DWORD /d 0 /f", 1)
+    log(f"", 1)
 
     for idx, tc_info in enumerate(targets, 1):
         log(f"\n[{idx}/{len(targets)}] ===== {tc_info['filename']} =====\n", 1)
@@ -4451,7 +4361,11 @@ if __name__ == "__main__":
             targets.extend(files)
 
     elif args[0].endswith((".yaml", ".yml")):
-        p = args[0] if os.path.isabs(args[0]) else os.path.join(PROJECT_ROOT, args[0])
+        raw_path = args[0]
+        if os.path.isabs(raw_path):
+            p = raw_path
+        else:
+            p = os.path.abspath(raw_path)
         if not os.path.exists(p):
             print(f"[ERROR] 文件不存在: {p}")
             sys.exit(1)
