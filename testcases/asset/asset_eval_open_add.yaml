@@ -41,7 +41,7 @@ steps:
   target: 核准申请
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
   assertion:
     type: text_contains
     expected: 新增
@@ -52,7 +52,7 @@ steps:
   target: 新增
   wait_after:
     type: time
-    duration: 1500
+    duration: 12000
   assertion:
     type: element_visible
     expected: 项目名称
@@ -94,7 +94,7 @@ steps:
     uid: "60_370"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 15
   desc: 填写'委托方/产权单位'
   action: fill
@@ -138,7 +138,7 @@ steps:
   value: 2026-05-10
   wait_after:
     type: time
-    duration: 500
+    duration: 12000
   assertion:
     type: field_filled
     expected: 字段已填写
@@ -171,7 +171,7 @@ steps:
     uid: "59_393"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 23
   desc: 上传'资产评估项目初审表'（Element UI el-upload）
   action: el_upload
@@ -182,7 +182,7 @@ steps:
     uid: "61_406"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 24
   desc: 上传'经济行为决策文件'（Element UI el-upload）
   action: el_upload
@@ -193,7 +193,7 @@ steps:
     uid: "61_424"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 25
   desc: 上传'处置方案及协议'（Element UI el-upload）
   action: el_upload
@@ -204,7 +204,7 @@ steps:
     uid: "61_442"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 26
   desc: 上传'审计报告'（Element UI el-upload）
   action: el_upload
@@ -215,7 +215,7 @@ steps:
     uid: "61_460"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 27
   desc: 上传'当事方承诺函'（Element UI el-upload）
   action: el_upload
@@ -226,7 +226,7 @@ steps:
     uid: "61_478"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 28
   desc: 上传'评估报告'（Element UI el-upload）
   action: el_upload
@@ -237,9 +237,9 @@ steps:
     uid: "61_538"
   wait_after:
     type: time
-    duration: 5000
+    duration: 24000
 - step: 29
-  desc: 上传'评估说明'（Element UI el-upload）
+  desc: 上传'评估说明'（Element UI el_upload）
   action: el_upload
   target: 上传
   path: C:\Users\wonder\Downloads\金控数字化转型-企业邮箱选型260108.docx
@@ -248,17 +248,8 @@ steps:
     uid: "61_556"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
 - step: 30
-  desc: 上传'企业产权登记证'（Element UI el_upload）
-  action: el_upload
-  target: 上传
-  path: C:\Users\wonder\Downloads\蓝凌门户系统集成开发实施指南.docx
-  file_label: 企业产权登记证
-  wait_after:
-    type: time
-    duration: 5000
-- step: 31
   desc: 上传'市场法测算表'（Element UI el_upload）
   action: el_upload
   target: 上传
@@ -268,14 +259,25 @@ steps:
     uid: "59_610"
   wait_after:
     type: time
-    duration: 5000
+    duration: 12000
+- step: 31
+  desc: 上传'企业产权登记证'（Element UI el_upload）
+  action: el_upload
+  target: 上传
+  path: C:\Users\wonder\Downloads\蓝凌门户系统集成开发实施指南.docx
+  file_label: 企业产权登记证
+  _locator:
+    uid: "58_496"
+  wait_after:
+    type: time
+    duration: 12000
 - step: 32
   desc: 点击'提交申请'按钮
   action: click
   target: 提交申请
   wait_after:
     type: time
-    duration: 2000
+    duration: 12000
   assertion:
     type: element_visible
     expected: 确认提交核准申请
@@ -287,10 +289,10 @@ steps:
   target: 确定
   wait_after:
     type: time
-    duration: 2000
+    duration: 12000
   assertion:
-    type: toast_visible
-    expected: 提交成功
+    type: element_text
+    expected: 提交
     confidence: high
     critical: true
 

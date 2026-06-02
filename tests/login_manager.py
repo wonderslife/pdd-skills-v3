@@ -20,6 +20,8 @@ import re
 import asyncio
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any
+from tests.framework.logger import log
+from tests.framework.mcp_client import check_result_has_error
 
 
 @dataclass
@@ -72,23 +74,6 @@ class LoginManager:
         self._element_cache = {}
         self._snapshot_dir = snapshot_dir
 
-    @staticmethod
-    def _check_result_has_error(content: str) -> bool:
-        if not content:
-            return False
-        content_lower = content.lower()
-        strict_errors = ["mcp error", "input validation error", "invalid arguments",
-                         "elementclickinterceptederror", "not interactable"]
-        if any(err in content_lower for err in strict_errors):
-            return True
-        loose_patterns = ["error:", "failed to", "did not become", "timeout",
-                         "could not", "unable to", "no such", "cannot find"]
-        if any(p in content_lower for p in loose_patterns):
-            return True
-        if content_lower.startswith("error:") or content_lower.startswith("err:"):
-            return True
-        return False
-    
     async def check_and_ensure_login(
         self,
         session,
@@ -558,7 +543,7 @@ class LoginManager:
                 for c in click_result.content:
                     if hasattr(c, 'text'): err_text += c.text
             if (hasattr(click_result, 'is_error') and click_result.is_error) or \
-               self._check_result_has_error(err_text):
+               check_result_has_error(err_text):
                 log(f"[Auto-Logout] 点击失败: {err_text[:100]}", 3)
                 return False
         except Exception as e:
@@ -586,7 +571,7 @@ class LoginManager:
                 for c in logout_result.content:
                     if hasattr(c, 'text'): err += c.text
             if (hasattr(logout_result, 'is_error') and logout_result.is_error) or \
-               self._check_result_has_error(err):
+               check_result_has_error(err):
                 log(f"[Auto-Logout] 点击退出失败: {err[:100]}", 3)
                 return False
         except Exception as e:
@@ -678,16 +663,6 @@ class LoginManager:
         return matches >= 2
 
 
-def log(msg: str, level: int = 0, timestamp: bool = True):
-    """日志输出函数"""
-    from datetime import datetime
-    if timestamp:
-        prefix = datetime.now().strftime("[%H:%M:%S]")
-    else:
-        prefix = ""
-    
-    indent = "  " * level
-    print(f"{prefix}{indent}{msg}")
 
 
 if __name__ == "__main__":
