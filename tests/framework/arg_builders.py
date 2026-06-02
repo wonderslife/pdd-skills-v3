@@ -16,11 +16,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from tests.framework.snapshot_models import StepResult
 from tests.framework.snapshot_matcher import SnapshotParser
-
-
-def _log(msg: str, level: int = 0):
-    prefix = "  " * level
-    print(f"{prefix}{msg}", flush=True)
+from tests.framework.logger import log
 
 
 def resolve_env_vars(value):
@@ -82,7 +78,7 @@ class ActionRegistry:
             try:
                 hook(context)
             except Exception as e:
-                _log(f"[Hook Error] Pre-hook for {action_name}: {e}", 2)
+                log(f"[Hook Error] Pre-hook for {action_name}: {e}", 2)
 
     @classmethod
     def run_post_hooks(cls, action_name: str, context: Dict, result: StepResult):
@@ -91,7 +87,7 @@ class ActionRegistry:
             try:
                 hook(context, result)
             except Exception as e:
-                _log(f"[Hook Error] Post-hook for {action_name}: {e}", 2)
+                log(f"[Hook Error] Post-hook for {action_name}: {e}", 2)
 
 
 class AssertionRegistry:
@@ -116,19 +112,19 @@ def _resolve_uid(step: Dict, parser, cache, prefer_role: Optional[str] = None,
     direct_uid = locator.get("uid")
     if direct_uid:
         if direct_uid in parser.elements:
-            _log(f"[Direct-UID] {direct_uid} (YAML强制定位)", 2)
+            log(f"[Direct-UID] {direct_uid} (YAML强制定位)", 2)
             return direct_uid
         else:
-            _log(f"[Direct-UID-FAIL] uid={direct_uid} 不在当前页面元素中，降级到target匹配", 2)
+            log(f"[Direct-UID-FAIL] uid={direct_uid} 不在当前页面元素中，降级到target匹配", 2)
 
     aria_label = locator.get("aria-label") or locator.get("aria_label")
     if aria_label:
         for uid, elem in parser.elements.items():
             if (elem.text and aria_label.lower() in elem.text.lower()) or \
                (elem.name and aria_label.lower() in elem.name.lower()):
-                _log(f"[ARIA-LABEL] '{aria_label}' -> {uid} (text='{elem.text[:30] if elem.text else ''}')", 2)
+                log(f"[ARIA-LABEL] '{aria_label}' -> {uid} (text='{elem.text[:30] if elem.text else ''}')", 2)
                 return uid
-        _log(f"[ARIA-LABEL-FAIL] '{aria_label}' 未找到匹配元素", 2)
+        log(f"[ARIA-LABEL-FAIL] '{aria_label}' 未找到匹配元素", 2)
 
     if require_interactive is None:
         action = (step.get("action") or "").lower()
@@ -208,7 +204,7 @@ def _build_select_option_args(action, step, parser, cache) -> Dict:
             candidates = parser.find_all_by_role(role)
             if candidates:
                 uid = candidates[0].uid
-                _log(f"[Fallback] Using first {role}: {uid}", 2)
+                log(f"[Fallback] Using first {role}: {uid}", 2)
                 break
     if uid:
         args["uid"] = uid

@@ -14,12 +14,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from tests.framework.constants import SERVER_PARAMS
-
-
-def _log(msg: str, level: int = 0):
-    """内部日志"""
-    prefix = "  " * level
-    print(f"{prefix}{msg}", flush=True)
+from tests.framework.logger import log
 
 
 def preconfigure_chrome_profile(server_params):
@@ -57,9 +52,9 @@ def preconfigure_chrome_profile(server_params):
     try:
         with open(pref_path, "w", encoding="utf-8") as f:
             json.dump(preferences, f, ensure_ascii=False, indent=2)
-        _log(f"   📝 已预配置 Chrome Profile: {pref_path}", 2)
+        log(f"   📝 已预配置 Chrome Profile: {pref_path}", 2)
     except Exception as e:
-        _log(f"   ⚠️ Chrome Profile 预配置失败: {e}", 2)
+        log(f"   ⚠️ Chrome Profile 预配置失败: {e}", 2)
 
 
 def extract_result_content(result) -> str:
@@ -208,8 +203,8 @@ def parse_json_from_mcp_response(text: str):
     if re.search(r'"found"\s*:\s*true', text_clean) or \
        re.search(r'"exposed"\s*:\s*true', text_clean) or \
        re.search(r'found\s*:\s*true', text_clean):
-        _log(f"    [MCP-Parse] 通过正则检测到成功标记", 3)
+        log(f"    [MCP-Parse] 通过正则检测到成功标记", 3)
         return {"found": True, "_parse_method": "regex_fallback"}
 
-    _log(f"    [MCP-Parse] ⚠️ 无法提取JSON对象 (len={len(text_clean)}, has_found={'found' in text_clean.lower()})", 2)
+    log(f"    [MCP-Parse] ⚠️ 无法提取JSON对象 (len={len(text_clean)}, has_found={'found' in text_clean.lower()})", 2)
     return {}

@@ -10,12 +10,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from tests.framework.constants import INPUT_ROLES
 from tests.framework.snapshot_models import SnapshotElement
-
-
-def _log(msg: str, level: int = 0):
-    """内部日志（debug级别使用print，生产环境可替换为logging）"""
-    prefix = "  " * level
-    print(f"{prefix}{msg}", flush=True)
+from tests.framework.logger import log
 
 
 class SnapshotParser:
@@ -184,7 +179,7 @@ class SnapshotParser:
 
         cached = cache.get(target_lower)
         if cached and cached in self.elements:
-            _log(f"[Cache Hit] '{target_description}' -> {cached}", 3)
+            log(f"[Cache Hit] '{target_description}' -> {cached}", 3)
             return cached
 
         if not self.elements:
@@ -194,29 +189,29 @@ class SnapshotParser:
         if exact_uid:
             cache[target_lower] = exact_uid
             elem = self.elements[exact_uid]
-            _log(f"[Exact] '{target_description}' -> {exact_uid} "
+            log(f"[Exact] '{target_description}' -> {exact_uid} "
                 f"(role={elem.role}, text='{elem.text[:30]}')", 3)
             return exact_uid
 
         candidates = self._score_candidates(target_lower, prefer_role, exclude_roles, require_interactive)
 
         if not candidates:
-            _log(f"[Miss] '{target_description}' - 无候选元素", 3)
+            log(f"[Miss] '{target_description}' - 无候选元素", 3)
             self._log_debug_info(target_lower)
             return None
 
         best_uid, best_score = candidates[0]
 
-        _log(f"[Fuzzy-WARN] '{target_description}' -> {best_uid} (score={best_score}, "
+        log(f"[Fuzzy-WARN] '{target_description}' -> {best_uid} (score={best_score}, "
             f"建议YAML使用精确文本匹配以提升可靠性)", 2)
 
         if best_score > 0:
             cache[target_lower] = best_uid
             elem = self.elements[best_uid]
-            _log(f"[Match] '{target_description}' -> {best_uid} "
+            log(f"[Match] '{target_description}' -> {best_uid} "
                 f"(score={best_score}, role={elem.role}, text='{elem.text[:30]}')", 3)
         else:
-            _log(f"[Low Score] '{target_description}' -> {best_uid} (score={best_score})", 3)
+            log(f"[Low Score] '{target_description}' -> {best_uid} (score={best_score})", 3)
 
         return best_uid
 
@@ -468,11 +463,11 @@ class SnapshotParser:
                  if e.role in INPUT_ROLES]
 
         if interactive:
-            _log(f"[Debug] Interactive elements ({len(interactive)}): {interactive[:8]}", 3)
+            log(f"[Debug] Interactive elements ({len(interactive)}): {interactive[:8]}", 3)
         if buttons:
-            _log(f"[Debug] Buttons ({len(buttons)}): {buttons[:5]}", 3)
+            log(f"[Debug] Buttons ({len(buttons)}): {buttons[:5]}", 3)
         if inputs:
-            _log(f"[Debug] Inputs ({len(inputs)}): {inputs[:5]}", 3)
+            log(f"[Debug] Inputs ({len(inputs)}): {inputs[:5]}", 3)
 
     def find_all_by_role(self, role: str) -> List[SnapshotElement]:
         """查找所有指定角色的元素"""

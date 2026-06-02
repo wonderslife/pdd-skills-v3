@@ -248,7 +248,7 @@ steps:
     uid: "61_556"
   wait_after:
     type: time
-    duration: 12000
+    duration: 24000
 - step: 30
   desc: 上传'市场法测算表'（Element UI el_upload）
   action: el_upload
@@ -259,7 +259,7 @@ steps:
     uid: "59_610"
   wait_after:
     type: time
-    duration: 12000
+    duration: 24000
 - step: 31
   desc: 上传'企业产权登记证'（Element UI el_upload）
   action: el_upload

@@ -15,7 +15,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from tests.framework.constants import DEFAULT_CONFIG, RESULT_BASE_DIR, INPUT_ROLES
+from tests.framework.constants import DEFAULT_CONFIG, RESULT_BASE_DIR, INPUT_ROLES, INTERACTIVE_ROLES
 from tests.framework.logger import log
 from tests.framework.snapshot_models import StepStatus, StepResult, SnapshotElement
 from tests.framework.snapshot_matcher import SnapshotParser
@@ -344,8 +344,8 @@ class ActionExecutor:
                 if is_form_page:
                     # await self._disable_auto_save()  # 暂时禁用，排查导航问题
                     pass
-            except Exception:
-                pass
+            except Exception as e:
+                log(f"  ⚠️ 获取页面URL异常: {type(e).__name__}: {e}", 3)
 
         if action_type == "assert_multiple":
             return await self._execute_assert_multiple(step, step_num, desc, start_time)
@@ -623,8 +623,8 @@ class ActionExecutor:
                     if hasattr(c, 'text') and c.text.startswith('http'):
                         self.last_snapshot_url = c.text
                         break
-            except Exception:
-                pass
+            except Exception as e:
+                log(f"  ⚠️ 获取页面URL异常: {type(e).__name__}: {e}", 3)
 
             os.makedirs(self.snapshot_dir, exist_ok=True)
             snap_path = os.path.join(self.snapshot_dir, f"snap-{time.strftime('%Y%m%d-%H%M%S')}.txt")
@@ -1558,7 +1558,6 @@ class ActionExecutor:
         """
         log(f"    [SmartMatch] target='{target}' preferred_uid={preferred_uid} file_label={file_label}", 3)
 
-        INTERACTIVE_ROLES = {"button", "link", "textbox", "combobox", "menuitem"}
         TEXT_ONLY_ROLES = {"strong", "statictext", "inline textbox", "heading",
                            "listitem", "paragraph", "label", "image"}
 

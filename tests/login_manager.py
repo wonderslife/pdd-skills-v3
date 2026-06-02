@@ -480,7 +480,7 @@ class LoginManager:
                 elements = parsed.elements
             elif isinstance(parsed, list):
                 elements = parsed
-        except:
+        except Exception:
             elements = []
 
         user_element = None
