@@ -179,8 +179,14 @@ class SnapshotParser:
 
         cached = cache.get(target_lower)
         if cached and cached in self.elements:
-            log(f"[Cache Hit] '{target_description}' -> {cached}", 3)
-            return cached
+            elem = self.elements[cached]
+            if prefer_role and elem.role != prefer_role:
+                log(f"[Cache-Mismatch] '{target_description}' -> {cached} "
+                    f"(role={elem.role} ≠ required={prefer_role}), 重新匹配", 2)
+            else:
+                log(f"[Cache Hit] '{target_description}' -> {cached} "
+                    f"(role={elem.role}, text='{elem.text[:30]}')", 3)
+                return cached
 
         if not self.elements:
             return None

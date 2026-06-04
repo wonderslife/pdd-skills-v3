@@ -109,6 +109,8 @@ class AssertionRegistry:
 def _resolve_uid(step: Dict, parser, cache, prefer_role: Optional[str] = None,
                 require_interactive: Optional[bool] = None) -> Optional[str]:
     locator = step.get("locator", {}) or {}
+    if prefer_role is None:
+        prefer_role = locator.get("role") or locator.get("selector", {}).get("role")
     direct_uid = locator.get("uid")
     if direct_uid:
         if direct_uid in parser.elements:
@@ -277,6 +279,36 @@ def _build_script_args(action, step, parser, cache) -> Dict:
     fn = step.get("function", step.get("script", step.get("value", "() => {}")))
     return {"function": fn}
 
+def _build_js_click_args(action, step, parser, cache) -> Dict:
+    target_text = resolve_env_vars(step.get("target", ""))
+    locator = step.get("locator", {}) or {}
+    css_selector = locator.get("css") or locator.get("selector", "")
+    role_filter = locator.get("role", "")
+    escaped_target = target_text.replace("'", "\\'").replace("\\", "\\\\")
+    escaped_css = css_selector.replace("'", "\\'").replace("\\", "\\\\")
+
+    if css_selector:
+        js_fn = f"""() => {{
+        const el = document.querySelector('{escaped_css}');
+        if (el) {{ el.click(); return JSON.stringify({{tag: el.tagName, text: el.textContent.trim().substring(0,50), clicked:true}}); }}
+        return JSON.stringify({{error:'not_found', selector:'{escaped_css}'}});
+        }}"""
+    else:
+        role_tag = "button" if role_filter == "button" else ("a" if role_filter == "link" else "")
+        js_selector = role_tag or "*"
+        role_attr = f', tag:"{role_tag}"' if role_tag else ""
+        js_fn = f"""() => {{
+        const targets = document.querySelectorAll('{js_selector}');
+        for (const el of targets) {{
+            if (el.textContent.includes('{escaped_target}') && el.offsetParent !== null) {{
+                el.click();
+                return JSON.stringify({{tag: el.tagName, text: el.textContent.trim().substring(0,50), clicked:true{role_attr}}});
+            }}
+        }}
+        return JSON.stringify({{error:'not_found', target:'{escaped_target}'}});
+        }}"""
+    return {"function": js_fn}
+
 def _build_select_page_args(action, step, parser, cache) -> Dict:
     page_id = step.get("pageId", step.get("page_index", 0))
     return {"pageId": page_id}
@@ -293,6 +325,8 @@ def register_builtin_actions():
         ("new_page", "new_page", _build_new_page_args, False),
         ("click", "click", _build_click_args, True),
         ("tap", "click", _build_click_args, True),
+        ("js_click", "evaluate_script", _build_js_click_args, False),
+        ("native_click", "evaluate_script", _build_js_click_args, False),
         ("fill", "fill", _build_fill_args, True),
         ("type", "fill", _build_fill_args, True),
         ("input", "fill", _build_fill_args, True),

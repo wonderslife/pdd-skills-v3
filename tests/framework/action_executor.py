@@ -25,6 +25,7 @@ from tests.framework.mcp_client import (
 from tests.framework.arg_builders import (
     ActionRegistry, AssertionRegistry,
     resolve_env_vars, _resolve_uid,
+    _build_js_click_args,
 )
 from tests.framework.utils import safe_json_dumps
 
@@ -357,6 +358,9 @@ class ActionExecutor:
         if action_type in ("el_date", "el_date_picker"):
             return await self._execute_el_date(step, step_num, desc, start_time)
 
+        if action_type in ("js_click", "native_click"):
+            return await self._execute_js_click(step, step_num, desc, start_time)
+
         mcp_entry = ActionRegistry.get(action_type)
 
         if not mcp_entry:
@@ -427,6 +431,12 @@ class ActionExecutor:
 
             if ActionRegistry.needs_uid(action_type) and "uid" in mcp_args:
                 mcp_args["includeSnapshot"] = False
+                uid = mcp_args.get("uid", "")
+                elem = self.parser.elements.get(uid) if uid else None
+                if elem:
+                    log(f"  🎯 点击目标: UID={uid} | role={elem.role} | text='{(elem.text or '')[:40]}'", 2)
+                elif uid:
+                    log(f"  🎯 点击目标: UID={uid} (元素不在当前快照中)", 2)
 
             log(f"  🔧 MCP工具: {mcp_tool_name}", 2)
             log(f"  📝 参数: {safe_json_dumps(mcp_args, ensure_ascii=False, indent=2)}", 2)
@@ -468,7 +478,8 @@ class ActionExecutor:
 
                 icon = "✅" if not has_error else "❌"
                 status_text = "成功" if not has_error else "失败"
-                log(f"  {icon} {status_text} ({elapsed_ms}ms)" + (f" [重试{attempt}次]" if attempt > 0 else ""), 1)
+                uid_info = f" [UID={mcp_args.get('uid','')}]" if mcp_args.get('uid') else ""
+                log(f"  {icon} {status_text} ({elapsed_ms}ms){uid_info}" + (f" [重试{attempt}次]" if attempt > 0 else ""), 1)
                 
                 if content_str:
                     truncated = content_str[:400] + "..." if len(content_str) > 400 else content_str
@@ -1128,6 +1139,10 @@ class ActionExecutor:
                     )
 
             if click_uid:
+                click_elem = self.parser.elements.get(click_uid)
+                click_role = click_elem.role if click_elem else "?"
+                click_text = (click_elem.text or "")[:30] if click_elem else ""
+                log(f"  📎 🎯 上传按钮: UID={click_uid} | role={click_role} | text='{click_text}'", 2)
                 click_result = await self.session.call_tool("click", {
                     "uid": click_uid,
                     "includeSnapshot": False,
@@ -1682,6 +1697,83 @@ class ActionExecutor:
 
         log(f"    [NearestButton] 未找到匹配按钮", 3)
         return None
+
+    async def _execute_js_click(self, step: Dict, step_num: int,
+                                desc: str, start_time: float) -> StepResult:
+        target_text = resolve_env_vars(step.get("target", ""))
+        locator = step.get("locator", {}) or {}
+        css_selector = locator.get("css") or locator.get("selector", "")
+        role_filter = locator.get("role", "")
+        log(f"  🖱️ [JS Click] 目标='{target_text}' | role={role_filter or 'any'}"
+            f" | selector={css_selector or '(auto)'}", 2)
+        mcp_args = _build_js_click_args("js_click", step, self.parser, self.cache)
+        log(f"  🔧 MCP工具: evaluate_script (JS原生click)", 2)
+        log(f"  📝 JS代码预览: {mcp_args['function'][:80]}...", 3)
+
+        max_retries = int(resolve_env_vars(step.get("retries",
+                                  self.config.get("MAX_RETRIES", "3"))))
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                result = await self.session.call_tool("evaluate_script", mcp_args)
+                content = extract_result_content(result) if result else ""
+                log(f"  📄 JS返回: {content[:120] if content else '(empty)'}", 2)
+
+                import json as _json
+                try:
+                    info = _json.loads(content) if content else {}
+                    clicked = info.get("clicked", False)
+                    tag = info.get("tag", "?")
+                    el_text = info.get("text", "")
+                    err = info.get("error", "")
+                    if clicked:
+                        log(f"  ✅ JS点击成功: <{tag}> '{el_text}' "
+                            f"(耗时:{(time.time()-start_time)*1000:.0f}ms)"
+                            + (f" [重试{attempt}次]" if attempt > 0 else ""), 1)
+                        return StepResult(
+                            step_num=step_num, desc=desc, action="js_click",
+                            status=StepStatus.SUCCESS,
+                            mcp_tool="evaluate_script",
+                            output=f"JS clicked <{tag}> '{el_text}'",
+                            duration_ms=int((time.time() - start_time) * 1000),
+                            snapshot_path=self.last_snapshot_path,
+                        )
+                    elif err:
+                        log(f"  ❌ JS未找到元素: {err}", 1)
+                        last_error = f"Element not found: {err}"
+                    else:
+                        log(f"  ⚠️ JS返回异常格式: {content[:80]}", 1)
+                        last_error = f"Unexpected result: {content[:80]}"
+                except (_json.JSONDecodeError, TypeError):
+                    if content and ("error" not in content.lower()):
+                        log(f"  ✅ JS执行完成 (非JSON): {content[:60]}", 1)
+                        return StepResult(
+                            step_num=step_num, desc=desc, action="js_click",
+                            status=StepStatus.SUCCESS,
+                            mcp_tool="evaluate_script",
+                            output=content[:100] if content else "OK",
+                            duration_ms=int((time.time() - start_time) * 1000),
+                            snapshot_path=self.last_snapshot_path,
+                        )
+                    last_error = f"JS error: {content[:80] if content else 'empty'}"
+
+            except Exception as e:
+                last_error = f"{type(e).__name__}: {e}"
+                log(f"  ❌ JS执行异常: {last_error} (尝试 {attempt+1}/{max_retries})", 1)
+
+            if attempt < max_retries - 1:
+                delay = self.config.get("RETRY_DELAY", 1.0)
+                await asyncio.sleep(delay)
+
+        log(f"  ⛔ JS Click 失败 ({max_retries}次): {last_error}", 1)
+        return StepResult(
+            step_num=step_num, desc=desc, action="js_click",
+            status=StepStatus.FAILED,
+            mcp_tool="evaluate_script",
+            output=f"Failed after {max_retries} attempts: {last_error}",
+            duration_ms=int((time.time() - start_time) * 1000),
+            snapshot_path=self.last_snapshot_path,
+        )
 
     async def _execute_assert_multiple(self, step: Dict, step_num: int,
                                        desc: str, start_time: float) -> StepResult:

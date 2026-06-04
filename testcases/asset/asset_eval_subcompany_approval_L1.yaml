@@ -1,0 +1,115 @@
+test_id: asset_eval_subcompany_approval-L1
+title: 资产评估核准 - 子公司内部审批退回流程
+on_fail: continue
+priority: P1
+tags:
+- approval
+- subcompany
+- reject
+author: "通过对话录入"
+_include: login-flow.yaml
+
+context_check:
+  login_url: ${TEST_URL}
+  home_indicator: ''
+  credentials:
+    username: ${TEST_USER}
+    password: ${TEST_PASS}
+    display_name: ${TEST_DISPLAY_NAME}
+  captcha_required: false
+  sso_enabled: false
+
+steps:
+- step: 7
+  desc: 展开左侧菜单'资产评估'
+  action: click
+  target: 资产评估
+  assertion:
+    type: element_visible
+    expected: 资产评估核准
+    confidence: high
+- step: 8
+  desc: 展开子菜单'资产评估核准'
+  action: click
+  target: 资产评估核准
+  assertion:
+    type: element_visible
+    expected: 内部审批
+    confidence: high
+- step: 9
+  desc: 点击'内部审批'菜单项，打开内部审批列表页
+  action: click
+  target: 内部审批
+  wait_after:
+    type: time
+    duration: 12000
+  assertion:
+    type: text_contains
+    expected: 搜索
+    confidence: high
+- step: 10
+  desc: 在关键词搜索框中输入项目编号
+  action: fill
+  target: 关键词
+  value: ${APPROVAL_PROJECT_CODE}
+  assertion:
+    type: field_filled
+    confidence: high
+- step: 11
+  desc: 点击'搜索'按钮执行查询
+  action: click
+  target: 搜索
+  wait_after:
+    type: time
+    duration: 3000
+  assertion:
+    type: element_visible
+    expected: 审批
+    confidence: high
+- step: 12
+  desc: 在列表中点击目标记录的'审批'按钮（JS原生click绕过el-button兼容问题）
+  action: js_click
+  target: 审批
+  locator:
+    role: button
+  wait_after:
+    type: time
+    duration: 10000
+  assertion:
+    type: url_contains
+    expected: approve/
+    confidence: high
+- step: 13
+  desc: 选择'退回'radio选项（JS原生click确保选中）
+  action: js_click
+  target: 退回
+  locator:
+    role: radio
+  wait_after:
+    type: time
+    duration: 2000
+  assertion:
+    type: element_text
+    expected: 退回
+    confidence: medium
+- step: 14
+  desc: 在审批意见输入框中录入退回原因
+  action: fill
+  target: 审批意见
+  value: ${APPROVAL_REJECT_REASON}
+  assertion:
+    type: field_filled
+    confidence: high
+- step: 15
+  desc: 点击'确认通过'按钮提交审批结果（UI上无论选通过/退回都用此按钮提交）
+  action: js_click
+  target: 确认通过
+  locator:
+    role: button
+  wait_after:
+    type: time
+    duration: 12000
+  assertion:
+    type: toast_visible
+    expected: 成功
+    confidence: high
