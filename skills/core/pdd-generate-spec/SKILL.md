@@ -1,15 +1,6 @@
 ---
 name: pdd-generate-spec
-description: 根据功能点矩阵生成开发规格和验收标准。当用户想要生成功能点的技术规格时调用此Skill。支持中文触发：生成规格、开发规格、技术规格、PDD规格。
-license: MIT
-compatibility: 需要功能点矩阵和业务分析报告
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "2.1"
-  parent: pdd-main
-  triggers:
-    - "生成开发规格" | "生成spec" | "/spec"
-    - "技术设计" | "接口设计" | "数据模型"
+description: "Generate development specifications and acceptance criteria from feature point matrix. Invoke when users want to generate technical specs for features. 支持中文触发：生成规格、开发规格、技术规格。"
 ---
 
 # PDD-Generate Spec - 开发规格生成技能 / Development Specification Generation Skill

@@ -1,17 +1,6 @@
 ---
 name: expert-auto-refactor
-description: Automated refactoring expert transforming quality improvements into concrete code operations. Call when eliminating duplication or simplifying complexity systematically. 支持中文触发：重构代码、消除重复、简化代码。
-  
-  Core responsibility: Initiate targeted refactoring PRs regularly in a "small debt repayment" manner to prevent technical debt accumulation.
-  
-  Trigger scenarios:
-  - User requests "refactor code", "eliminate duplicates", "simplify code"
-  - Called by pdd-entropy-reduction coordinator
-  - Refactoring suggestions passed from expert-entropy-auditor
-  
-  支持中文触发：自动重构、代码重构、消除重复、简化代码、重构专家、PDD重构。
-author: neuqik@hotmail.com
-license: MIT
+description: "Automated refactoring expert transforming quality improvements into concrete code operations. Call when eliminating duplication or simplifying complexity systematically. 支持中文触发：重构代码、消除重复、简化代码、自动重构。"
 ---
 
 # Automated Refactoring Expert (expert-auto-refactor)

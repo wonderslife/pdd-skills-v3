@@ -1,15 +1,6 @@
 ---
 name: pdd-verify-feature
-description: 验证功能点实现是否符合开发规格和验收标准，采用三维验证模型（完整性、正确性、一致性）。当用户需要验证功能或检查实现时自动触发。支持中文触发：验证功能、功能验证、验收检查、PDD验证。
-license: MIT
-compatibility: 需要功能点代码和验收标准
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "4.1"
-  parent: pdd-main
-  triggers:
-    - "验证功能" | "验收" | "/verify"
-    - "功能点验收" | "checklist验证"
+description: "Verify feature implementation against development specs and acceptance criteria using a 3D verification model. Invoke when users need to verify features. 支持中文触发：验证功能、功能验证、验收检查。"
 ---
 
 # PDD-Verify Feature - 功能点验证技能 / Feature Verification Skill

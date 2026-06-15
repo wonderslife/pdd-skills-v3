@@ -1,10 +1,7 @@
-***
-
-name: "official-doc-writer"
-description: "Official document writer generating government docs (notifications, reports, requests) per GB/T 9704-2012 standard. Invoke when creating formal documents or government-style output."
-author: "neuqik@hotmail.com"
-license: "MIT"
---------------
+---
+name: official-doc-writer
+description: "Official document writer generating government docs per GB/T 9704-2012 standard. Invoke when creating formal documents or government-style output. 支持中文触发：公文生成、党政机关公文、正式文件。"
+---
 
 # 党政机关公文生成技能 / Official Government Document Generation Skill
 

@@ -1,15 +1,6 @@
 ---
 name: pdd-extract-features
-description: 从PRD文档体系中提取功能点矩阵。当用户想要提取功能点、识别功能需求或分析业务功能时调用此Skill。支持中文触发：提取功能点、功能点提取、PRD分析、需求拆解。
-license: MIT
-compatibility: 需要业务分析报告和PRD文档
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "2.1"
-  parent: pdd-main
-  triggers:
-    - "提取功能点" | "功能点矩阵" | "FP-"
-    - "从PRD提取" | "功能点分析"
+description: "Extract feature point matrix from PRD document system. Invoke when users want to extract features, identify requirements, or analyze business functions. 支持中文触发：提取功能点、PRD分析、需求拆解。"
 ---
 
 # PDD-Extract Features - 功能点提取技能 / Feature Extraction Skill

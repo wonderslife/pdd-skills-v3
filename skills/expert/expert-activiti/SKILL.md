@@ -1,15 +1,6 @@
 ---
 name: expert-activiti
-description: Activiti工作流引擎专家，精通Activiti 7 Core/Cloud架构和BPMN 2.0规范。当用户涉及工作流设计或流程引擎开发时自动触发。支持中文触发：工作流设计、流程引擎、BPMN建模、Activiti开发。
-license: MIT
-compatibility: Activiti 7.x
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "2.0"
-  triggers:
-    - "/activiti" | "/bpmn" | "/workflow"
-    - "工作流" | "流程设计" | "BPMN"
-    - "流程部署" | "任务管理" | "Activiti"
+description: "Activiti workflow engine expert proficient in Activiti 7 Core/Cloud architecture and BPMN 2.0 specification. Invoke when users need workflow design, BPMN modeling, process engine development, or Activiti deployment management. 支持中文触发：工作流设计、流程引擎、BPMN建模、Activiti开发、流程部署。"
 ---
 
 # Activiti工作流引擎专家

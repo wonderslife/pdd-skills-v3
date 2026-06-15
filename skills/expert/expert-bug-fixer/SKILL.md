@@ -1,31 +1,6 @@
 ---
 name: expert-bug-fixer
-description: "线上/已开发系统的Bug修复专家 v2.1（精简版）。精准定位、控制修改范围、生成变更发布单、根因验证、风险评估。当用户描述Bug、报错、显示异常时自动触发。支持中文触发：修复Bug、线上问题、改一下、报错了、显示不对。"
-license: MIT
-compatibility: 已有代码的Bug修复和小范围功能微调
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "2.1.0"
-  lastUpdated: "2026-05-06"
-  changelog: |
-    ## v2.1.0 (2026-05-06) - 质量优化
-    ### 压缩改进
-    - ✅ SKILL.md从523行压缩至370行（压缩29%）
-    - ✅ 详细示例移至config/目录按需加载
-    - ✅ 删除冗余的附录A快速参考卡
-    - ✅ 保持所有核心功能完整
-    
-    ### v2.0.0 核心能力保留
-    - 根因验证机制（Step 1.5 + config/hypothesis-validation.md）
-    - UI交互Bug调试决策树（config/debug-decision-tree.yaml）
-    - 代码冲突检测器（config/code-conflict-rules.yaml）
-    - 修复方案风险评估矩阵（config/fix-risk-matrix.yaml）
-    - 案例知识库模板（templates/case-template.md）
-
-  triggers:
-    - "/fix-bug" | "/修复Bug"
-    - "修复Bug" | "线上问题" | "改一下" | "不对" | "报错"
-    - "显示异常" | "接口404" | "数据不对" | "页面空白"
+description: "Bug fixing expert with precise location, scope control, minimal changes, root cause verification, and risk assessment. Invoke when users describe bugs or errors. 支持中文触发：修复Bug、线上问题、报错了、显示不对。"
 ---
 
 # Bug 修复专家 v2.1 (精简优化版) / Bug Fix Expert

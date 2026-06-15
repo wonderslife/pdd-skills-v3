@@ -1,16 +1,6 @@
 ---
 name: expert-ruoyi
-description: 若依(RuoYi)框架开发专家，精通项目搭建、代码生成和架构优化。当用户涉及若依框架开发、权限配置或菜单路由配置时自动触发。支持中文触发：若依框架、RuoYi、SpringBoot后台、权限配置。
-license: MIT
-compatibility: 若依框架项目
-metadata:
-  author: "neuqik@hotmail.com"
-  version: "3.0"
-  triggers:
-    - "/ruoyi" | "/若依"
-    - "若依框架" | "RuoYi" | "权限配置" | "菜单路由"
-    - "@PreAuthorize" | "@DataScope" | "sys_menu"
-    - "代码生成器" | "代码生成" | "权限校验"
+description: "RuoYi framework development expert proficient in project scaffolding, code generation, and architecture optimization. Invoke when users work on RuoYi framework. 支持中文触发：若依框架、RuoYi、SpringBoot后台、权限配置。"
 ---
 
 # 若依框架开发专家

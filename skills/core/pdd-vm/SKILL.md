@@ -1,16 +1,6 @@
 ---
 name: pdd-vm
-description: "PDD Visual Manager 可视化监控技能。当用户需要查看项目状态、启动Dashboard、使用TUI终端界面、监控流水线进度、查看质量评分、导出项目数据时自动触发。支持中文触发：可视化监控、Dashboard、看板、TUI、项目状态、流水线、质量评分、pdd vm。"
-license: MIT
-compatibility: PDD-Skills v3.0+ 项目
-metadata:
-  author: "PDD Team"
-  version: "1.0"
-  triggers:
-    - "/vm" | "/dashboard" | "/tui"
-    - "可视化监控" | "Dashboard" | "看板" | "TUI"
-    - "项目状态" | "流水线" | "质量评分" | "pdd vm"
-    - "Web Dashboard" | "Terminal TUI" | "SSE"
+description: "PDD Visual Manager for project status monitoring, Dashboard, TUI terminal interface, pipeline progress, and quality scores. Invoke when users need visualization. 支持中文触发：可视化监控、Dashboard、看板、TUI。"
 ---
 
 # PDD Visual Manager / PDD 可视化监控
