@@ -1,6 +1,6 @@
 ---
 name: pdd-main
-description: Main entry Skill for PRD-Driven Development orchestrating the entire workflow from PRD to deployment. Invoke when developing features based on PRD documents. 支持中文触发：PRD驱动开发、PDD开发、功能开发、启动PDD。
+description: "PRD驱动开发的主入口Skill，协调整个开发流程。当用户想要基于PRD文档进行功能开发、从需求文档生成代码、执行PDD方法论流程、开发业务模块、实现完整功能、'搞个功能'、'资产转让'、'国有产权转让'、'帮我搞个资产转让的功能'时必须调用此Skill。即使用户没有明确说'使用PDD'，只要涉及PRD文档、需求文档、功能点开发、规格文档、模块开发、根据文档开发、业务功能实现、'开发ZCCZ'、'我想开发'、'搞个功能'等场景，都应触发此Skill。此Skill会自动协调pdd-ba、pdd-extract-features、pdd-generate-spec、pdd-implement-feature等子Skill完成从需求分析到代码交付的完整流程。注意：单一接口设计、调试问题、文档查询等场景不应触发此Skill。支持中文触发：PRD驱动开发、PDD开发、功能开发、启动PDD。"
 license: MIT
 compatibility: Requires complete PRD document system
 metadata:

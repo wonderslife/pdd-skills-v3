@@ -1,6 +1,6 @@
 ---
 name: pdd-ba
-description: "PDD framework business analysis Skill for requirement elicitation and modeling. Invoke when users input /analyze, /audit, /doc commands, or need business process analysis, requirement modeling, PRD review, or 5W1H analysis. 支持中文触发：业务分析、需求分析、需求建模、5W1H分析、MECE。"
+description: "PDD框架下的业务分析Skill，运用专业方法论进行需求分析和业务建模。当用户输入/analyze、/audit、/doc等命令，或需要对业务流程、管理制度、Excel表单进行专业分析时触发。支持中文触发：业务分析、需求分析、需求建模、5W1H分析、MECE、流程分析。"
 license: MIT
 compatibility: 需要PRD文档或业务需求描述
 metadata:

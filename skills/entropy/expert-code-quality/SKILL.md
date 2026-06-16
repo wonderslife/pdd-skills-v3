@@ -1,6 +1,6 @@
 ---
 name: expert-code-quality
-description: "Code quality expert integrating refactoring techniques and design patterns for systematic improvement. Call when reviewing code, refactoring, or applying SOLID principles."
+description: "代码质量专家，整合Martin Fowler重构技术和GoF设计模式，帮助开发者系统性地提升代码质量。当用户询问代码审查、重构、设计模式、代码异味、SOLID原则或软件架构改进时触发此技能。支持中文触发：代码质量、代码审查、重构、设计模式、代码异味、SOLID原则、架构改进。"
 license: "MIT"
 author: "neuqik@hotmail.com"
 version: "2.0"

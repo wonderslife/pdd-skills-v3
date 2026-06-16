@@ -2,10 +2,17 @@
 name: testcase-modeler
 description: "测试用例建模师 - 将自然语言描述或页面操作录制转换为结构化YAML测试用例。当用户需要生成测试用例、录制操作流程、创建E2E测试时调用此技能。支持中文触发：写个测试用例、生成测试用例、帮我录个操作、录制测试流程、把这个操作记下来、测试一下功能、帮我验证流程、零基础写测试、自然语言转测试、回归测试、冒烟测试、UI自动化、E2E自动化、验收测试、场景测试、浏览器测试。"
 license: MIT
+compatibility: Chrome DevTools MCP + YAML 测试框架
 metadata:
   author: "PDD Team"
   version: "2.0.1"
   lastUpdated: "2026-05-20"
+  triggers:
+    - "/testcase" | "/model" | "/录制"
+    - "写个测试用例" | "生成测试用例" | "录制测试流程"
+    - "帮我录个操作" | "把这个操作记下来"
+    - "零基础写测试" | "自然语言转测试"
+    - "回归测试" | "冒烟测试" | "UI自动化" | "E2E自动化"
 ---
 
 # Testcase Modeler Skill - 测试用例建模师

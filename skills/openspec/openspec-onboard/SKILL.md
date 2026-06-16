@@ -1,6 +1,6 @@
 ---
 name: openspec-onboard
-description: Guided onboarding for OpenSpec walking through a complete workflow cycle. Invoke when initializing OpenSpec or starting guided setup with real codebase work.
+description: OpenSpec引导式入门专家，通过完整的实际工作流循环引导用户上手OpenSpec。当用户初次使用OpenSpec、需要引导式设置或学习完整工作流时调用此Skill。支持中文触发：引导入门、onboard、OpenSpec入门、首次使用、学习OpenSpec。
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:

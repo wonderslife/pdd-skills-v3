@@ -1,6 +1,6 @@
 ---
 name: pdd-implement-feature
-description: Implement feature point code based on development specifications. Call this Skill when users want to start coding implementation. 支持中文触发：实现功能点、编码实现、开始编码、功能开发、代码实现、PDD实现。
+description: "根据开发规格实现功能点代码的核心Skill。当用户想要开始编码实现、根据规格文档生成代码、实现功能点时调用此Skill。此Skill会自动调用pdd-template-engine生成基础代码框架，然后由software-engineer补充业务逻辑。即使只有规格文档没有明确说'实现'，只要涉及代码生成、功能开发，都应触发此Skill。支持中文触发：实现功能点、编码实现、开始编码、功能开发、代码实现、PDD实现。"
 license: MIT
 compatibility: Requires specification generation to be completed first
 metadata:

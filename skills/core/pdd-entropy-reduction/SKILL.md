@@ -1,6 +1,6 @@
 ---
 name: pdd-entropy-reduction
-description: PDD Entropy Reduction Agent monitoring technical debt and preventing system decay. Invoke for code cleanup, documentation updates, debt management, or garbage collection. 支持中文触发：熵减、技术债务、代码清理。
+description: "PDD熵减智能体，持续监控和偿还技术债务，防止系统腐化。当用户需要代码清理、文档更新、技术债务管理、架构对齐、熵减、垃圾回收、清理技术债务时自动触发。即使用户只说'熵减'、'清理技术债务'或'垃圾回收'，也应触发此Skill。支持中文触发：熵减、技术债务、代码清理、文档更新、架构对齐、垃圾回收。"
 license: MIT
 metadata:
   author: neuqik@hotmail.com
