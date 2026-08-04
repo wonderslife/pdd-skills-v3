@@ -1,7 +1,6 @@
 ---
 name: pdd-pr-create
-description: |
-  创建 PR 并执行自动化审查。当用户需要提交代码审查、创建 Pull Request、发起合并请求时调用此Skill。支持 GitHub 模式和本地模式。即使用户只说"创建PR"、"提交审查"或"发起PR"，也应触发此Skill。
+description: "创建 PR 并执行自动化审查，支持 GitHub 模式与本地模式。当用户提交代码审查、创建 Pull Request、发起合并请求时触发。触发词：创建PR、提交审查、发起PR、创建合并请求。"
 license: MIT
 compatibility: 需要 OpenSpec Change ID 或功能点 ID
 metadata:

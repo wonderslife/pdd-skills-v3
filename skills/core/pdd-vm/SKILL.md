@@ -33,10 +33,6 @@ PDD Visual Manager (PDD-VM) 提供双形态可视化监控能力，用于监控�
 - SSE 实时推送 — Server-Sent Events 实时数据更新
 - 数据导出 — 支持 CSV/JSON 格式导出
 
-### 🇺🇸 Positioning
-
-PDD Visual Manager provides dual-form visualization monitoring for PDD-driven business projects, offering both Web Dashboard and Terminal TUI interfaces.
-
 ## 2. CLI 命令 / CLI Commands
 
 ### Web Dashboard

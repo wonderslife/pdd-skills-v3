@@ -89,21 +89,6 @@ onMounted(() => { loadData(); });
 - 组件名使用 PascalCase，文件名使用 kebab-case
 - 复杂表单抽离为独立组件，通过 Props/Emits 通信
 
-### 🇺🇸
-
-#### 2.1 Composition API Standards
-- Use `<script setup>` syntax sugar uniformly
-- Reactive data: `ref()` for primitives, `reactive()` for objects/arrays
-- Component method exposure via `defineExpose()`
-- Props typing with `defineProps<T>()`
-- Emits typing with `defineEmits<T>()`
-
-#### 2.2 Pinia State Management Standards
-- Store files in `src/stores/` directory
-- Naming convention: `use{Module}Store` (e.g., `useUserStore`)
-- Prefer Setup Store syntax (more flexible)
-- Persistence via `pinia-plugin-persistedstate`
-
 ---
 
 ## 3. 常见问题模式 / Common Issue Patterns

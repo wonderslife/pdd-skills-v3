@@ -1,468 +1,102 @@
 ---
 name: expert-code-quality
-description: "代码质量专家，整合Martin Fowler重构技术和GoF设计模式，帮助开发者系统性地提升代码质量。当用户询问代码审查、重构、设计模式、代码异味、SOLID原则或软件架构改进时触发此技能。支持中文触发：代码质量、代码审查、重构、设计模式、代码异味、SOLID原则、架构改进。"
+description: "代码质量专家，整合Martin Fowler重构技术和GoF设计模式，系统提升代码质量。触发：代码审查、重构、设计模式、代码异味、SOLID原则、架构改进、code review、refactoring、design patterns。"
 license: "MIT"
 author: "neuqik@hotmail.com"
 version: "2.0"
 ---
 
-# Code Quality Expert
-
-## Overview
-
-This skill integrates two foundational software engineering disciplines:
-1. **Refactoring** - Improving code structure without changing behavior
-2. **Design Patterns** - Proven solutions to common design problems
-
-Combined, they form a powerful toolkit for writing clean, maintainable, and extensible code.
-
-## Directory Structure
-
-```
-expert-code-quality/
-├── SKILL.md              # Skill definition file
-├── LICENSE               # MIT License
-└── references/           # Reference documents
-    ├── refactoring-catalog.md    # Complete catalog of refactoring techniques
-    ├── design-patterns.md         # 23 GoF patterns
-    ├── code-smells.md             # Detailed description of code smells
-    └── solid-principles.md        # In-depth analysis of SOLID principles
-```
-
-## Trigger Conditions
-
-**Automatic Triggers:**
-- User asks about code quality issues
-- Need to identify code smells
-- Request for design pattern recommendations
-- Performing code refactoring
-- Evaluating SOLID principle compliance
-
-**Manual Triggers:**
-- User enters commands like `/code-quality`, `/refactor`, `/pattern`, etc.
-
----
-
-## Core Capabilities
-
-### 1. Code Smell Detection
-
-#### 1.1 Quick Reference: 22 Code Smells
-
-**Method-Level Smells:**
-
-| Smell | Detection Pattern | Severity |
-|-------|------------------|----------|
-| **Long Method** | Method > 20 lines | High |
-| **Duplicated Code** | Similar code blocks | Critical |
-| **Long Parameter List** | Parameters > 4 | Medium |
-| **Switch Statements** | Large switch/case blocks | Medium |
-
-**Class-Level Smells:**
-
-| Smell | Detection Pattern | Severity |
-|-------|------------------|----------|
-| **Large Class** | Class > 300 lines or > 10 fields | High |
-| **Divergent Change** | One class changes for multiple reasons | High |
-| **Shotgun Surgery** | One change requires modifying many classes | High |
-| **Feature Envy** | Method uses data from other classes more | Medium |
-
-**Relationship-Level Smells:**
-
-| Smell | Detection Pattern | Severity |
-|-------|------------------|----------|
-| **Inappropriate Intimacy** | Classes access each other's private parts | Medium |
-| **Message Chains** | `a.b().c().d()` chains | Medium |
-| **Middle Man** | Class only does delegation | Low |
-| **Data Clumps** | Same data items always appear together | Medium |
-
-#### 1.2 Smell Detection Checklist
-
-When reviewing code, check:
-- [ ] Are there methods longer than 20 lines?
-- [ ] Is there duplicated code?
-- [ ] Are there classes with more than 10 fields?
-- [ ] Are there switch statements that could use polymorphism?
-- [ ] Are there methods with more than 4 parameters?
-- [ ] Is there deep inheritance hierarchy (> 3 levels)?
-- [ ] Does the class change for multiple reasons?
-- [ ] Are there message chains with more than 3 calls?
-- [ ] Are there "data classes" with only data and no behavior?
-- [ ] Are there "lazy classes" that do almost nothing?
-
----
-
-### 2. Refactoring Techniques
-
-#### 2.1 Refactoring Principles
-
-**Two Hats (Kent Beck):**
-
-| Hat | Activity | Rule |
-|-----|----------|------|
-| **Adding Features** | Add new functionality | Don't modify existing code |
-| **Refactoring** | Improve structure | Don't add new features |
-
-**Never wear both hats at the same time!**
-
-**Refactoring Rhythm:**
-```
-Test → Small Change → Test → Small Change → Test
-```
-
-#### 2.2 Key Refactoring Techniques
-
-**Composing Methods:**
-
-| Refactoring | When to Use | Steps |
-|-------------|-------------|-------|
-| **Extract Method** | Method too long, code block needs naming | 1.Create new method 2.Copy code 3.Replace original code with call |
-| **Inline Method** | Method body as clear as its name | 1.Replace calls with method body 2.Delete method |
-| **Replace Temp with Query** | Temporary variable holds expression | 1.Extract expression to method 2.Replace temp with call |
-| **Replace Method with Method Object** | Too many temporaries in long method | 1.Create class for method 2.Temporaries become fields |
-
-**Moving Features:**
-
-| Refactoring | When to Use | Steps |
-|-------------|-------------|-------|
-| **Move Method** | Method uses other class more | 1.Copy to target 2.Delegate in source 3.Delete source method |
-| **Extract Class** | Class does too much | 1.Create new class 2.Move fields/methods 3.Link classes |
-| **Hide Delegate** | Client knows delegation chain | 1.Add delegate method 2.Hide chain |
-
-**Simplifying Conditionals:**
-
-| Refactoring | When to Use | Steps |
-|-------------|-------------|-------|
-| **Decompose Conditional** | Complex conditional logic | 1.Extract condition 2.Extract then/else |
-| **Consolidate Conditional** | Multiple checks with same result | 1.Combine with && or \|\| 2.Extract method |
-| **Replace Nested Conditional with Guard Clauses** | Deeply nested if-else | 1.Add guard clause returns 2.Flatten structure |
-| **Replace Conditional with Polymorphism** | Switch by type | 1.Create subclasses 2.Move behavior to each subclass |
-
-#### 2.3 Refactoring Decision Tree
-
-```
-Found code smell?
-    │
-    ├─ Do you have tests?
-    │   ├─ No → Write tests first
-    │   └─ Yes → Continue
-    │
-    ├─ Do you understand the code?
-    │   ├─ No → Refactor to understand
-    │   └─ Yes → Continue
-    │
-    └─ Choose refactoring approach:
-        │
-        ├─ Method too long → Extract Method
-        ├─ Duplicated code → Extract Method / Pull Up
-        ├─ Class too large → Extract Class
-        ├─ Parameter list too long → Introduce Parameter Object
-        ├─ Switch statement → Replace with Polymorphism
-        └─ Complex conditionals → Decompose / Guard Clauses
-```
-
----
-
-### 3. Design Patterns
-
-#### 3.1 SOLID Principles Foundation
-
-Before applying patterns, ensure understanding of SOLID principles:
-
-| Principle | Name | Description |
-|-----------|------|-------------|
-| **S** | Single Responsibility | One reason to change |
-| **O** | Open/Closed | Open for extension, closed for modification |
-| **L** | Liskov Substitution | Subtypes must be substitutable |
-| **I** | Interface Segregation | Small, focused interfaces |
-| **D** | Dependency Inversion | Depend on abstractions |
-
-#### 3.2 Selection by Problem Type
-
-| Problem | Pattern | Key Benefit |
-|---------|---------|-------------|
-| Need single instance | Singleton | Controlled access |
-| Flexible object creation | Factory Method | Decouple creation |
-| Create families of objects | Abstract Factory | Consistent products |
-| Build complex objects | Builder | Step-by-step construction |
-| Incompatible interfaces | Adapter | Make incompatible work |
-| Dynamically add responsibilities | Decorator | Flexible extension |
-| Control access | Proxy | Indirection layer |
-| Simplify complex system | Facade | Simple interface |
-| Tree structure | Composite | Uniform handling |
-| Switch algorithms | Strategy | Interchangeable behaviors |
-| Event notification | Observer | Loose coupling |
-| Encapsulate requests | Command | Undo/redo support |
-| State-dependent behavior | State | Clear state transitions |
-
-#### 3.3 Selection by Code Smell
-
-| Smell | Pattern Solution |
-|-------|------------------|
-| Large switch statement | State, Strategy |
-| Multiple conditionals | Strategy, State, Null Object |
-| Tight coupling | Observer, Mediator, Facade |
-| Difficult object creation | Factory, Builder |
-| Hard to extend class | Decorator, Adapter |
-| Complex subsystem | Facade |
-| Need varying algorithms | Strategy, Template Method |
-
-#### 3.4 Pattern Quick Reference
-
-**Creational Patterns:**
-
-| Pattern | When to Use |
-|---------|-------------|
-| Singleton | Need single instance |
-| Factory Method | Don't know exact class to create |
-| Abstract Factory | Need families of related objects |
-| Builder | Complex object with many options |
-| Prototype | Clone existing objects |
-
-**Structural Patterns:**
-
-| Pattern | When to Use |
-|---------|-------------|
-| Adapter | Incompatible interfaces |
-| Decorator | Dynamically add responsibilities |
-| Proxy | Control access, lazy loading |
-| Facade | Simplify complex interfaces |
-| Composite | Tree structure, uniform handling |
-| Flyweight | Many similar objects, share state |
-| Bridge | Separate abstraction from implementation |
-
-**Behavioral Patterns:**
-
-| Pattern | When to Use |
-|---------|-------------|
-| Strategy | Interchangeable algorithms |
-| Observer | One-to-many notifications |
-| Command | Encapsulate requests, undo/redo |
-| State | State-dependent behavior |
-| Template Method | Algorithm skeleton, varying steps |
-| Iterator | Uniform collection traversal |
-| Mediator | Complex object interactions |
-| Memento | Save/restore state |
-| Chain of Resp. | Request has multiple handlers |
-| Visitor | Add operations to object structure |
-
----
-
-### 4. Integrated Workflow
-
-#### 4.1 Code Quality Improvement Process
-
-```
-1. IDENTIFY
-   └── Detect code smells
-       └── Use smell checklist
-           └── Rate severity (Critical/High/Medium/Low)
-
-2. DIAGNOSE
-   └── Understand root cause
-       └── Why does this smell exist?
-           └── What problems will it cause?
-
-3. PLAN
-   └── Choose refactoring or pattern
-       └── Consider dependencies
-           └── Estimate impact
-
-4. PREPARE
-   └── Ensure tests exist
-       └── Run tests to verify behavior
-           └── Create tests if missing
-
-5. EXECUTE
-   └── Apply small changes
-       └── Test after each change
-           └── Keep code working
-
-6. VERIFY
-   └── Run all tests
-       └── Check for new smells
-           └── Confirm improvement
-```
-
-#### 4.2 Smell→Refactoring→Pattern Flow
-
-```
-Detected code smell
-        │
-        ▼
-┌───────────────────┐
-│ Is this a method  │
-│ level problem?    │
-└────────┬──────────┘
-         │
-    ┌────┴────┐
-    │ Yes     │ No
-    ▼         ▼
-Extract    Is this a class
-Method     level problem?
-              │
-         ┌────┴────┐
-         │ Yes     │ No
-         ▼         ▼
-    Extract    Is this a
-    Class      relationship
-              problem?
-                  │
-             ┌────┴────┐
-             │ Yes     │ No
-             ▼         ▼
-        Move/Hide   Consider
-        Delegate    Pattern
-                        │
-                        ▼
-                  ┌──────────────┐
-                  │ Which        │
-                  │ pattern fits │
-                  │ best?        │
-                  └──────┬───────┘
-                         │
-         ┌───────────────┼───────────────┐
-         ▼               ▼               ▼
-    Creational      Structural      Behavioral
-    Patterns        Patterns        Patterns
-```
-
----
-
-### 5. Collaboration Table
-
-#### 5.1 Collaboration with Other Skills
-
-| Collaborating Skill | Collaboration Mode | Description |
-|--------------------|-------------------|-------------|
-| **test-driven-development** | Sequential | Write tests before refactoring |
-| **systematic-debugging** | Consultation | Find root cause before fixing |
-| **requesting-code-review** | Reference | Get feedback on refactored code |
-| **pdd-code-reviewer** | Reference | Get PDD project code review |
-| **software-engineer** | Delegation | Quality check after code implementation |
-
-#### 5.2 Collaboration Workflow
-
-```
-Code quality issue detected
-    ↓
-Invoke expert-code-quality
-    ↓
-Identify code smells + Recommend refactoring/patterns
-    ↓
-(If tests needed first) → Invoke test-driven-development
-    ↓
-(If code implementation needed) → Invoke software-engineer
-    ↓
-Complete code quality improvement
-```
-
----
-
-### 6. Quick Decision Matrix
-
-| Scenario | Primary Action |
-|----------|---------------|
-| Found duplicated code | Extract Method |
-| Method too long | Extract Method |
-| Class too large | Extract Class |
-| Parameter list too long | Introduce Parameter Object |
-| Switch by type | Replace with Polymorphism |
-| Need single instance | Consider Singleton |
-| Need flexible creation | Factory Method or Builder |
-| Incompatible interfaces | Adapter |
-| Need to add behavior | Decorator |
-| Complex subsystem | Facade |
-| Need varying algorithms | Strategy |
-| Need event notification | Observer |
-
----
-
-### 7. Anti-Patterns
-
-#### 7.1 Refactoring Anti-Patterns
-
-| Anti-Pattern | Description | Correct Approach |
-|--------------|-------------|------------------|
-| **Big Bang Refactoring** | Rewrite everything at once | Small incremental changes |
-| **Refactoring Without Tests** | Change code without safety net | Write tests first |
-| **Over-Refactoring** | Refactor clean code | Stop when code is clear |
-| **Refactoring Addiction** | Only refactor, never deliver | Balance refactoring with features |
-| **Random Refactoring** | No clear goal | Identify smells first |
-
-#### 7.2 Pattern Anti-Patterns
-
-| Anti-Pattern | Description | Correct Approach |
-|--------------|-------------|------------------|
-| **Pattern Obsession** | Use patterns everywhere | Use patterns to solve problems |
-| **Singleton Abuse** | Everything is singleton | Use only when truly needed |
-| **Factory Overkill** | Factory for single product | Use factory for multiple products |
-| **Decorator Nesting** | Too many decorator layers | Limit nesting depth |
-| **Premature Pattern** | Use pattern before needed | Let patterns emerge from refactoring |
-
----
-
-### 8. Practice Checklists
-
-#### 8.1 Code Review Checklist
-
-Before approving code, verify:
-- [ ] No critical code smells
-- [ ] Reasonable method size (< 20 lines)
-- [ ] Class has single responsibility
-- [ ] No duplicated code
-- [ ] Clear conditionals
-- [ ] Meaningful names
-- [ ] Tests exist and pass
-- [ ] Follows SOLID principles
-- [ ] Patterns used appropriately (not overused)
-
-#### 8.2 Refactoring Safety Checklist
-
-Before refactoring:
-- [ ] All tests pass
-- [ ] Tests cover code to refactor
-- [ ] Understand code functionality
-- [ ] Have rollback plan
-- [ ] Make small changes
-- [ ] Test after each change
-
-#### 8.3 Pattern Application Checklist
-
-Before applying pattern:
-- [ ] Problem matches pattern intent
-- [ ] Pattern solves real problem (not imagined)
-- [ ] Team understands pattern
-- [ ] Pattern doesn't overcomplicate
-- [ ] Alternatives considered
-- [ ] Pattern fits project context
-
----
+# Code Quality Expert 代码质量专家
+
+整合两大软件工程学科：**重构(Refactoring)**（不改变行为改进结构）+ **设计模式(Design Patterns)**（常见设计问题的成熟方案），帮助编写整洁、可维护、可扩展的代码。
+
+**参考文档**: `references/` 下按需加载（refactoring-catalog / design-patterns / code-smells / solid-principles）
+
+## 触发条件
+- 询问代码质量问题 / 识别代码异味 / 推荐设计模式 / 执行重构 / 评估SOLID合规
+- 手动命令: `/code-quality` `/refactor` `/pattern`
+
+## 核心能力
+
+### 1. 代码异味检测 (22种)
+**方法级**: Long Method(>20行)🔴 | Duplicated Code(重复代码)🔴 | Long Parameter List(>4参数)🟡 | Switch Statements(大switch)🟡
+**类级**: Large Class(>300行或>10字段)🔴 | Divergent Change(多种原因修改)🔴 | Shotgun Surgery(一处改多处)🔴 | Feature Envy(多用他类数据)🟡
+**关系级**: Inappropriate Intimacy(访问私有)🟡 | Message Chains(链式调用)🟡 | Middle Man(仅委托)🟢 | Data Clumps(数据聚合)🟡
+
+**检测清单**: [ ]方法>20行 [ ]重复代码 [ ]类>10字段 [ ]switch可多态化 [ ]方法>4参数 [ ]继承>3层 [ ]类多原因变更 [ ]消息链>3 [ ]纯数据类 [ ]惰性类
+
+### 2. 重构技术
+**两顶帽子原则(Kent Beck)**: 增加功能(不改旧代码) vs 重构(不加新功能)，绝不同时戴两顶。
+**重构节奏**: Test → 小改动 → Test → 小改动 → Test
+
+**关键重构**:
+- 组合方法: Extract Method(方法过长) | Inline Method(方法体清晰) | Replace Temp with Query(临时变量) | Replace Method with Method Object(临时变量过多)
+- 搬移特性: Move Method(多用他类) | Extract Class(类过多职责) | Hide Delegate(隐藏委托链)
+- 简化条件: Decompose Conditional(复杂条件) | Consolidate Conditional(合并条件) | Replace Nested Conditional with Guard Clauses(嵌套if) | Replace Conditional with Polymorphism(类型switch)
+
+**重构决策树**: 有测试? 无→先写测试 | 理解代码? 无→先重构理解 | 方法过长→Extract Method | 重复代码→Extract/Pull Up | 类过大→Extract Class | 参数过长→Parameter Object | switch→Polymorphism | 复杂条件→Decompose/Guard Clauses
+
+### 3. 设计模式
+**SOLID原则**: S单一职责 | O开闭(扩展开放/修改关闭) | L里氏替换(子类可替换) | I接口隔离(小聚焦接口) | D依赖倒置(依赖抽象)
+
+**按问题选择**:
+| 问题 | 模式 |
+|------|------|
+| 需单实例 | Singleton |
+| 灵活创建对象 | Factory Method |
+| 一族对象 | Abstract Factory |
+| 复杂对象构建 | Builder |
+| 接口不兼容 | Adapter |
+| 动态加职责 | Decorator |
+| 控制访问 | Proxy |
+| 简化复杂系统 | Facade |
+| 树结构 | Composite |
+| 切换算法 | Strategy |
+| 事件通知 | Observer |
+| 封装请求 | Command |
+| 状态依赖行为 | State |
+
+**按代码异味选择**: 大switch→State/Strategy | 多重条件→Strategy/State/Null Object | 紧耦合→Observer/Mediator/Facade | 对象创建难→Factory/Builder | 类难扩展→Decorator/Adapter | 复杂子系统→Facade | 算法变化→Strategy/Template Method
+
+**模式速查**: 创建型(Singleton/Factory/Abstract Factory/Builder/Prototype) | 结构型(Adapter/Decorator/Proxy/Facade/Composite/Flyweight/Bridge) | 行为型(Strategy/Observer/Command/State/Template Method/Iterator/Mediator/Memento/Chain of Resp/Visitor)
+
+### 4. 集成工作流
+**代码质量改进流程**: 1.IDENTIFY识别异味(清单+分级) → 2.DIAGNOSE诊断根因 → 3.PLAN选重构/模式(考虑依赖/估算影响) → 4.PREPARE保证测试 → 5.EXECUTE小步改动(每步测试) → 6.VERIFY全集测试+查新异味
+
+**异味→重构→模式流**: 方法级→Extract Method | 类级→Extract Class | 关系级→Move/Hide Delegate | 否则→选最佳模式(创建型/结构型/行为型)
+
+### 5. 协作
+| 协作技能 | 方式 | 说明 |
+|---------|------|------|
+| test-driven-development | 顺序 | 重构前先写测试 |
+| systematic-debugging | 咨询 | 修复前找根因 |
+| requesting-code-review | 参考 | 重构后获取反馈 |
+| pdd-code-reviewer | 参考 | PDD项目代码审查 |
+| software-engineer | 委托 | 代码实现后质量检查 |
+
+### 6. 快速决策矩阵
+重复代码/方法过长→Extract Method | 类过大→Extract Class | 参数过长→Parameter Object | 类型switch→Polymorphism | 单实例→Singleton | 灵活创建→Factory/Builder | 接口不兼容→Adapter | 加行为→Decorator | 复杂子系统→Facade | 算法变化→Strategy | 事件通知→Observer
+
+### 7. 反模式
+**重构反模式**: Big Bang(一次全重写)→小步增量 | 无测试重构→先写测试 | 过度重构→清晰即停 | 重构成瘾→平衡功能 | 随机重构→先识别异味
+**模式反模式**: Pattern Obsession(到处用模式)→按需 | Singleton滥用→真需要才用 | Factory过度→多产品才用 | Decorator嵌套过深→限制深度 | Premature Pattern(过早用模式)→重构中自然浮现
+
+### 8. 实践清单
+**代码审查清单**: [ ]无关键异味 [ ]方法<20行 [ ]类单一职责 [ ]无重复代码 [ ]条件清晰 [ ]命名有意义 [ ]测试存在且通过 [ ]符合SOLID [ ]模式用得恰当
+**重构安全清单**: [ ]所有测试通过 [ ]测试覆盖目标 [ ]理解功能 [ ]有回滚方案 [ ]小步改动 [ ]每步测试
+**模式应用清单**: [ ]问题匹配模式意图 [ ]解决真实问题 [ ]团队理解 [ ]不过度复杂化 [ ]考虑替代方案 [ ]符合项目上下文
 
 ## Guardrails
+- 基于Martin Fowler重构目录和GoF设计模式给建议
+- 重构建议需具体代码转换示例
+- 模式应用需权衡利弊，不盲目推荐
+- 代码审查需具体指出问题和改进建议
+- 不确定的问题明确说明，避免误导
 
-- Must provide suggestions based on Martin Fowler's refactoring catalog and GoF design patterns
-- Refactoring suggestions need specific code transformation examples
-- Pattern application needs to weigh pros and cons, not blindly recommend
-- Code review needs to specifically point out problems and improvement suggestions
-- Clearly state uncertain issues to avoid misleading
+## 版本历史
+| 版本 | 日期 | 变更 |
+|------|------|------|
+| 2.0 | 2026-03-21 | 统一中文描述，增加协作表，增强决策矩阵 |
+| 1.0 | 早期 | 基础质量检测/重构目录/模式参考 |
 
----
-
-## Version History
-
-### v2.0 (2026-03-21)
-- Unified to Chinese description
-- Added collaboration table, clarified collaboration with other skills
-- Enhanced quick decision matrix
-- Optimized refactoring decision tree
-- Added anti-pattern checklist
-
-### v1.0 (Initial version)
-- Basic code quality detection
-- Refactoring technique catalog
-- Design pattern reference
-
----
-
-> **Remember**: Good code isn't about being clever—it's about being clear. Refactoring and patterns are tools to achieve clarity, not ends in themselves.
+> 记住: 好代码的关键是清晰而非聪明。重构和模式是达成清晰的手段，而非目的本身。

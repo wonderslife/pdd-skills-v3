@@ -1,1 +1,1 @@
-{"name": "expert-auto-refactor", "version": "1.0.0", "category": "entropy", "description": "Automated refactoring expert transforming collected quality improvements into concrete code operations. Call when eliminating code duplication, simplifying complexity, or applying design patterns systematically.", "triggers": ["重构代码", "消除重复", "简化代码"]}
+{"name": "expert-auto-refactor", "version": "1.0.0", "category": "entropy", "description": "自动化重构专家技能，将质量改进任务转化为具体代码操作。当需要消除代码重复、简化复杂度、系统应用设计模式时调用。支持中文触发：重构代码、消除重复、简化代码。", "triggers": ["重构代码", "消除重复", "简化代码"]}

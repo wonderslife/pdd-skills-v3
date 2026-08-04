@@ -118,13 +118,6 @@ Provides expert-level guidance for Spring Cloud / Spring Cloud Alibaba microserv
 - [ ] 网关路由变更必须配合限流规则
 - [ ] 分布式事务方法必须标注 `@GlobalTransactional`
 
-### 🇺🇸 Must Follow
-- [ ] Service-to-service calls must use OpenFeign; hardcoded RestTemplate URLs are forbidden
-- [ ] All Feign clients must have Fallback configured
-- [ ] Config changes must be verified in dev environment first
-- [ ] Gateway route changes must include rate limiting rules
-- [ ] Distributed transaction methods must be annotated with `@GlobalTransactional`
-
 ---
 
 ## 5. 版本历史 / Version History

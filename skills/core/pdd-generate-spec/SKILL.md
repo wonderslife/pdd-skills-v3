@@ -1,6 +1,6 @@
 ---
 name: pdd-generate-spec
-description: 根据功能点矩阵生成开发规格和验收标准。当用户想要生成功能点的技术规格时调用此Skill。支持中文触发：生成规格、开发规格、技术规格、PDD规格。
+description: 根据功能点矩阵生成开发规格与验收标准。当用户需要生成功能点技术规格、编写spec.md或checklist.md时调用。支持中文触发：生成规格、开发规格、技术规格、PDD规格、验收标准。
 license: MIT
 compatibility: 需要功能点矩阵和业务分析报告
 metadata:
@@ -12,397 +12,38 @@ metadata:
     - "技术设计" | "接口设计" | "数据模型"
 ---
 
-# PDD-Generate Spec - 开发规格生成技能 / Development Specification Generation Skill
+# PDD-Generate Spec - 开发规格生成技能
 
-## 核心概念 / Core Concepts
+## 核心概念
 
-### 🇨🇳
-
-根据功能点矩阵和业务分析报告,为每个功能点生成详细的开发规格文档(spec.md)和验收标准(checklist.md)。
+根据功能点矩阵和业务分析报告，为每个功能点生成详细的开发规格文档(spec.md)和验收标准(checklist.md)。
 
 **输入**: feature-matrix.md(功能点矩阵) | 业务分析报告 | **输出**: spec.md(开发规格) | checklist.md(验收标准) | **不负责**: 代码实现/测试执行
 
-### 🇺🇸
-
-Based on the feature matrix and business analysis report, generate detailed development specification documents (spec.md) and acceptance criteria (checklist.md) for each feature point.
-
-**Input**: feature-matrix.md (Feature Matrix) | Business Analysis Report | **Output**: spec.md (Development Specification) | checklist.md (Acceptance Criteria) | **Not Responsible For**: Code implementation / Test execution
-
-## 规格文档结构 / Specification Document Structure
-
-### 🇨🇳
-
-### spec.md 模板
-
-```markdown
-# [模块名称] 开发规格
-
-## 基本信息
-| 项目 | 内容 |
-|------|------|
-| 功能点ID | FP-XXX-NNN |
-| 版本 | v1.0 |
-| 日期 | YYYY-MM-DD |
-
-## 1. 接口定义
-
-### 1.1 API列表
-| 序号 | 方法 | 路径 | 描述 | 认证 |
-
-### 1.2 接口详情
-#### POST /api/{module}/create
-**请求参数**: 字段名/类型/必填/说明
-**响应结构**: code/msg/data
-**错误码**: 错误码/描述/处理方式
-
-## 2. 数据模型
-
-### 2.1 实体关系图(文字描述)
-实体间的关系和依赖
-
-### 2.2 数据表设计
-| 字段名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-
-### 2.3 枚举值定义
-| 字段 | 值 | 含义 |
-
-## 3. 业务逻辑
-
-### 3.1 处理流程
-1.[步骤] → 2.[步骤] → 3.[步骤]
-
-### 3.2 业务规则
-| 规则ID | 规则描述 | 约束类型 | 优先级 |
-
-### 3.3 状态转换
-当前状态 → 条件/事件 → 目标状态
-
-## 4. 前端页面设计
-
-### 4.1 页面清单
-| 页面 | 路径 | 类型 |
-
-### 4.2 表单字段
-| 字段名 | 组件类型 | 校验规则 |
-
-## 5. 权限与安全
-
-### 5.1 接口权限
-| 路径 | 权限标识 | 角色 |
-
-### 5.2 数据权限
-| 操作 | 数据范围 |
-
-## 6. 前端实现约定
-
-### 6.1 页面组件
-- 页面路径: /{module}
-- 组件文件: {ModuleName}View.vue
-- 布局: AppLayout + ContentArea
-
-### 6.2 表单字段映射
-| 字段 | 组件 | 数据源API | 默认值 | 校验规则 |
-|------|------|----------|--------|---------|
-| (根据PRD 4.4节填写) | | | | |
-
-### 6.3 操作按钮矩阵
-| 状态 | 创建者 | 评估师/审批人 | 其他人 |
-|------|--------|-------------|--------|
-| (根据PRD 7.1节填写) | | | |
-
-### 6.4 列表表格列定义
-| 列名 | 字段 | 宽度 | 排序 | 筛选 |
-|------|------|------|------|------|
-
-## 7. 关联数据源（Options接口）
-
-### 7.1 需要的Options接口
-| 接口 | 路径 | 返回格式 | 过滤参数 |
-|------|------|---------|---------|
-| (根据PRD 4.5节填写) | | | |
-
-### 7.2 Options接口设计规则
-- 路由必须在 /{id} 之前定义（避免路由冲突）
-- 返回轻量数据（仅id+显示字段）
-- 支持query参数过滤（如 ?role=evaluator）
-
-## 8. 路由注册与命名约定
-
-### 8.1 路由注册顺序（必须严格遵守）
-1. /me (当前用户)
-2. / (列表)
-3. /options (下拉选项) — 必须在 /{id} 之前！
-4. /{id} (详情)
-5. POST / (创建)
-6. PUT /{id} (更新)
-7. DELETE /{id} (删除)
-
-### 8.2 文件命名约定
-- API路由: {module_name}.py
-- Service: {module_name}_service.py
-- Schema: {module_name}.py (在schemas目录)
-- Model: {module_name}.py (在models目录)
-- Vue组件: {ModuleName}View.vue (PascalCase)
-
-## 9. 依赖检查清单
-
-### 9.1 前置依赖（必须满足才能开始开发）
-- [ ] **部门管理模块**已就绪
-  - 验证: curl GET /departments/options → 返回≥1条记录
-  - 如果未就绪: 先实现 FP-INFRA-001
-- [ ] **种子数据**已初始化
-  - 验证: python seed_base_data.py 执行成功
-  - 如果未就绪: 先运行种子脚本
-- [ ] **认证中间件**已配置
-  - 验证: POST /auth/login → 返回access_token
-
-### 9.2 本功能产生的后续依赖
-- [ ] 本功能的 /options 端点将被 FP-XXX 依赖
-```
-
-### checklist.md 模板
-
-```markdown
-# [功能点名称] 验收标准
-
-## 业务验收标准
-| 序号 | 验收项 | 预期结果 | 验证方法 |
-|------|-------|---------|---------|
-
-## 技术验收标准
-| 序号 | 验收项 | 标准 | 验证方法 |
-|------|-------|------|---------|
-
-## 集成验收标准
-| 序号 | 验收项 | 标准 | 验证方法 |
-```
-
-### 🇺🇸
-
-### spec.md Template
-
-```markdown
-# [Module Name] Development Specification
-
-## Basic Information
-| Item | Content |
-|------|---------|
-| Feature Point ID | FP-XXX-NNN |
-| Version | v1.0 |
-| Date | YYYY-MM-DD |
-
-## 1. API Definition
-
-### 1.1 API List
-| No. | Method | Path | Description | Auth |
-
-### 1.2 API Details
-#### POST /api/{module}/create
-**Request Parameters**: Field Name / Type / Required / Description
-**Response Structure**: code / msg / data
-**Error Codes**: Error Code / Description / Handling
-
-## 2. Data Model
-
-### 2.1 Entity Relationship Diagram (Text Description)
-Relationships and dependencies between entities
-
-### 2.2 Database Table Design
-| Field Name | Type | Required | Description |
-|------------|------|----------|-------------|
-
-### 2.3 Enumeration Value Definitions
-| Field | Value | Meaning |
-
-## 3. Business Logic
-
-### 3.1 Processing Flow
-1.[Step] → 2.[Step] → 3.[Step]
-
-### 3.2 Business Rules
-| Rule ID | Rule Description | Constraint Type | Priority |
-
-### 3.3 State Transitions
-Current State → Condition/Event → Target State
-
-## 4. Frontend Page Design
-
-### 4.1 Page List
-| Page | Path | Type |
-
-### 4.2 Form Fields
-| Field Name | Component Type | Validation Rules |
-
-## 5. Permissions & Security
-
-### 5.1 API Permissions
-| Path | Permission Identifier | Role |
-
-### 5.2 Data Permissions
-| Operation | Data Scope |
-
-## 6. Frontend Implementation Conventions
-
-### 6.1 Page Components
-- Page path: /{module}
-- Component file: {ModuleName}View.vue
-- Layout: AppLayout + ContentArea
-
-### 6.2 Form Field Mapping
-| Field | Component | Data Source API | Default | Validation |
-|-------|-----------|---------------|---------|------------|
-| (Fill from PRD Section 4.4) | | | | |
-
-### 6.3 Action Button Matrix
-| Status | Creator | Reviewer | Others |
-|--------|---------|----------|--------|
-| (Fill from PRD Section 7.1) | | | |
-
-### 6.4 List Table Column Definition
-| Column | Field | Width | Sortable | Filterable |
-|--------|-------|-------|----------|------------|
-
-## 7. Related Data Sources (Options APIs)
-
-### 7.1 Required Options APIs
-| API | Path | Response Format | Filter Params |
-|-----|------|----------------|---------------|
-| (Fill from PRD Section 4.5) | | | |
-
-### 7.2 Options API Design Rules
-- Route MUST be defined before /{id} (avoid route conflicts)
-- Return lightweight data (id + display fields only)
-- Support query parameter filtering (e.g., ?role=evaluator)
-
-## 8. Route Registration & Naming Conventions
-
-### 8.1 Route Registration Order (MUST strictly follow)
-1. /me (current user)
-2. / (list)
-3. /options (dropdown options) — MUST be before /{id}!
-4. /{id} (detail)
-5. POST / (create)
-6. PUT /{id} (update)
-7. DELETE /{id} (delete)
-
-### 8.2 File Naming Conventions
-- API route: {module_name}.py
-- Service: {module_name}_service.py
-- Schema: {module_name}.py (in schemas directory)
-- Model: {module_name}.py (in models directory)
-- Vue component: {ModuleName}View.vue (PascalCase)
-
-## 9. Dependency Checklist
-
-### 9.1 Prerequisites (MUST be met before development)
-- [ ] **Department module** is ready
-  - Verify: curl GET /departments/options → returns ≥1 record
-  - If not ready: implement FP-INFRA-001 first
-- [ ] **Seed data** is initialized
-  - Verify: python seed_base_data.py executes successfully
-  - If not ready: run seed script first
-- [ ] **Auth middleware** is configured
-  - Verify: POST /auth/login → returns access_token
-
-### 9.2 Dependencies Created by This Feature
-- [ ] This feature's /options endpoint will be needed by FP-XXX
-```
-
-### checklist.md Template
-
-```markdown
-# [Feature Point Name] Acceptance Criteria
-
-## Business Acceptance Criteria
-| No. | Acceptance Item | Expected Result | Verification Method |
-|-----|----------------|-----------------|---------------------|
-
-## Technical Acceptance Criteria
-| No. | Acceptance Item | Standard | Verification Method |
-|-----|----------------|----------|---------------------|
-
-## Integration Acceptance Criteria
-| No. | Acceptance Item | Standard | Verification Method |
-```
-
-## 生成流程 / Generation Process
-
-### 🇨🇳
-
-### Step 1: 读取功能点矩阵
-从 `dev-specs/feature-matrix.md` 读取功能点定义
-
-### Step 2: 分析功能点详情
-提取: 功能描述 | 输入字段 | 输出信息 | 业务规则 | 状态转换 | 测试策略
-
-### Step 3: 设计接口定义
-RESTful规范 | HTTP方法语义 | URL命名规范 | 请求/响应格式 | 错误码体系
-
-### Step 4: 设计数据模型
-实体识别 | 属性定义 | 关系映射 | 索引设计 | 审计字段(create_time/update_time/create_by/update_by/del_flag/status)
-
-### Step 5: 定义业务逻辑
-核心流程 | 边界条件 | 异常处理 | 状态机转换
-
-### Step 6: 设计前端页面
-页面结构 | 表单布局 | 列表展示 | 交互流程
-
-### Step 7: 定义权限与安全
-接口权限 | 数据权限 | 输入校验 | SQL注入防护
-
-### Step 8: 编写验收标准
-业务场景覆盖 | 技术指标达标 | 集成测试通过
-
-### Step 9: 输出规格文档
-保存到 `dev-specs/FP-{序号}/spec.md` 和 `checklist.md`
-
-### 🇺🇸
-
-### Step 1: Read Feature Matrix
-Read feature point definitions from `dev-specs/feature-matrix.md`
-
-### Step 2: Analyze Feature Point Details
-Extract: Feature Description | Input Fields | Output Information | Business Rules | State Transitions | Test Strategy
-
-### Step 3: Design API Definitions
-RESTful Conventions | HTTP Method Semantics | URL Naming Conventions | Request/Response Format | Error Code System
-
-### Step 4: Design Data Model
-Entity Identification | Attribute Definition | Relationship Mapping | Index Design | Audit Fields (create_time/update_time/create_by/update_by/del_flag/status)
-
-### Step 5: Define Business Logic
-Core Flow | Edge Cases | Exception Handling | State Machine Transitions
-
-### Step 6: Design Frontend Pages
-Page Structure | Form Layout | List Display | Interaction Flow
-
-### Step 7: Define Permissions & Security
-API Permissions | Data Permissions | Input Validation | SQL Injection Protection
-
-### Step 8: Write Acceptance Criteria
-Business Scenario Coverage | Technical Metrics Compliance | Integration Test Pass
-
-### Step 9: Output Specification Documents
-Save to `dev-specs/FP-{sequence}/spec.md` and `checklist.md`
+## 规格文档模板
+
+- **spec.md 模板**: 见 `references/spec-template.md`（接口定义/数据模型/业务逻辑/前端页面/权限安全/Options/路由/依赖，共9章）
+- **checklist.md 模板**: 见 `references/checklist-template.md`（业务/技术/集成验收三部分）
+
+## 生成流程
+
+1. **读取功能点矩阵**: 从 `dev-specs/feature-matrix.md` 读取功能点定义
+2. **分析功能点详情**: 提取功能描述|输入字段|输出信息|业务规则|状态转换|测试策略
+3. **设计接口定义**: RESTful规范|HTTP方法语义|URL命名|请求/响应格式|错误码体系
+4. **设计数据模型**: 实体识别|属性定义|关系映射|索引设计|审计字段(create_time/update_time/create_by/update_by/del_flag/status)
+5. **定义业务逻辑**: 核心流程|边界条件|异常处理|状态机转换
+6. **设计前端页面**: 页面结构|表单布局|列表展示|交互流程
+7. **定义权限与安全**: 接口权限|数据权限|输入校验|SQL注入防护
+8. **编写验收标准**: 业务场景覆盖|技术指标达标|集成测试通过
+9. **输出规格文档**: 保存到 `dev-specs/FP-{序号}/spec.md` 和 `checklist.md`
 
 ## Guardrails / 质量护栏
 
-### 🇨🇳
+**必须遵守**: 接口定义符合RESTful规范 | 数据模型包含审计字段 | 业务规则标注优先级 | 验收标准可测试可验证 | 外键字段定义前端组件类型(禁止UUID手动输入) | Options接口在Spec中声明 | 路由注册顺序遵守约定 | 枚举值用snake_case小写英文
 
-**必须遵守**: 接口定义必须符合RESTful规范 | 数据模型必须包含审计字段 | 业务规则必须标注优先级 | 验收标准必须可测试可验证 | 外键字段必须定义前端组件类型(禁止UUID手动输入) | Options接口必须在Spec中声明 | 路由注册顺序必须遵守约定 | 枚举值必须使用snake_case小写英文
+**避免事项**: ❌ 接口路径不符RESTful | ❌ 数据模型缺审计字段 | ❌ 业务规则模糊 | ❌ 验收标准不可测试 | ❌ 外键字段用Input而非Select | ❌ Options路由在/{id}之后 | ❌ 枚举用大写/中文 | ❌ datetime声明为str
 
-**避免事项**: ❌ 接口路径不符合RESTful规范 | ❌ 数据模型缺少审计字段 | ❌ 业务规则模糊无法验证 | ❌ 验收标准不可测试 | ❌ 外键字段用Input而非Select | ❌ Options接口路由在/{id}之后 | ❌ 枚举值使用大写或中文 | ❌ datetime字段声明为str而非datetime
-
-### 🇺🇸
-
-**Must Follow**: API definitions must comply with RESTful conventions | Data models must include audit fields | Business rules must be marked with priority levels | Acceptance criteria must be testable and verifiable | Foreign key fields MUST define frontend component type (no manual UUID input) | Options APIs MUST be declared in Spec | Route registration order MUST follow conventions | Enum values MUST use snake_case lowercase English
-
-**Avoid**: ❌ API paths that do not follow RESTful conventions | ❌ Data models missing audit fields | ❌ Business rules that are vague and unverifiable | ❌ Acceptance criteria that are not testable | ❌ Foreign key fields using Input instead of Select | ❌ Options API route defined after /{id} | ❌ Enum values using UPPERCASE or Chinese | ❌ datetime fields declared as str instead of datetime
-
-## 与其他技能协作 / Collaboration with Other Skills
-
-### 🇨🇳
+## 与其他技能协作
 
 | 协作技能 | 协作方式 | 传入数据 | 期望输出 |
 |---------|---------|---------|---------|
@@ -412,145 +53,50 @@ Save to `dev-specs/FP-{sequence}/spec.md` and `checklist.md`
 | **software-architect** | Consultation | 模块需求 | 模块设计 |
 | **pdd-implement-feature** | Sequential | spec.md + checklist.md | 代码实现 |
 
-### 🇺🇸
+## 人工审核规范
 
-| Collaborating Skill | Collaboration Mode | Input Data | Expected Output |
-|---------------------|-------------------|------------|-----------------|
-| **pdd-extract-features** | Sequential | Feature Matrix | Feature Point Details |
-| **pdd-ba** | Sequential | Business Analysis Report | Use Cases / Flows / States |
-| **system-architect** | Consultation | Architecture Requirements | Architecture Recommendations |
-| **software-architect** | Consultation | Module Requirements | Module Design |
-| **pdd-implement-feature** | Sequential | spec.md + checklist.md | Code Implementation |
-
-## 人工审核规范 / Human Review Guidelines
-
-### 🇨🇳
-
-**审核节点**: 开发规格生成完成后需要人工审核
-
+**审核节点**: 开发规格生成完成后需人工审核
 **审核内容**: 接口设计合理性 | 数据模型完整性 | 业务逻辑正确性 | 验收标准完备性
-
-**审核粒度**:
-- **批量审核**: 快速浏览整体,标记需详细审核的内容
-- **关键功能点详细审核**: P0优先级 | 复杂状态转换 | 外部系统集成 | 敏感数据处理
-
+**审核粒度**: 批量审核（快速浏览标志需详审项）| 关键功能点详细审核（P0优先级|复杂状态转换|外部系统集成|敏感数据）
 **输出文件**: `review-spec.md` | **结果类型**: passed / rejected / conditional
-
-### 🇺🇸
-
-**Review Checkpoint**: Human review is required after development specification generation is complete
-
-**Review Content**: API design rationality | Data model completeness | Business logic correctness | Acceptance criteria completeness
-
-**Review Granularity**:
-- **Batch Review**: Quickly scan the overall content and flag items requiring detailed review
-- **Detailed Review for Critical Features**: P0 priority | Complex state transitions | External system integration | Sensitive data handling
-
-**Output File**: `review-spec.md` | **Result Types**: passed / rejected / conditional
-
----
 
 ## Iron Law / 铁律
 
-### 🇨🇳
+1. **规格驱动实现**: 生成的spec.md必须是后续代码实现的唯一依据，所有接口定义、数据模型、业务规则都必须在规格中明确声明，不得让实现者自行推断。
+2. **验收标准可测试性**: checklist.md中的每条验收标准都必须是客观的、可验证的，不得出现"界面美观""响应迅速"等主观描述。
+3. **前后端一致性**: 规格中的接口定义必须同时适用于后端实现和前端调用，前端API层应能直接基于规格生成。
+4. **完整性与简洁性平衡**: 规格必须足够详细以指导实现(不遗漏关键细节)，但也要避免过度详细导致维护成本过高。
+5. **变更追溯性**: 规格中每个决策(如选择某种数据结构、设计某个接口)都应有简要的理由说明或引用来源，便于后续审查和理解。
 
-1. **规格驱动实现**: 生成的spec.md必须是后续代码实现的唯一依据,所有接口定义、数据模型、业务规则都必须在规格中明确声明,不得让实现者自行推断。
+**违规示例**: ❌ 接口只写路径而未定义请求参数和响应结构 | ❌ 验收标准写"用户体验良好"而非具体指标 | ❌ 后端规格与前端实际调用字段名不一致 | ❌ 规格过于简略致实现者频繁询问 | ❌ 联合索引未说明查询场景
+**合规示例**: ✅ 每个接口含完整请求/响应定义和错误码列表 | ✅ 验收标准明确"列表接口响应时间<500ms(1000条数据)" | ✅ 前后端使用同一份接口规格作为开发依据 | ✅ 关键决策有注释、常规内容用表格 | ✅ 索引设计附说明"支持按status+create_time的组合查询"
 
-2. **验收标准可测试性**: checklist.md中的每条验收标准都必须是客观的、可验证的,不得出现"界面美观""响应迅速"等主观描述。
+## Rationalization / 理性化对照
 
-3. **前后端一致性**: 规格中的接口定义必须同时适用于后端实现和前端调用,前端API层应能直接基于规格生成。
-
-4. **完整性与简洁性平衡**: 规格必须足够详细以指导实现(不遗漏关键细节),但也要避免过度详细导致维护成本过高。
-
-5. **变更追溯性**: 规格中每个决策(如选择某种数据结构、设计某个接口)都应有简要的理由说明或引用来源,便于后续审查和理解。
-
-**违规示例**: ❌ 接口只写了路径而未定义请求参数和响应结构 | ❌ 验收标准写"用户体验良好"而非具体指标 | ❌ 后端规格与前端实际调用的字段名不一致 | ❌ 为了省事将规格写得过于简略导致实现者频繁询问 | ❌ 数据库设计了联合索引但未说明查询场景
-
-**合规示例**: ✅ 每个接口都包含完整的请求/响应定义和错误码列表 | ✅ 验收标准明确:"列表接口响应时间<500ms(1000条数据)" | ✅ 前后端使用同一份接口规格作为开发依据 | ✅ 规格详细但不冗余:关键决策有注释,常规内容用表格呈现 | ✅ 索引设计附带说明:"支持按status+create_time的组合查询"
-
-### 🇺🇸
-
-1. **Specification-Driven Implementation**: The generated spec.md must be the sole basis for subsequent code implementation. All API definitions, data models, and business rules must be explicitly declared in the specification — implementers must not be left to make their own inferences.
-
-2. **Acceptance Criteria Testability**: Each acceptance criterion in checklist.md must be objective and verifiable. Subjective descriptions such as "beautiful UI" or "fast response" are prohibited.
-
-3. **Frontend-Backend Consistency**: API definitions in the specification must be applicable to both backend implementation and frontend invocation. The frontend API layer should be able to generate code directly based on the specification.
-
-4. **Balance of Completeness and Conciseness**: The specification must be sufficiently detailed to guide implementation (without omitting key details), but should avoid excessive detail that leads to high maintenance costs.
-
-5. **Change Traceability**: Every decision in the specification (such as choosing a data structure or designing an API) should include a brief rationale or reference source for subsequent review and understanding.
-
-**Violation Examples**: ❌ An API only has a path defined without request parameters and response structure | ❌ Acceptance criterion says "good user experience" instead of specific metrics | ❌ Backend spec field names are inconsistent with what the frontend actually calls | ❌ Specification is overly brief to save effort, causing implementers to frequently ask questions | ❌ Database composite index is designed without explaining the query scenario
-
-**Compliance Examples**: ✅ Every API includes complete request/response definitions and error code list | ✅ Acceptance criterion is explicit: "List API response time < 500ms (1000 records)" | ✅ Frontend and backend use the same API specification as development basis | ✅ Specification is detailed but not redundant: key decisions have comments, routine content uses tables | ✅ Index design includes explanation: "Supports combined queries by status + create_time"
-
----
-
-## Rationalization Table / 理性化对照表
-
-### 🇨🇳
-
-| # | 陷阱 / Trap | 请问自己 / Ask Yourself | 应该怎么做 / Action |
-|---|------------|----------------------|---------------------|
-| 1 | "这个接口很简单,写个路径就行了" / "This API is simple, just write the path" | 简单的接口也需要明确的参数定义,否则实现者会自行猜测 / Even simple APIs need clear parameter definitions, otherwise implementers will guess | 即使是最简单的CRUD接口也必须定义完整的请求/响应结构 / Even the simplest CRUD APIs must have complete request/response structure defined |
-| 2 | "验收标准差不多就行,反正后面会测" / "Acceptance criteria is good enough, it will be tested later anyway" | 模糊的验收标准会导致验收阶段扯皮,且无法客观判断是否通过 / Vague acceptance criteria leads to disputes during acceptance and makes objective judgment impossible | 每条标准都必须量化或提供明确的判定方法 / Every criterion must be quantified or provide a clear determination method |
-| 3 | "前端后面再对吧,先完成后端" / "Let's do frontend later, finish backend first" | 前后端不一致是集成阶段最常见的问题 / Frontend-backend inconsistency is the most common problem in integration phase | 规格生成时就必须同步考虑前后端,确保接口定义的双向适用性 / Frontend and backend must be considered together during spec generation to ensure bidirectional applicability |
-| 4 | "这些细节实现者应该知道" / "Implementers should know these details" | 不同开发者有不同的理解和习惯,细节缺失会导致实现差异 / Different developers have different understandings and habits; missing details lead to implementation divergence | 将你认为"显而易见"的细节都显式写入规格,特别是边界条件 / Explicitly write all "obvious" details into the specification, especially edge cases |
-| 5 | "规格写得太长没人看" / "The spec is too long, no one will read it" | 过于简略的规格会导致频繁沟通,反而浪费更多时间 / Overly brief specs cause frequent communication and waste more time | 采用分层详略策略:概览+详细表格,让读者可按需深入 / Adopt a layered detail strategy: overview + detailed tables, allowing readers to drill down as needed |
-
-**常见陷阱 / Common Traps**:
-1. **"假 completeness"陷阱 / "Fake Completeness" Trap**: 看起来覆盖了所有章节但每章内容空洞 → 建立"章节质量检查":每章至少回答What/Who/How三个问题 / Appears to cover all sections but each section is empty → Establish "section quality check": each section must answer at least What/Who/How questions
-2. **"主观验收"陷阱 / "Subjective Acceptance" Trap**: 使用无法客观验证的描述作为验收标准 → 强制要求每条标准可通过自动化测试或明确步骤验证 / Uses unverifiable descriptions as acceptance criteria → Require every criterion to be verifiable via automated tests or explicit steps
-3. **"后端偏见"陷阱 / "Backend Bias" Trap**: 规格只关注后端实现而忽略前端需求 → 强制要求规格包含"前端适配"章节,明确Vue组件需要的数据结构 / Spec focuses only on backend implementation while ignoring frontend requirements → Require spec to include "Frontend Adaptation" section with data structures needed by Vue components
-4. **"快照思维"陷阱 / "Snapshot Thinking" Trap**: 将规格视为静态文档而不考虑变更管理 → 在规格模板中内置CHANGELOG区域,鼓励记录变更历史 / Treats spec as a static document without considering change management → Build CHANGELOG area into spec template to encourage recording change history
-
-### 🇺🇸
-
-| # | Trap / 陷阱 | Question | Action |
-|---|------------|----------|--------|
-| 1 | "This API is simple, just write the path" / 这个接口很简单,写个路径就行了 | Even simple APIs need clear parameter definitions, otherwise implementers will guess / 简单的接口也需要明确的参数定义,否则实现者会自行猜测 | Even the simplest CRUD APIs must have complete request/response structure defined / 即使是最简单的CRUD接口也必须定义完整的请求/响应结构 |
-| 2 | "Acceptance criteria is good enough, it will be tested later anyway" / 验收标准差不多就行,反正后面会测 | Vague acceptance criteria leads to disputes during acceptance and makes objective judgment impossible / 模糊的验收标准会导致验收阶段扯皮,且无法客观判断是否通过 | Every criterion must be quantified or provide a clear determination method / 每条标准都必须量化或提供明确的判定方法 |
-| 3 | "Let's do frontend later, finish backend first" / 前端后面再对吧,先完成后端 | Frontend-backend inconsistency is the most common problem in integration phase / 前后端不一致是集成阶段最常见的问题 | Frontend and backend must be considered together during spec generation to ensure bidirectional applicability / 规格生成时就必须同步考虑前后端,确保接口定义的双向适用性 |
-| 4 | "Implementers should know these details" / 这些细节实现者应该知道 | Different developers have different understandings and habits; missing details lead to implementation divergence / 不同开发者有不同的理解和习惯,细节缺失会导致实现差异 | Explicitly write all "obvious" details into the specification, especially edge cases / 将你认为"显而易见"的细节都显式写入规格,特别是边界条件 |
-| 5 | "The spec is too long, no one will read it" / 规格写得太长没人看 | Overly brief specs cause frequent communication and waste more time / 过于简略的规格会导致频繁沟通,反而浪费更多时间 | Adopt a layered detail strategy: overview + detailed tables, allowing readers to drill down as needed / 采用分层详略策略:概览+详细表格,让读者可按需深入 |
-
-**Common Traps / 常见陷阱**:
-1. **"Fake Completeness" Trap / "假 completeness"陷阱**: Appears to cover all sections but each section is empty → Establish "section quality check": each section must answer at least What/Who/How questions / 看起来覆盖了所有章节但每章内容空洞 → 建立"章节质量检查":每章至少回答What/Who/How三个问题
-2. **"Subjective Acceptance" Trap / "主观验收"陷阱**: Uses unverifiable descriptions as acceptance criteria → Require every criterion to be verifiable via automated tests or explicit steps / 使用无法客观验证的描述作为验收标准 → 强制要求每条标准可通过自动化测试或明确步骤验证
-3. **"Backend Bias" Trap / "后端偏见"陷阱**: Spec focuses only on backend implementation while ignoring frontend requirements → Require spec to include "Frontend Adaptation" section with data structures needed by Vue components / 规格只关注后端实现而忽略前端需求 → 强制要求规格包含"前端适配"章节,明确Vue组件需要的数据结构
-4. **"Snapshot Thinking" Trap / "快照思维"陷阱**: Treats spec as a static document without considering change management → Build CHANGELOG area into spec template to encourage recording change history / 将规格视为静态文档而不考虑变更管理 → 在规格模板中内置CHANGELOG区域,鼓励记录变更历史
-
----
+完整对照表见 `references/rationalization.md`。核心要点：接口再简单也要定义完整请求/响应结构；每条验收标准必须量化或明确判定方法；规格生成时同步考虑前后端双向适用性；将"显而易见"的细节（尤其边界条件）显式写入规格；采用"概览+详细表格"分层策略。
 
 ## Red Flags / 红旗警告
 
-### Layer 1: 输入检查 / Input Validation Guards
+### Layer 1: 输入检查
+- **INPUT-GS-001**: 功能点矩阵为空或缺少功能点详情 → 🔴 终止并提示先完成功能点提取
+- **INPUT-GS-002**: 业务分析报告缺少用例或状态定义 → 🔴 提示补充完整业务分析后再生成规格
+- **INPUT-GS-003**: 功能点复杂度标记(P0/P1/P2)与实际描述不符 → 🟡 记录并标注偏差
 
-- **INPUT-GS-001**: 功能点矩阵为空或缺少功能点详情 → 🔴 CRITICAL → 终止并提示先完成功能点提取 / Feature matrix is empty or missing feature point details → 🔴 CRITICAL → Terminate and prompt to complete feature extraction first
-- **INPUT-GS-002**: 业务分析报告缺少用例或状态定义 → 🔴 CRITICAL → 提示补充完整的业务分析后再生成规格 / Business analysis report is missing use cases or state definitions → 🔴 CRITICAL → Prompt to supplement complete business analysis before generating specs
-- **INPUT-GS-003**: 功能点的复杂度标记(P0/P1/P2)与实际描述不符 → 🟡 WARN → 记录并在规格中标注可能的复杂度评估偏差 / Feature point complexity marking (P0/P1/P2) does not match actual description → 🟡 WARN → Record and flag possible complexity assessment deviation in spec
+### Layer 2: 执行检查
+- **EXEC-GS-001**: 接口定义缺少请求参数或响应结构 → 🔴 补充完整接口定义
+- **EXEC-GS-002**: 数据模型缺少审计字段(create_time等)或主键 → 🔴 补充标准审计字段和主键
+- **EXEC-GS-003**: 验收标准存在无法客观验证的条目 → 🟡 重写为可量化/可判定标准
+- **EXEC-GS-004**: 规格业务规则与业务分析报告矛盾 → 🔴 以业务分析为准修正或记录冲突请用户确认
+- **EXEC-GS-005**: 外键字段未定义前端组件类型(如department_id用Input) → 🔴 改为Select并声明Options API数据源
+- **EXEC-GS-006**: 枚举值使用大写或中文编码 → 🟡 改为snake_case小写英文
+- **EXEC-GS-007**: datetime字段在Pydantic Schema中声明为str → 🟡 改为datetime类型并添加序列化配置
 
-### Layer 2: 执行检查 / Execution Validation Guards
+### Layer 3: 输出检查
+- **OUTPUT-GS-001**: spec.md缺少必要章节(接口定义/数据模型/业务逻辑) → 🔴 补充缺失章节
+- **OUTPUT-GS-002**: checklist.md验收标准少于5条或不足以覆盖主要功能 → 🔴 补充更完善的验收标准
+- **OUTPUT-GS-003**: 规格保存路径不符合规范(不在dev-specs/FP-{序号}/下) → 🟡 移到正确目录
+- **OUTPUT-GS-004**: spec.md缺少前端实现约定章节(第6章) → 🔴 补充前端组件映射和操作按钮矩阵
+- **OUTPUT-GS-005**: spec.md缺少关联数据源章节(第7章) → 🔴 补充Options接口定义
+- **OUTPUT-GS-006**: spec.md缺少依赖检查清单(第9章) → 🟡 补充前置依赖和后续依赖
 
-- **EXEC-GS-001**: 接口定义缺少请求参数或响应结构的详细说明 → 🔴 CRITICAL → 补充完整的接口定义 / API definition is missing detailed request parameters or response structure → 🔴 CRITICAL → Supplement complete API definition
-- **EXEC-GS-002**: 数据模型缺少审计字段(create_time等)或主键定义 → 🔴 CRITICAL → 补充标准的审计字段和主键 / Data model is missing audit fields (create_time, etc.) or primary key definition → 🔴 CRITICAL → Supplement standard audit fields and primary key
-- **EXEC-GS-003**: 验收标准存在无法客观验证的条目 → 🟡 WARN → 重写为可量化的或可明确判定的标准 / Acceptance criteria contains items that cannot be objectively verified → 🟡 WARN → Rewrite as quantifiable or clearly determinable criteria
-- **EXEC-GS-004**: 规格中的业务规则与业务分析报告矛盾 → 🔴 CRITICAL → 以业务分析为准修正规格或记录冲突并请用户确认 / Business rules in spec contradict business analysis report → 🔴 CRITICAL → Correct spec based on business analysis or record conflict and ask user for confirmation
-- **EXEC-GS-005**: 外键字段未定义前端组件类型(如department_id用Input) → 🔴 CRITICAL → 改为Select并声明Options API数据源 / Foreign key field missing frontend component type (e.g., department_id using Input) → 🔴 CRITICAL → Change to Select and declare Options API data source
-- **EXEC-GS-006**: 枚举值使用大写或中文编码 → 🟡 WARN → 改为snake_case小写英文 / Enum values using UPPERCASE or Chinese → 🟡 WARN → Change to snake_case lowercase English
-- **EXEC-GS-007**: datetime字段在Pydantic Schema中声明为str → 🟡 WARN → 改为datetime类型并添加序列化配置 / datetime field declared as str in Pydantic Schema → 🟡 WARN → Change to datetime type and add serialization config
-
-### Layer 3: 输出检查 / Output Validation Guards
-
-- **OUTPUT-GS-001**: spec.md缺少必要的章节(接口定义/数据模型/业务逻辑) → 🔴 CRITICAL → 补充缺失的章节 / spec.md is missing required sections (API definition/data model/business logic) → 🔴 CRITICAL → Supplement missing sections
-- **OUTPUT-GS-002**: checklist.md的验收标准少于5条或明显不足以覆盖主要功能 → 🔴 CRITICAL → 补充更完善的验收标准 / checklist.md has fewer than 5 acceptance criteria or is clearly insufficient to cover main functionality → 🔴 CRITICAL → Supplement more comprehensive acceptance criteria
-- **OUTPUT-GS-003**: 规格文件的保存路径不符合规范(不在dev-specs/FP-{序号}/下) → 🟡 WARN → 移动到正确的目录位置 / Spec file save path does not conform to standards (not under dev-specs/FP-{sequence}/) → 🟡 WARN → Move to correct directory location
-- **OUTPUT-GS-004**: spec.md缺少前端实现约定章节(第6章) → 🔴 CRITICAL → 补充前端组件映射和操作按钮矩阵 / spec.md missing Frontend Implementation Conventions section (Chapter 6) → 🔴 CRITICAL → Supplement frontend component mapping and action button matrix
-- **OUTPUT-GS-005**: spec.md缺少关联数据源章节(第7章) → 🔴 CRITICAL → 补充Options接口定义 / spec.md missing Related Data Sources section (Chapter 7) → 🔴 CRITICAL → Supplement Options API definitions
-- **OUTPUT-GS-006**: spec.md缺少依赖检查清单(第9章) → 🟡 WARN → 补充前置依赖和后续依赖 / spec.md missing Dependency Checklist (Chapter 9) → 🟡 WARN → Supplement prerequisites and downstream dependencies
-
-### 触发Red Flag时的处理流程 / Red Flag Trigger Handling Process
-
-🔴 CRITICAL → 立即停止,报告问题详情,等待指示 | 🟡 WARN → 记录警告到规格日志,尝试自动修复,在最终报告中标注 | 🔵 INFO → 记录信息,正常继续
-
-🔴 CRITICAL → Stop immediately, report problem details, wait for instructions / 立即停止,报告问题详情,等待指示 | 🟡 WARN → Log warning to spec log, attempt auto-fix, annotate in final report / 记录警告到规格日志,尝试自动修复,在最终报告中标注 | 🔵 INFO → Log information, continue normally / 记录信息,正常继续
+**处理流程**: 🔴 CRITICAL → 立即停止，报告问题详情，等待指示 | 🟡 WARN → 记录警告到规格日志，尝试自动修复，在最终报告中标注 | 🔵 INFO → 记录信息，正常继续
