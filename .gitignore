@@ -6,6 +6,9 @@
 .env.local
 .env.production
 *.env.secret
+.npmrc
+.npmrc.local
+npm-debug.log*
 
 # ---- Python ----
 __pycache__/
