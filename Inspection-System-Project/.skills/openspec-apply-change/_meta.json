@@ -1,0 +1,1 @@
+{"name": "openspec-apply-change", "version": "1.0.0", "category": "openspec", "description": "Implement tasks from an OpenSpec change. Call when starting implementation, continuing work, or working through tasks.", "triggers": ["应用变更", "apply change", "实现任务"]}

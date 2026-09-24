@@ -1,0 +1,38 @@
+# 舆情报告生成配置（F-014 日报 / F-015 月报）
+#
+# 将此片段并入 ruoyi-admin 的 application-*.yml。
+# 所有开关默认保守：auto-generate 默认 false —— 定时任务依赖 SnailJob 控制台
+# 创建执行器，在运维配置前不自动跑，避免半夜给全公司推送空日报。
+yuqing:
+  report:
+    # 报告生成引擎总开关（关闭后所有生成端返回明确的"已关闭"而非静默失败）
+    enabled: true
+
+    # 是否启用定时自动生成。启用前请先在 SnailJob 控制台创建执行器 yuqingDailyReport
+    auto-generate: false
+
+    # 自动生成的报告类型：daily / monthly
+    auto-type: daily
+
+    # 自动生成时使用的默认模板ID；留空则按全章节输出、不套模板
+    default-template-id:
+
+    # 正文纳入的重点舆情条数上限
+    hot-opinion-limit: 10
+
+    # 正文纳入的预警条数上限
+    alert-limit: 20
+
+    # 生成后是否自动推送至企业微信（日报一般开、月报建议手工确认后再推）
+    push-after-generate: false
+
+    # 启动时自检中文字体可用性（PDF 导出依赖；缺失时打 warn 不阻断启动）
+    render-self-check: true
+
+    # PDF 中文字体路径。留空则按以下顺序自动探测：
+    #   C:/Windows/Fonts/msyh.ttc
+    #   C:/Windows/Fonts/simhei.ttf
+    #   C:/Windows/Fonts/simsun.ttc
+    #   /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    # Linux 服务器推荐：apt install fonts-noto-cjk
+    pdf-font-path:

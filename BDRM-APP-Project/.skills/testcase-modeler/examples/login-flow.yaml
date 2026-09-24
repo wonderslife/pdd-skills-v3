@@ -1,0 +1,113 @@
+# 统一门户登录流程 - 正常路径测试
+#
+# 📋 用途: 验证PDD Test Skill的完整执行流程
+# 🎯 场景: 打开统一门户 → 输入凭据 → 点击登录 → 验证首页
+# 🔗 业务系统: http://uniportal.sjjk.com.cn
+# ⚠️ 安全提示: 所有敏感信息使用环境变量，禁止硬编码！
+
+test_id: "LOGIN-001-portal-normal"
+title: "统一门户登录正常流程"
+priority: "P0"
+tags: ["登录", "统一门户", "正常路径", "E2E", "试点验证"]
+author: "PDD Team (v2.0)"
+
+# 前置状态感知
+context_check:
+  login_url: "http://uniportal.sjjk.com.cn"
+  home_indicator: "统一门户（新）"  # 已登录状态的标志性文本
+  credentials:
+    username: "${TEST_USER}"        # 从环境变量读取用户名
+    password: "${TEST_PASS}"        # 从环境变量读取密码（绝对禁止明文！）
+    display_name: "${TEST_DISPLAY_NAME}"  # 中文名，用于登录状态对比
+  captcha_required: false           # 测试环境通常不需要验证码
+  sso_enabled: true                 # 支持SSO单点登录
+
+# 测试步骤
+steps:
+
+  # ===== 步骤 1：打开统一门户登录页面 =====
+  - step: 1
+    desc: "打开统一门户登录页面"
+    action: navigate
+    url: "${LOGIN_URL:-http://uniportal.sjjk.com.cn}"
+    wait_after:
+      type: time
+      duration: 2000  # 等待页面完全加载
+    assertions:
+      - type: text_contains
+        expected: "欢迎登录"
+        confidence: high
+      - type: element_visible
+        target: "盛京金控统一门户平台"
+        confidence: high
+
+  # ===== 步骤 2：输入用户名 =====
+  - step: 2
+    desc: "在用户名输入框中填入用户名"
+    action: fill
+    target: "用户名输入框"
+    locator:
+      uid_cache_key: "username_input"  # 缓存UID以便后续复用
+    value: "${TEST_USER}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+        confidence: high
+
+  # ===== 步骤 3：输入密码 =====
+  - step: 3
+    desc: "在密码输入框中填入密码"
+    action: fill
+    target: "密码输入框"
+    locator:
+      uid_cache_key: "password_input"  # 缓存UID
+    value: "${TEST_PASS}"
+    isSensitive: true
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+        confidence: high
+
+  # ===== 步骤 4：点击登录按钮 =====
+  - step: 4
+    desc: "点击登录按钮提交登录信息"
+    action: click
+    target: "登录按钮"
+    locator:
+      uid_cache_key: "login_button"  # 缓存UID
+    wait_after:
+      type: navigation              # 等待页面跳转
+      timeout: 10000                # 最长等待10秒
+    assertions:
+      - type: text_contains
+        expected: "统一门户"
+        confidence: high
+      - type: network_called
+        url_pattern: "/api/login*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+  # ===== 步骤 5：验证首页关键元素 =====
+  - step: 5
+    desc: "验证首页加载完成并显示关键元素"
+    action: assert_multiple
+    assertions:
+      - type: element_visible
+        target: "待办"
+        confidence: high
+      - type: element_visible
+        target: "主导航菜单"
+        confidence: high
+      - type: element_count_greater_than
+        target: "电子档案"
+        min_count: 3
+        confidence: medium
+
+# 后置清理
+teardown:
+  - action: screenshot
+    name: "login-success-{timestamp}.png"
+    fullPage: true                  # 全页截图
+  - action: log
+    message: "登录流程测试完成，当前页面: {current_url}"

@@ -1,0 +1,23 @@
+{
+  "监测任务管理": "task",
+  "关键词库管理": "keyword",
+  "采集渠道管理": "channel",
+  "全网自动采集与调度": "collect",
+  "手动链接导入": "link-import",
+  "数据净化与链接去重": "dedup",
+  "智能研判": "analysis",
+  "智能研判（研判数字员工）": "analysis",
+  "研判规则与分级体系": "level-rule",
+  "舆情多维分析": "analytics",
+  "风险预警": "alert",
+  "企业微信推送": "push",
+  "企业微信推送（推送数字员工）": "push",
+  "企业微信端任务管控": "h5-console",
+  "企业微信端任务管控（H5）": "h5-console",
+  "报告模板管理": "report-template",
+  "舆情日报生成": "daily-report",
+  "舆情月报生成": "monthly-report",
+  "舆情台账与数据查询": "ledger",
+  "知识库沉淀与迭代": "knowledge",
+  "运营监控与权限日志": "monitor"
+}

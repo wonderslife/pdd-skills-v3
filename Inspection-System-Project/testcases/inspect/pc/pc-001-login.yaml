@@ -1,0 +1,147 @@
+# 机房巡检系统 - PC 管理端登录（冒烟）
+#
+# 用途: 验证 PC 管理端登录流程与「机房巡检」菜单权限加载
+# 前置: sys_config 中 sys.account.captchaEnabled = false（测试环境建议关闭验证码，
+#       否则需人工识别；若开启，本用例自动降级为人工输入验证码）
+# 安全: 账号密码全部走环境变量，禁止硬编码
+
+test_id: "INSP-PC-001-login"
+title: "PC 管理端登录并加载机房巡检菜单"
+priority: "P0"
+tags: ["登录", "PC", "冒烟", "E2E"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "打开 PC 管理端，进入登录页"
+    action: navigate
+    url: "${PC_URL}/index"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: text_contains
+        expected: "欢迎使用"
+        confidence: high
+
+  - step: 2
+    desc: "在登录表单的「账号」输入框中填入用户名"
+    action: fill
+    target: "请输入您的账号"
+    locator:
+      uid_cache_key: "pc_login_username"
+    value: "${PC_USER}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 3
+    desc: "在登录表单的「密码」输入框中填入密码"
+    action: fill
+    target: "请输入您的密码"
+    locator:
+      uid_cache_key: "pc_login_password"
+    value: "${PC_PASS}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 4
+    desc: "点击「登 录」按钮提交"
+    action: click
+    target: "登录"
+    wait_after:
+      type: navigation
+      timeout: 15000
+    assertions:
+      - type: network_called
+        url_pattern: "*/login"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: url_contains
+        expected: "/index"
+        confidence: high
+
+  - step: 5
+    desc: "验证左侧菜单出现一级菜单「机房巡检」"
+    action: assert_multiple
+    assertions:
+      - type: element_visible
+        target: "机房巡检"
+        confidence: high
+      - type: element_visible
+        target: "首页"
+        confidence: medium
+
+  - step: 6
+    desc: "展开「机房巡检」菜单，验证 7 个二级菜单全部可见"
+    action: click
+    target: "机房巡检"
+    wait_after:
+      type: time
+      duration: 800
+    assertions:
+      - type: element_visible
+        target: "机房管理"
+        confidence: high
+      - type: element_visible
+        target: "区域管理"
+        confidence: high
+      - type: element_visible
+        target: "点位管理"
+        confidence: high
+      - type: element_visible
+        target: "巡检项模板"
+        confidence: high
+      - type: element_visible
+        target: "巡检记录"
+        confidence: high
+      - type: element_visible
+        target: "统计报表"
+        confidence: high
+      - type: element_visible
+        target: "异常处理"
+        confidence: high
+
+  - step: 7
+    desc: "点击「机房管理」进入列表页，确认列表接口被调用"
+    action: click
+    target: "机房管理"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: element_visible
+        target: "机房名称"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "pc-login-success-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "PC 登录完成，当前页面: {current_url}"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  browser: "chromium"
+  viewport: "1920x1080"
+  estimated_duration: "20-40s"
+  risk_level: "low"

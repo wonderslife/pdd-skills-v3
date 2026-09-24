@@ -1,0 +1,1 @@
+{"name": "openspec-bulk-archive-change", "version": "1.0.0", "category": "openspec", "description": "Archive multiple completed OpenSpec changes at once. Call when archiving several parallel changes.", "triggers": ["批量归档", "bulk archive", "批量完成"]}

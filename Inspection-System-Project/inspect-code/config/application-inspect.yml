@@ -1,0 +1,17 @@
+# ============================================================
+# 机房巡检系统 —— 后端配置片段
+# 把下面 inspect: 段落**追加**到 ruoyi-admin/src/main/resources/application.yml
+# （或 application-prod.yml）的顶层，注意缩进与同级 key 对齐。
+# ============================================================
+
+inspect:
+  qrcode:
+    # AES 密钥种子：会经 MD5 派生为 32 字节密钥（AES-256）
+    # 上线前务必替换，且一旦修改，此前导出的二维码全部失效，必须重新生成
+    secret: CHANGE_ME_inspect_qrcode_secret_2026
+    # 二维码内容前缀。手机相机扫码后会直接打开该地址并带上 p=<密文>
+    # 请改成 H5 的真实访问地址，末尾必须保留 "?p="
+    # 例：https://inspect.example.com/#/pages/inspect/scan?p=
+    content-prefix: https://localhost/#/pages/inspect/scan?p=
+    # 二维码边长（px）
+    size: 300

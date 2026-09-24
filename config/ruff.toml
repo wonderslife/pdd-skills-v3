@@ -1,0 +1,45 @@
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+  "E",      # pycodestyle errors
+  "W",      # pycodestyle warnings
+  "F",      # Pyflakes
+  "I",      # isort
+  "N",      # pep8-naming
+  "UP",     # pyupgrade
+  "B",      # flake8-bugbear
+  "SIM",    # flake8-simplify
+  "C90",    # mccabe complexity
+  "A",      # flake8-builtins
+  "COM",    # flake8-commas
+  "T20",    # flake8-print
+  "ARG",    # flake8-unused-arguments
+  "RUF",    # Ruff-specific rules
+]
+ignore = [
+  "E501",   # line too long (handled by formatter)
+  "B008",   # do not perform function calls in argument defaults
+  "N802",   # function name should be lowercase
+  "N806",   # variable in function should be lowercase
+  "ARG001", # unused-function-argument
+  "COM812", # trailing comma missing (conflicts with formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T20", "ARG"]
+"__init__.py" = ["F401"]
+"*_test.py" = ["T20", "ARG"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 100
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true

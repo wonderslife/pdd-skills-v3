@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>舆情平台 · P0 关键词链路改造 交付说明</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1f2329; --ink2:#5b6570; --line:#e3e6ea;
+    --brand:#1a5fb4; --ok:#1a7f37; --warn:#9a6700; --bad:#b42318; --code:#f3f4f6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  header{background:linear-gradient(135deg,#1a5fb4,#2f80ed);color:#fff;border-radius:14px;
+         padding:28px 30px;margin-bottom:22px}
+  header h1{margin:0 0 6px;font-size:25px;letter-spacing:.3px}
+  header .sub{opacity:.9;font-size:14px}
+  header .meta{margin-top:14px;font-size:13px;opacity:.92;display:flex;gap:18px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:22px 24px;margin-bottom:18px}
+  h2{font-size:18px;margin:0 0 14px;padding-left:11px;border-left:4px solid var(--brand)}
+  h3{font-size:15px;margin:20px 0 8px;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#fafbfc;font-weight:600;color:var(--ink2);white-space:nowrap}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12.5px;
+       font-family:"JetBrains Mono",Consolas,monospace}
+  pre{background:#1f2329;color:#e6edf3;padding:14px 16px;border-radius:9px;overflow:auto;
+      font-size:12.5px;line-height:1.65;font-family:"JetBrains Mono",Consolas,monospace}
+  .tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600}
+  .t-ok{background:#e6f4ea;color:var(--ok)}
+  .t-bad{background:#fdecea;color:var(--bad)}
+  .t-warn{background:#fdf3e0;color:var(--warn)}
+  .t-info{background:#e8f0fe;color:var(--brand)}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0}
+  .kv .item{background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+  .kv .item .k{font-size:12.5px;color:var(--ink2)}
+  .kv .item .v{font-size:20px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .note{background:#f0f6ff;border-left:3px solid var(--brand);padding:11px 14px;
+        border-radius:0 8px 8px 0;font-size:13.5px;margin:12px 0}
+  .danger{background:#fff5f5;border-left:3px solid var(--bad)}
+  .good{background:#f2fbf5;border-left:3px solid var(--ok)}
+  ul,ol{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .flow{background:#fafbfc;border:1px solid var(--line);border-radius:9px;padding:14px 16px;
+        font-size:13.5px;font-family:"JetBrains Mono",Consolas,monospace;line-height:1.9;overflow:auto}
+  footer{text-align:center;color:var(--ink2);font-size:12.5px;margin-top:28px}
+  .dim{color:var(--ink2);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>舆情监测平台 · P0 关键词链路改造 交付说明</h1>
+  <div class="sub">修好「采不到东西、而且不报错」——关键词从词表到采集入库的闭环</div>
+  <div class="meta">
+    <span>交付日期：2026-09-22</span>
+    <span>范围：P0-1 ~ P0-4 + PC 端类型缺陷</span>
+    <span>状态：<b>编译通过 · 自测 34/34 · SQL ALL PASS · 前端类型零错误</b></span>
+  </div>
+</header>
+
+<section class="card">
+  <h2>一、结论先说</h2>
+  <p>改造前，业务同事手写的词表（如 <code>(辽宁|沈阳|…)+(药监局|药品|…)</code>）在系统里<strong>只被当成一个普通字符串</strong>：类型、分类、组合表达式、匹配策略全部被丢弃，
+  采集引擎只取「第一个词」去检索，于是出现 <b>任务显示成功、一键采集跑完、入库 0 条、且日志里没有任何错误</b>。</p>
+  <p>本次把这条链路打通，并顺手修掉 3 个此前未被发现的真实缺陷。现在：</p>
+  <ul>
+    <li>组合表达式被正确解析为「检索词组 + 本地校验组 + 排除组」，<b>检索请求量 = 主题词个数</b>，不是笛卡尔积；</li>
+    <li>排除词以「任务级降噪」方式生效，不会误杀其他任务的舆情；</li>
+    <li>表达式语法错误在<strong>录入时</strong>就用带列号的提示拦住，不再等到采集完才发现是 0 条；</li>
+    <li>词表可整份导入（PC 对话框或 SQL），重复导入幂等。</li>
+  </ul>
+  <div class="kv">
+    <div class="item"><div class="k">自测用例</div><div class="v" style="color:var(--ok)">34 / 34</div></div>
+    <div class="item"><div class="k">SQL 交付前校验</div><div class="v" style="color:var(--ok)">ALL PASS</div></div>
+    <div class="item"><div class="k">yuqing 前端类型错误</div><div class="v" style="color:var(--ok)">0</div></div>
+    <div class="item"><div class="k">实测词表条目</div><div class="v">2 + 177</div></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>二、四项 P0 交付内容</h2>
+
+  <h3>P0-1 关键词生效改造（核心）</h3>
+  <p>关键词库 → 采集引擎的契约从「拼字符串」升级为「结构化规格」。</p>
+  <table>
+    <tr><th>改造点</th><th>改造前</th><th>改造后</th></tr>
+    <tr>
+      <td>关键词装载</td>
+      <td><code>loadKeywords()</code> 只 select <code>keyword_text</code></td>
+      <td><code>buildMatcher(taskId)</code> 装载全部字段，类型 / 分类 / 表达式 / 任务级策略一并进入规格</td>
+    </tr>
+    <tr>
+      <td>检索词填充</td>
+      <td><code>firstKeyword()</code> 只取第一个词，<code>fillUrl</code> 把整串表达式 URL 编码进 <code>wd=</code></td>
+      <td><code>searchTerms()</code> 取表达式<strong>最后一组</strong>，逐词请求；每个词独立预算配额</td>
+    </tr>
+    <tr>
+      <td>本地过滤</td>
+      <td>无（搜索引擎返回什么就入什么）</td>
+      <td>入库前按「所有组 AND 命中、排除组未命中」过滤，<b>过滤发生在去重之前</b>，不占用去重配额</td>
+    </tr>
+    <tr>
+      <td>可观测</td>
+      <td>入库 0 条无任何信号</td>
+      <td><code>CollectResult</code> 新增 <code>filteredCount</code> / <code>isAllFiltered()</code>，单独打点且<strong>不计入异常告警</strong>（全被过滤属于正常业务结果）</td>
+    </tr>
+  </table>
+  <div class="note">
+    <b>为什么不做笛卡尔积展开：</b>样例1 有 16 个地区词 × 6 个主题词 = 96 次请求。若按 16×6 发起，绝大多数渠道会被限流直接拒绝。
+    因此采用「主题词检索 + 地区本地校验」：请求量 6 次，地区命中在本地判定，结果等价而成本降低 16 倍。
+    <code>max-search-terms-per-unit</code> 默认 8，超出自动截断并告警。
+  </div>
+
+  <h3>P0-2 组合表达式校验器</h3>
+  <p><code>KeywordExpression.validate()</code> 返回<strong>带列位置</strong>的错误说明（对外经 <code>GET /yuqing/collect/keyword/validate</code>），
+  对应 <code>dev-specs/F-002</code> 验收标准 3。PC 关键词表单在表达式输入框下方实时提示，合法的显示绿色「表达式语法正确」。</p>
+  <table>
+    <tr><th>容错项</th><th>说明</th></tr>
+    <tr><td>全角标点</td><td><code>（）｜＋－，、；</code> 与全角空格自动归一化（1:1 映射，报错列号仍与原文对齐）</td></tr>
+    <tr><td>多余外层括号</td><td><code>((东北|…)+(东北超|…))</code> 整段被包住时自动剥离，不再误报「不支持嵌套括号」</td></tr>
+    <tr><td>冒号前缀标题</td><td><code>药监监测:(辽宁|沈阳)+(药监局|药品)</code> 的标题自动剥离并写进备注</td></tr>
+    <tr><td>裸 OR 组</td><td><code>药监局|药品监管</code>（不带括号）同样识别为组合表达式</td></tr>
+  </table>
+  <p class="dim">真正非法的写法仍然拒绝并给出列号，例如 <code>((A|B)+(C|D))+(E|F)</code>（首括号中途闭合）、<code>-(广告|代理)</code>（只有排除词、缺检索组）、以 <code>+</code> 结尾。</p>
+
+  <h3>P0-3 任务级降噪</h3>
+  <p><code>keyword_type=negative</code> 的关键词，经 <code>yq_task_keyword</code> 关联后<strong>只对绑定任务生效</strong>。
+  排除词命中优先级高于任何正向命中（命中即丢弃）。</p>
+  <div class="note danger">
+    <b>为什么全局降噪规则 <code>yq_noise_rule</code> 默认不参与采集：</b>该表没有 <code>task_id</code> 维度，
+    一旦全局启用，「招聘」「代理」这类词会把「某药企被查」之类的高价值舆情一起杀掉。因此
+    <code>apply-global-noise=false</code>（默认），深度降噪归 F-006 净化去重环节。
+  </div>
+
+  <h3>P0-4 词表导入工具</h3>
+  <p>把业务同事手写的词表文本一次转成库里的记录，无需逐条手工录入。</p>
+  <table>
+    <tr><th>入口</th><th>位置</th><th>权限</th></tr>
+    <tr><td>PC 对话框</td><td>关键词管理 → 工具栏「导入词表」；支持选 .txt 或直接粘贴，先「解析预览」再「确认导入」</td><td><code>yuqing:keyword:add</code></td></tr>
+    <tr><td>REST 预览</td><td><code>POST /yuqing/keyword/import/parse</code>（不写库）</td><td><code>yuqing:keyword:add</code></td></tr>
+    <tr><td>REST 入库</td><td><code>POST /yuqing/keyword/import/commit</code>（事务，可带 <code>taskId</code> 直接绑定）</td><td><code>yuqing:keyword:add</code></td></tr>
+    <tr><td>SQL</td><td><code>script/sql/yuqing/yq_keyword_sample_import.sql</code></td><td>—</td></tr>
+  </table>
+  <p><b>幂等性：</b>按 <code>keyword_text</code> 查重、按 <code>(task_id, keyword_id)</code> 查重关联，同一份词表重复导入只补齐不翻倍。
+  解析出任意一条语法错误则<strong>整份拒绝</strong>，不写半成品。</p>
+</section>
+
+<section class="card">
+  <h2>三、真实词表实测数据</h2>
+  <p class="dim">数据来源：业务同事提交的《关键词样例.txt》。以下数字全部由 <code>emit_part11d.mjs</code> 脚本实测输出，并写进单测断言，不做人工估算。</p>
+  <table>
+    <tr><th>项目</th><th class="num">数值</th><th>说明</th></tr>
+    <tr><td>样例1 组数 / 词数</td><td class="num">2 组 / 22 词</td><td>地区组 16 词 + 主题组 6 词</td></tr>
+    <tr><td>样例1 检索词组</td><td class="num">6</td><td>药监局 / 药品 / 医疗器械 / 化妆品 / 服务区 / 药品监督</td></tr>
+    <tr><td>样例2 组数 / 词数</td><td class="num">2 组 / 9 词</td><td>东北组 5 词 + 赛事组 4 词；原始写法带外层括号，已自动剥离</td></tr>
+    <tr><td>样例2 检索词组</td><td class="num">4</td><td>地区城市足球联赛 / 东北足球超级联赛 / 东北区域城市足球联赛 / 东北超</td></tr>
+    <tr><td>排除词原始条目</td><td class="num">188</td><td>含重复</td></tr>
+    <tr><td>排除词去重后</td><td class="num">177</td><td>跳过 11 条重复（东北超火 ×3、外穿东北超 ×2 等）</td></tr>
+    <tr><td>预计检索请求</td><td class="num">10 次 / 轮</td><td>6 + 4；若按笛卡尔积则是 96 + 20</td></tr>
+    <tr><td>待入库条目合计</td><td class="num">179</td><td>2 组合 + 177 排除</td></tr>
+    <tr><td>超长词 / 正则元字符</td><td class="num">0 / 0</td><td>无需截断，排除词按普通关键词匹配（非正则）</td></tr>
+  </table>
+  <div class="note">
+    <b>关于「排除词必须绑定任务才生效」：</b>SQL 脚本只落关键词库、不自动建任务关联——177 个「东北超」语境的排除词绑到药监任务上会误杀。
+    正确做法是在导入对话框里勾选目标任务，或使用 SQL 末尾现已预留的绑定模板。
+  </div>
+</section>
+
+<section class="card">
+  <h2>四、验证结果</h2>
+  <table>
+    <tr><th>验证项</th><th>命令</th><th>结果</th></tr>
+    <tr>
+      <td>生成器语法自检</td>
+      <td><code>node --check gen-yuqing*.mjs</code></td>
+      <td><span class="tag t-ok">通过 ×2</span></td>
+    </tr>
+    <tr>
+      <td>三端代码生成</td>
+      <td><code>node gen-yuqing.mjs</code> / <code>node gen-yuqing-collect.mjs</code></td>
+      <td><span class="tag t-ok">采集侧 68 文件</span></td>
+    </tr>
+    <tr>
+      <td>后端编译</td>
+      <td><code>mvn -o -pl ruoyi-admin test-compile -Dmaven.test.skip=false</code></td>
+      <td><span class="tag t-ok">exit=0，206 主类 / 10 测试类</span></td>
+    </tr>
+    <tr>
+      <td>离线自测（无 surefire）</td>
+      <td><code>java @run.args …OfflineCollectTestRunner</code></td>
+      <td><span class="tag t-ok">34 / 34 PASS</span></td>
+    </tr>
+    <tr>
+      <td>SQL 交付前校验（10 类）</td>
+      <td><code>node check-yuqing-sql.mjs</code></td>
+      <td><span class="tag t-ok">ALL PASS，警告 0</span></td>
+    </tr>
+    <tr>
+      <td>PC 端类型检查</td>
+      <td><code>vue-tsc --noEmit</code></td>
+      <td><span class="tag t-ok">yuqing 0 错误</span>（全项目 126 → 69，余量属 presale / inspect / monitor）</td>
+    </tr>
+  </table>
+
+  <h3>自测用例分布（34）</h3>
+  <table>
+    <tr><th>测试类</th><th class="num">用例</th><th>覆盖</th></tr>
+    <tr><td><code>YqCollectEngineTest</code></td><td class="num">10</td><td>URL 归一化、增量水位、限流间隔、反爬识别、JDK HttpClient 拒绝 localhost、重试退避、管道端到端、健康守卫</td></tr>
+    <tr><td><code>YqKeywordPipelineTest</code></td><td class="num">13</td><td>表达式解析 / 校验 / 全角容错、检索词选择、严格与宽松匹配、组合关键词端到端、任务级排除、命中词落库、全被过滤信号</td></tr>
+    <tr><td><code>YqKeywordImportTest</code></td><td class="num">11</td><td><b>真实样例整份解析</b>（179 条 / 跳 11 重复）、外层括号剥离、冒号标题剥离、段落标记误判防护、列宽超限拒绝、空输入拒绝</td></tr>
+  </table>
+
+  <h3>SQL 校验新增第 10 类（14 条）</h3>
+  <p class="dim">针对 <code>yq_keyword_sample_import.sql</code>：列数 = 15、行值个数一致、类型 / 分类落在字典内、
+  <code>keyword_id</code> 唯一且与其他脚本无号段冲突、<code>keyword_text</code> 无前后空白、
+  combo 行两列表达式一致、数量与单测同一套实测值、INSERT 前均有 DELETE（可重复执行）。</p>
+</section>
+
+<section class="card">
+  <h2>五、过程中发现并修掉的 8 个真实缺陷</h2>
+  <p class="dim">全部由「脚本实测 / 单测执行」暴露，不是代码走查猜出来的。其中 D1–D4 若不修，系统会静默给出「成功但空」的结果。</p>
+  <table>
+    <tr><th>#</th><th>缺陷</th><th>后果</th><th>修法</th></tr>
+    <tr>
+      <td>D1</td>
+      <td>样例2 <code>((东北|…)+(…))</code> 整段被外层括号包住，解析器判「不支持嵌套括号」</td>
+      <td>业务真实词表<strong>根本无法导入</strong>，一张也进不去</td>
+      <td>解析前剥离整段冗余外层括号；置空格而非删除，保证报错列号仍与原文对齐</td>
+    </tr>
+    <tr>
+      <td>D2</td>
+      <td>剥离括号后归一化结果残留前后空格（<code>' (东北|…)+(…) '</code>）</td>
+      <td><code>keyword_text</code> 脏数据，去重失效、列表展示异常</td>
+      <td>parse 前 <code>trim()</code>，归一化结果再次 <code>trim()</code></td>
+    </tr>
+    <tr>
+      <td>D3</td>
+      <td><code>splitWords</code> 在行内先做了去重</td>
+      <td>「跳过重复 N 条」永远是 0，重复数据被静默吃掉、无从发现</td>
+      <td>拆词阶段不去重，重复判定与计数统一交给 <code>register()</code></td>
+    </tr>
+    <tr>
+      <td>D4</td>
+      <td><code>样例:(A|B)+(C|D)</code> 的冒号标题被当作表达式内容</td>
+      <td>撞「左括号缺少配对」，业务习惯写法直接报错</td>
+      <td>新增 <code>stripLeadingLabel()</code>；仅当冒号右侧确实像表达式时才剥离（<code>时间:12:30</code> 不受影响）</td>
+    </tr>
+    <tr>
+      <td>D5</td>
+      <td>30 个前端 <code>types.ts</code> 都写 <code>import type { PageQuery } from '@/api/types'</code>，但该符号并不存在</td>
+      <td>40 个 TS2305 + 大量 <code>pageNum/pageSize</code> 报错，<code>vue-tsc</code> 失去把关能力</td>
+      <td><code>PageQuery</code> 实为 <code>src/types/global.d.ts</code> 的全局环境接口 → 删除 import</td>
+    </tr>
+    <tr>
+      <td>D6</td>
+      <td>VO 接口无条件追加 <code>createTime</code>，而 4 张表的字段清单里已有同名字段</td>
+      <td>8 个 TS2300 Duplicate identifier</td>
+      <td>字段清单已含 createTime 时不再补</td>
+    </tr>
+    <tr>
+      <td>D7</td>
+      <td>生成器无条件输出 <code>loadForeignOptions();</code>，但无关联字段的表不生成该函数</td>
+      <td>3 个 TS2304 Cannot find name</td>
+      <td>新增 <code>pcForeignBootstrap()</code>，无关联字段则不输出调用</td>
+    </tr>
+    <tr>
+      <td>D8</td>
+      <td>导入对话框 <code>typeTag()</code> 声明返回 <code>string</code>，而 <code>el-tag</code> 的 type 仅接受 5 个字面量</td>
+      <td>1 个 TS2322</td>
+      <td>声明 <code>TagType</code> 联合类型</td>
+    </tr>
+  </table>
+  <div class="note good">
+    <b>另外记一条流程教训：</b>本项目的 <code>gen-yuqing-collect.mjs</code> 尾部有 4 个大段由
+    <code>part11a~d.js</code> 合并而来。本次曾两次「直接改生成器里的这段代码」，随后合并脚本用旧版 part 文件把修改<strong>静默覆盖回去</strong>，
+    表现为部署报告 <code>~0 覆盖</code>（什么都没变），极具迷惑性。现在的合并脚本会在每段头部写明来源、
+    并在合并后自检关键符号（<code>stripLeadingLabel</code> / <code>validateKeywordExpression</code> 等）是否存在，缺失就报错退出。
+  </div>
+</section>
+
+<section class="card">
+  <h2>六、怎么用（落地三步）</h2>
+
+  <h3>第 1 步：建表与字典（若尚未执行）</h3>
+  <pre>mysql -u&lt;user&gt; -p&lt;pass&gt; &lt;db&gt; &lt; script/sql/yuqing/yq_schema.sql
+mysql -u&lt;user&gt; -p&lt;pass&gt; &lt;db&gt; &lt; script/sql/yuqing/yq_dict.sql
+mysql -u&lt;user&gt; -p&lt;pass&gt; &lt;db&gt; &lt; script/sql/yuqing/yq_menu.sql</pre>
+
+  <h3>第 2 步：导入真实词表（二选一）</h3>
+  <p><b>推荐 · PC 对话框：</b>关键词管理 → 「导入词表」→ 选 <code>关键词样例.txt</code> → 「解析预览」核对
+  （应显示 <code>共 179 条（组合 2 / 排除 177 / 普通 0）；跳过重复 11 条；预计检索请求 10 次</code>）
+  → 勾选目标任务 → 「确认导入」。</p>
+  <p><b>或 · 直接跑 SQL：</b></p>
+  <pre>mysql -u&lt;user&gt; -p&lt;pass&gt; &lt;db&gt; &lt; script/sql/yuqing/yq_keyword_sample_import.sql</pre>
+  <p class="dim">该脚本只入库不绑任务；需要绑定时使用脚本末尾已注释的绑定模板（把 <code>:task_id</code> 换成真实任务 ID 后取消注释）。</p>
+
+  <h3>第 3 步：验证链路真的通了</h3>
+  <pre>-- 关键词应为 179 条：combo 2 + negative 177
+SELECT keyword_type, COUNT(*) FROM yq_keyword WHERE group_id = 1761600000000000000 GROUP BY keyword_type;
+
+-- 任务关联应为「导入的条数」
+SELECT COUNT(*) FROM yq_task_keyword WHERE task_id = &lt;你的任务ID&gt;;
+
+-- 采集一轮后看是否有「被过滤」信号（而非一片空白）
+SELECT task_id, channel_id, fetch_count, insert_count, filtered_count
+  FROM yq_collect_log ORDER BY create_time DESC LIMIT 20;</pre>
+  <div class="note">
+    若 <code>fetch_count &gt; 0</code> 而 <code>insert_count = 0</code> 且 <code>filtered_count ≈ fetch_count</code>，
+    说明<strong>链路是通的</strong>——只是这一轮抓到的内容都被地区组 / 排除词过滤掉了，属正常业务结果，系统不会误报异常。
+  </div>
+</section>
+
+<section class="card">
+  <h2>七、数据流与新增接口</h2>
+
+  <h3>关键词链路</h3>
+  <div class="flow">
+yq_keyword (组合/排除/普通)  +  yq_task_keyword (任务级策略、绑定)
+        │
+        ▼  buildMatcher(taskId)
+KeywordMatcher ── 组合表达式 → KeywordSpec(searchTerms / mustGroups / excludeTerms / FilterMode)
+        │
+        ▼  AdapterContext
+站点适配器  ──  逐检索词请求（{kw} 占位符，预算均分，跨词共享 seenUrls）
+        │
+        ▼  CollectPipeline.dedupeAndFilter()
+① 关键词过滤（命中全部组 + 未命中排除组）  →  filteredCount
+② URL 去重（归一化 + SHA-256）            →  dupCount
+③ 入库（Doris Stream Load）               →  insertCount + hitKeywords
+  </div>
+
+  <h3>新增 / 变更接口</h3>
+  <table>
+    <tr><th>方法</th><th>路径</th><th>权限</th><th>说明</th></tr>
+    <tr><td>POST</td><td><code>/yuqing/keyword/import/parse</code></td><td><code>yuqing:keyword:add</code></td><td>解析预览，返回条目 / 错误 / 统计，不写库</td></tr>
+    <tr><td>POST</td><td><code>/yuqing/keyword/import/commit</code></td><td><code>yuqing:keyword:add</code></td><td>解析并事务入库，可带 <code>taskId</code> 直接绑定</td></tr>
+    <tr><td>GET</td><td><code>/yuqing/collect/keyword/validate</code></td><td><code>yuqing:keyword:list</code></td><td>表达式语法校验，返回带列号的错误列表</td></tr>
+  </table>
+  <p class="dim">校验接口的权限由 <code>yuqing:task:query</code> 改为 <code>yuqing:keyword:list</code>——调用方是关键词页面的操作人，不该要求任务查询权限。</p>
+
+  <h3>新增文件</h3>
+  <table>
+    <tr><th>层</th><th>文件</th></tr>
+    <tr><td>后端 · 关键词</td><td><code>collect/keyword/KeywordImportParser.java</code>、<code>KeywordImportItem.java</code>、<code>KeywordImportResult.java</code>、<code>KeywordImportRequest.java</code></td></tr>
+    <tr><td>后端 · 服务</td><td><code>service/IYqKeywordImportService.java</code>、<code>service/impl/YqKeywordImportServiceImpl.java</code></td></tr>
+    <tr><td>后端 · 接口</td><td><code>controller/YqKeywordImportController.java</code></td></tr>
+    <tr><td>后端 · 测试</td><td><code>test/.../YqKeywordImportTest.java</code></td></tr>
+    <tr><td>前端 · PC</td><td><code>src/api/yuqing/keyword/import.ts</code>、<code>src/views/yuqing/keyword/KeywordImportDialog.vue</code></td></tr>
+    <tr><td>SQL</td><td><code>script/sql/yuqing/yq_keyword_sample_import.sql</code></td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>八、安全基线</h2>
+  <table>
+    <tr><th>风险</th><th>处理</th></tr>
+    <tr>
+      <td>越权</td>
+      <td>三个新接口全部 <code>@SaCheckPermission</code>；导入仅写「关键词库 + 任务关联」两张表，不触碰用户 / 角色 / 菜单；
+      任务 ID 会校验存在性，避免写到不存在的任务上</td>
+    </tr>
+    <tr>
+      <td>SQL 注入</td>
+      <td>全部走 MyBatis-Plus <code>LambdaQueryWrapper</code>，无字符串拼接，无 <code>${}</code>；生成 SQL 中的单引号做 <code>''</code> 转义</td>
+    </tr>
+    <tr>
+      <td>脏数据 / 静默失败</td>
+      <td>解析出错整份拒绝写入；超长表达式报错而非截断；入参长度 512KB 上限 + 条目 5000 条上限 + 行 20000 行上限</td>
+    </tr>
+    <tr>
+      <td>DoS（正则回溯）</td>
+      <td>排除词默认按<strong>普通字符串</strong>匹配；若启用正则，<code>ExcludeRule.risky()</code> 会扫描 <code>(a+)+</code> 这类灾难性回溯模式并自动降级为关键词匹配</td>
+    </tr>
+    <tr>
+      <td>XSS</td>
+      <td>关键词文本为纯数据，前端由 Vue 模板自动转义；导入预览表格不使用 <code>v-html</code></td>
+    </tr>
+    <tr>
+      <td>误杀舆情</td>
+      <td>全局降噪默认关闭（无任务维度）；排除词必须显式绑定任务才生效</td>
+    </tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>九、遗留与下一步</h2>
+  <ol>
+    <li><b>其他项目的同类前端缺陷（未处理）：</b><code>vue-tsc</code> 剩余 69 个错误全部属于 <code>presale</code>(41) / <code>inspect</code>(26) / <code>monitor</code>(2)，
+    其中 10 个是与 D5 完全相同的 <code>PageQuery</code> 误 import。修法与本次一致，改这两个项目的生成器即可，<b>本次未动</b>（不在舆情范围内）。</li>
+    <li><b>待手写的 9 个功能模块：</b>F-006 净化去重、F-007 智能研判、F-009 多维分析、F-010 预警处置、F-011 推送发送、F-014/F-015 报告生成与渲染、F-017 知识库与模型迭代、F-018 运行监控，以及 9 个企业微信 H5 页面。</li>
+    <li><b>词表导入的第二类来源：</b>当前导入器认「文本词表」。若后续要支持 Excel（<code>网址收集.xls</code> 那种）批量导入，可在 <code>KeywordImportParser</code> 前面加一层「表头映射 → 文本」的适配，解析逻辑无需改动。</li>
+    <li><b>网址清单仍未落地：</b>此前核查的 32 条网址中，1 条已就绪、1 条需栏目遍历、7 条需登录态、18 条无 URL，仍是「待建清单」而非可执行配置 —— 与本次关键词改造是两条独立的推进线。</li>
+  </ol>
+</section>
+
+<footer>
+  舆情监测平台 · P0 关键词链路改造交付说明 · 生成于 2026-09-22
+</footer>
+
+</div>
+</body>
+</html>

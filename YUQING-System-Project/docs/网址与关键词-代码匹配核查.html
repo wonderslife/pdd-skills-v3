@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网址清单与关键词样例 · 采集代码匹配核查</title>
+<style>
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#f8fafc;
+  --border:#e3e8ef; --border-strong:#cbd5e1;
+  --text:#1e293b; --muted:#64748b; --faint:#94a3b8;
+  --primary:#1d4ed8; --primary-dark:#1e3a8a; --primary-soft:#eff4ff;
+  --teal:#0f766e; --teal-soft:#e6f7f4;
+  --amber:#b45309; --amber-soft:#fff7ed;
+  --ok:#15803d; --ok-soft:#eefbf1;
+  --red:#b91c1c; --red-soft:#fef2f2;
+  --radius:12px; --radius-sm:8px;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Consolas,"Liberation Mono",monospace;
+  --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.75}
+header{background:var(--primary-dark);color:#fff;padding:40px 0 34px;margin-bottom:32px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#bfdbfe;margin-bottom:10px}
+h1{margin:0 0 14px;font-size:27px;line-height:1.35;font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:10px 22px;font-size:13px;color:#cbd5e1}
+.meta b{color:#fff;font-weight:500}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#1e40af;color:#dbeafe}
+.pill.green{background:#065f46;color:#d1fae5}
+.pill.amber{background:#78350f;color:#fde68a}
+.pill.red{background:#7f1d1d;color:#fecaca}
+.layout{display:grid;grid-template-columns:246px 1fr;gap:30px;align-items:start}
+.toc{position:sticky;top:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;font-size:13.5px}
+.toc-title{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:10px;font-weight:600}
+.toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 8px;border-radius:6px;border-left:2px solid transparent}
+.toc a:hover{background:var(--primary-soft);color:var(--primary)}
+main{min-width:0;padding-bottom:80px}
+section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 26px;margin-bottom:20px}
+h2{margin:0 0 16px;font-size:20px;font-weight:600;color:var(--primary-dark);padding-bottom:10px;border-bottom:2px solid var(--primary-soft)}
+h3{margin:22px 0 10px;font-size:16px;font-weight:600;color:var(--text)}
+h4{margin:16px 0 8px;font-size:14.5px;font-weight:600;color:var(--muted)}
+p{margin:8px 0}
+ul,ol{margin:8px 0;padding-left:22px}
+li{margin:4px 0}
+code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:1px 5px;color:#0f172a}
+pre{background:#0f172a;color:#e2e8f0;border-radius:var(--radius-sm);padding:14px 16px;overflow:auto;font-size:12.5px;line-height:1.7;font-family:var(--mono)}
+pre code{background:none;border:none;color:inherit;padding:0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+th,td{border:1px solid var(--border);padding:8px 11px;text-align:left;vertical-align:top}
+th{background:var(--surface-2);font-weight:600;color:var(--muted);font-size:13px}
+tbody tr:nth-child(even){background:#fbfcfe}
+.note{border-radius:var(--radius-sm);padding:12px 16px;margin:14px 0;font-size:14px;border-left:4px solid}
+.note.info{background:var(--primary-soft);border-color:var(--primary)}
+.note.ok{background:var(--ok-soft);border-color:var(--ok)}
+.note.warn{background:var(--amber-soft);border-color:var(--amber)}
+.note.danger{background:var(--red-soft);border-color:var(--red)}
+.note b{font-weight:600}
+.note.info b{color:var(--primary-dark)}
+.note.ok b{color:var(--ok)}
+.note.warn b{color:var(--amber)}
+.note.danger b{color:var(--red)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px}
+.stat .n{font-size:24px;font-weight:700;color:var(--primary);line-height:1.2}
+.stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:var(--primary-soft);color:var(--primary);margin:0 6px 4px 0;white-space:nowrap}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.warn{background:var(--amber-soft);color:var(--amber)}
+.tag.bad{background:var(--red-soft);color:var(--red)}
+.tag.gray{background:#f1f5f9;color:#64748b}
+footer{text-align:center;color:var(--faint);font-size:12.5px;padding:20px 0 40px}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+<div class="eyebrow">YUQING · F-004 采集调度 · 数据核验</div>
+<h1>网址清单与关键词样例 · 采集代码匹配核查</h1>
+<div class="meta">
+<span>核查对象：<b>网址收集.xls（32 条）</b> + <b>关键词样例.txt</b></span>
+<span>对照代码：<b>F-004 采集引擎</b></span>
+<span>日期：<b>2026-09-22</b></span>
+<span class="pill red">结论：不可直接跑通</span>
+</div>
+</div>
+</header>
+
+<div class="wrap">
+<div class="layout">
+<nav class="toc">
+<div class="toc-title">目录</div>
+<a href="#s1">1 核查结论速览</a>
+<a href="#s2">2 网址清单逐条判定</a>
+<a href="#s3">3 渠道类别映射缺口</a>
+<a href="#s4">4 关键词样例判定</a>
+<a href="#s5">5 排除词判定</a>
+<a href="#s6">6 表结构层面发现</a>
+<a href="#s7">7 修复建议</a>
+<a href="#s8">8 核对依据</a>
+</nav>
+
+<main>
+
+<section id="s1">
+<h2>1 核查结论速览</h2>
+<div class="note danger">
+<b>一句话结论：</b>网址清单是「待建清单」不是「可执行配置」——32 条里只有 <b>6 条</b>能立刻配成适配器；关键词样例的<b>组合表达式语法在采集侧完全不生效</b>，188 条排除词目前<b>没有任何执行落点</b>。
+</div>
+<div class="grid4">
+<div class="stat"><div class="n">6</div><div class="l">网址可直接接入</div></div>
+<div class="stat"><div class="n">1</div><div class="l">需新增期号遍历</div></div>
+<div class="stat"><div class="n">25</div><div class="l">缺能力或缺 URL</div></div>
+<div class="stat"><div class="n">0</div><div class="l">组合表达式实际生效</div></div>
+</div>
+<h3>三处需要决策的问题</h3>
+<table>
+<thead><tr><th>#</th><th>问题</th><th>性质</th><th>影响</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>组合表达式 <code>(A|B)+(C|D)</code> 被整串 URL 编码后塞进站点搜索框</td><td><span class="tag bad">代码缺陷</span></td><td>采集结果基本为 0，且不会报错——静默空跑</td></tr>
+<tr><td>2</td><td>表达式语法与 PRD 不一致：样例用 <code>(A|B)+(C|D)</code>，PRD 写 <code>"(A or B) not C"</code></td><td><span class="tag warn">规范冲突</span></td><td>录入界面与校验器无所适从</td></tr>
+<tr><td>3</td><td>排除词 <b>188 条</b>无执行落点；<code>yq_noise_rule</code> 无 <code>task_id</code></td><td><span class="tag bad">需求缺口</span></td><td>排除词若全局生效会误杀其他任务</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="s2">
+<h2>2 网址清单逐条判定</h2>
+<p>判定口径：现有采集引擎支持 <code>static</code>（HttpClient + Jsoup）/ <code>api</code>（JSON 接口）/ <code>render</code>（未接 Playwright 前降级为 static）/ <code>mock</code> 四档；<b>不具备登录态与验证码处理能力</b>。</p>
+<table>
+<thead><tr><th style="width:42px">#</th><th>类别</th><th>平台</th><th>原表标注</th><th style="width:190px">判定</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>网页</td><td>百度</td><td>—</td><td><span class="tag ok">可接 static</span>需清洗 <code>rsv_*</code>/<code>inputT</code> 会话参数</td></tr>
+<tr><td>2</td><td>微信</td><td>微信</td><td>直接搜全部</td><td><span class="tag bad">无 URL</span>需公众号文章搜索授权</td></tr>
+<tr><td>3</td><td>—</td><td>微信公众号</td><td>直接搜全部</td><td><span class="tag bad">无 URL</span>同上</td></tr>
+<tr><td>4</td><td>社交</td><td>抖音</td><td>需先登录</td><td><span class="tag bad">缺登录态</span></td></tr>
+<tr><td>5</td><td>—</td><td>快手</td><td>需先登录</td><td><span class="tag bad">缺登录态</span></td></tr>
+<tr><td>6</td><td>—</td><td>微博</td><td>需先登录</td><td><span class="tag bad">缺登录态</span>URL 是 SSO 登录页</td></tr>
+<tr><td>7</td><td>客户端</td><td>今日头条</td><td>长期交互有验证</td><td><span class="tag bad">缺登录态 + 反爬验证</span></td></tr>
+<tr><td>8</td><td>—</td><td>新浪</td><td>需先登录</td><td><span class="tag bad">缺登录态</span></td></tr>
+<tr><td>9</td><td>—</td><td>百家号</td><td>需先登录</td><td><span class="tag bad">缺登录态</span>URL 是后台登录页</td></tr>
+<tr><td>10</td><td>—</td><td>搜狐号</td><td>需先登录</td><td><span class="tag bad">缺登录态</span></td></tr>
+<tr><td>11</td><td>—</td><td>财富号</td><td>需先登录</td><td><span class="tag bad">无 URL + 缺登录态</span></td></tr>
+<tr><td>12</td><td>—</td><td>辽望客户端</td><td>需先登录</td><td><span class="tag bad">无 URL</span>APP 端</td></tr>
+<tr><td>13</td><td>—</td><td>北斗融媒</td><td>需先登录</td><td><span class="tag bad">无 URL</span>APP 端，只能走链接导入</td></tr>
+<tr><td>14</td><td>数字报</td><td>辽宁日报</td><td>无法搜索，按期刊号处理</td><td><span class="tag warn">需新增期号遍历</span>现有 <code>{kw}</code>/<code>{page}</code> 两个占位符不够</td></tr>
+<tr><td>15</td><td>—</td><td>中国医药报</td><td>—</td><td><span class="tag ok">可接 static</span>选择器待实测</td></tr>
+<tr><td>16</td><td>央级媒体</td><td>学习强国</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>17</td><td>—</td><td>国际在线</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>18</td><td>—</td><td>央广网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>19</td><td>—</td><td>中国质量新闻网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>20</td><td>—</td><td>中国消费网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>21</td><td>—</td><td>中国新闻网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>22</td><td>省级媒体</td><td>东北新闻网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>23</td><td>—</td><td>辽宁日报</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>24</td><td>—</td><td>北国网</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>25</td><td>省内政府网站</td><td>辽宁省人民政府</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>26</td><td>—</td><td>沈阳发布</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>27</td><td>垂类网站</td><td>辽宁省药监局</td><td>—</td><td><span class="tag ok">可接 static</span>带 <code>pageId</code>/<code>app</code>/<code>siteId</code> 固定参数</td></tr>
+<tr><td>28</td><td>—</td><td>国家药监局</td><td>—</td><td><span class="tag ok">可接 static</span>选择器待实测</td></tr>
+<tr><td>29</td><td>—</td><td>中国药闻微信公众号</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>30</td><td>—</td><td>国家药监局微信公众号</td><td>—</td><td><span class="tag gray">无 URL</span></td></tr>
+<tr><td>31</td><td>—</td><td>食品药品网</td><td>—</td><td><span class="tag ok">可接 static</span>自带日期区间参数</td></tr>
+<tr><td>32</td><td>—</td><td>中国搜索网</td><td>—</td><td><span class="tag ok">可接 static</span>选择器待实测</td></tr>
+</tbody>
+</table>
+<div class="note info">
+<b>汇总：</b>可接 6 条（1 / 15 / 27 / 28 / 31 / 32）· 需改造 1 条（14）· 缺登录态 7 条 · 无 URL 18 条，合计 32 条。
+</div>
+<h3>两个必须提请注意的点</h3>
+<ul>
+<li><b>第 13 条「北斗融媒」和你的安卓测试项目是同一个 APP</b>（<code>com.beidou.yun</code>）。它在表里标「需先登录」，且 APP 端没有可配的 web URL——只能走 F-005 链接导入，或复用你在 BDRM-TEST-SYSTEM 里已经跑通的自动化通道。</li>
+<li><b>百度那条 URL 的 <code>wd=</code> 参数已被 URL 编码</b>（<code>%E8%BE%BD%E5%AE%81%E7%9C%81...</code>）。配置时必须还原成 <code>{kw}</code> 占位符交给 <code>fillUrl</code> 二次编码，否则会出现双重编码。</li>
+</ul>
+</section>
+
+<section id="s3">
+<h2>3 渠道类别映射缺口</h2>
+<p>字典 <code>yq_channel_category</code> 现有 7 个值，但清单里出现了 9 类业务分类，有 3 类无对应项：</p>
+<table>
+<thead><tr><th>清单里的类别</th><th>条数</th><th>字典现状</th><th>建议</th></tr></thead>
+<tbody>
+<tr><td>网页</td><td>1</td><td>无直接对应</td><td>归 <code>news</code>，或用 <code>blog</code></td></tr>
+<tr><td>微信 / 微信公众号</td><td>4</td><td><b>无对应</b></td><td>补 <code>wechat</code></td></tr>
+<tr><td>社交</td><td>4</td><td><code>social</code> ✓</td><td>—</td></tr>
+<tr><td>客户端</td><td>6</td><td><b>无对应</b></td><td>补 <code>app</code></td></tr>
+<tr><td>数字报</td><td>1</td><td><code>epaper</code> ✓</td><td>—</td></tr>
+<tr><td>央级媒体 / 省级媒体</td><td>9</td><td><code>news</code> ✓</td><td>—</td></tr>
+<tr><td>省内政府网站</td><td>2</td><td><b>无对应</b></td><td>补 <code>gov</code></td></tr>
+<tr><td>垂类网站</td><td>5</td><td><code>news</code> ✓</td><td>—</td></tr>
+</tbody>
+</table>
+<div class="note warn">
+<b>建议：</b>给 <code>yq_channel_category</code> 补 <code>wechat</code>（微信生态）/ <code>gov</code>（政府网站）/ <code>app</code>（客户端）三个值。这三个类别后续在「渠道健康度」和「来源分布」统计里需要独立下钻，硬塞进 <code>news</code> 会导致统计口径失真。
+</div>
+</section>
+
+<section id="s4">
+<h2>4 关键词样例判定</h2>
+<h3>4.1 样例结构</h3>
+<table>
+<thead><tr><th>样例</th><th>长度</th><th>结构</th><th>向量规模</th></tr></thead>
+<tbody>
+<tr><td>样例 1</td><td>78 字符</td><td>地区组(16) + 主题组(6)</td><td>16 × 6 = 96 种组合</td></tr>
+<tr><td>样例 2</td><td>61 字符</td><td>地区组(5) + 赛事组(4)</td><td>5 × 4 = 20 种组合</td></tr>
+<tr><td>排除词</td><td>1035 字符</td><td>188 条（去重 177）</td><td>最长单条 14 字符</td></tr>
+</tbody>
+</table>
+<h3>4.2 语法与 PRD 冲突</h3>
+<table>
+<thead><tr><th>来源</th><th>写法</th></tr></thead>
+<tbody>
+<tr><td>你的关键词样例</td><td><code>(辽宁|沈阳|大连|...)+(药监局|药品|医疗器械|...)</code></td></tr>
+<tr><td>PRD §5.2 字段字典（第 932 行）</td><td><code>"(A or B) not C"</code></td></tr>
+</tbody>
+</table>
+<div class="note warn">
+<b>必须二选一。</b>建议<b>以你的实际样例为准反向修订 PRD</b>——因为这是从业务侧来的真实词表，<code>|</code> 加 <code>+</code> 的写法更贴近舆情行业的通行表达，也便于批量导入。改 PRD 的成本远低于改业务同事的录入习惯。
+</div>
+<h3>4.3 代码事实：三处断点</h3>
+<p>逐行核对后确认，组合表达式在采集链路上<b>一次都没有被真正使用过</b>：</p>
+<pre><code>// YqCollectServiceImpl.loadKeywords()  —— 只 select keyword_text
+return keywordMapper.selectByIds(ids).stream()
+    .filter(keyword -&gt; STATUS_ENABLED.equals(keyword.getStatus()))
+    .map(YqKeyword::getKeywordText)   // ← keyword_type / keyword_category
+    .filter(StringUtils::isNotBlank)  //   / combo_expression 全部丢弃
+    .distinct().collect(Collectors.toList());
+
+// AbstractSiteAdapter.firstKeyword()  —— 只取第一个
+for (String kw : keywords) {
+    if (StringUtils.isNotBlank(kw)) return kw.trim();   // ← 立即 return
+}
+
+// AbstractSiteAdapter.fillUrl()  —— 整串编码
+String url = template.replace(props.getKeywordPlaceholder(), urlEncode(keyword));</code></pre>
+<p>全仓检索 <code>comboExpression</code> 只有两处命中：<code>YqKeyword.java:51</code> 的域字段声明，和 <code>YqKeywordServiceImpl.java:96</code> 的一个 <code>like</code> 查询条件。<b>没有解析器、没有校验器、没有执行器。</b></p>
+<div class="note danger">
+<b>而 F-002 验收标准 3 明确要求：</b>「When 用户选择关键词类型为 <code>combo</code>, the system shall 要求填写布尔表达式并提供语法校验, 表达式非法时给出具体错误位置」——<b>该条未达标</b>。
+</div>
+<h3>4.4 后果推演</h3>
+<p>按现有代码，样例 1 会这样执行：</p>
+<ol>
+<li><code>loadKeywords</code> 拿到 2 条 <code>keyword_text</code>（如果是两条独立关键词的话）；</li>
+<li><code>firstKeyword</code> 取第一条；</li>
+<li><code>urlEncode</code> 把 <code>(辽宁|沈阳|...)+(药监局|...)</code> 整串编码；</li>
+<li>拼进 <code>https://www.baidu.com/s?...&amp;wd=%28%E8%BE%BD%E5%AE%81%7C...</code>。</li>
+</ol>
+<p>百度不认 <code>+</code> 连接两组、<code>|</code> 表示或的语法，会把整串当作字面查询词 → <b>返回 0 条结果且不报错</b>。政务站内搜索同理。这就是最危险的情况：<b>引擎显示「采集成功、入库 0 条」，看起来像正常空窗，实际是配置根本没生效。</b></p>
+<h3>4.5 组合语义的三种落地方式</h3>
+<table>
+<thead><tr><th>方式</th><th>做法</th><th>请求量</th><th>命中率</th><th>适用</th></tr></thead>
+<tbody>
+<tr><td><b>A 笛卡尔展开</b></td><td>16 地区 × 6 主题 → 96 个独立检索词逐个搜</td><td>×96</td><td>最高</td><td>站点搜索只支持单词</td></tr>
+<tr><td><b>B 高级语法透传</b></td><td>只对百度/Bing 等支持布尔语法的引擎透传表达式</td><td>×1</td><td>中</td><td>搜索引擎类渠道</td></tr>
+<tr><td><b>C 单侧检索 + 本地判定</b></td><td>用主题词（药监局）检索，拿到结果后本地跑组合正则筛地区</td><td>×6</td><td>高</td><td><b>推荐</b>，成本与覆盖平衡最好</td></tr>
+</tbody>
+</table>
+<div class="note ok">
+<b>推荐 C。</b>既能控住请求量（受渠道 <code>request_interval</code> 与 <code>concurrency_limit</code> 约束，A 方案的 96 倍放大在抖音这类渠道上会被限流打回），又能保证召回。实现上需要在适配器里加一层「本地命中判定」，把 <code>combo_expression</code> 编译成 <code>Pattern</code> 做二次过滤。
+</div>
+</section>
+
+<section id="s5">
+<h2>5 排除词判定</h2>
+<div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+<div class="stat"><div class="n">188</div><div class="l">排除词条数</div></div>
+<div class="stat"><div class="n">177</div><div class="l">去重后</div></div>
+<div class="stat"><div class="n">10</div><div class="l">重复词（已发现）</div></div>
+</div>
+<h3>5.1 落点分析</h3>
+<p>表结构上排除词有三个可能的落点，但当前<b>没有一个能真正生效</b>：</p>
+<table>
+<thead><tr><th>候选落点</th><th>字段容量</th><th>责任人</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><code>yq_keyword</code> + <code>keyword_type=negative</code></td><td>VARCHAR(100)，单条最长 14 字符 ✓</td><td>F-002 / F-004</td><td><span class="tag bad">采集侧不使用</span></td></tr>
+<tr><td><code>yq_keyword</code> + <code>keyword_category=block</code></td><td>同上 ✓</td><td>F-002 / F-004</td><td><span class="tag bad">采集侧不使用</span></td></tr>
+<tr><td><code>yq_noise_rule.match_value</code></td><td>VARCHAR(500)，需逐条拆开 ✓</td><td>F-006</td><td><span class="tag bad">F-006 未实现</span></td></tr>
+</tbody>
+</table>
+<div class="note info">
+<b>容量说明：</b>不要把 1035 字符整串入库——正确做法是按 <code>|</code> 拆成 177 条独立记录。拆开后每条最长 14 字符，三个落点的字段容量都绰绰有余。
+</div>
+<h3>5.2 任务级降噪的结构缺口</h3>
+<p>从词表内容能明确看出，排除词是<b>按任务分组的</b>：</p>
+<table>
+<thead><tr><th>词组</th><th>样本</th><th>归属任务</th></tr></thead>
+<tbody>
+<tr><td>「东北超」误匹配词</td><td>东北超哥 / 东北超火 / 外穿东北超 / 东北超自然 / 东北超保暖 …（约 100+ 条）</td><td>样例 2（东北足球超级联赛）</td></tr>
+<tr><td>通用噪声词</td><td>国事访问 / 被查 / 离职 / 妈妈 / 爆款 / 套餐 / 湖南 / 四川 / 美国 …</td><td>跨任务通用</td></tr>
+</tbody>
+</table>
+<p>但 <code>yq_noise_rule</code> 是<b>全局表，没有 <code>task_id</code></b>。如果把这些词全部灌进全局降噪规则，样例 1（药监局监测）里出现「被查」「离职」的合法舆情会被一并误杀——**「某药企被查」正是典型的高价值舆情**。</p>
+<div class="note danger">
+<b>必须补 <code>task_id</code>。</b>两种做法：① <code>yq_noise_rule</code> 加 <code>task_id</code> 字段（NULL 表示全局），降噪时按「任务级优先、全局兜底」匹配；② 排除词挂 <code>yq_task_keyword</code>，靠 <code>keyword_type=negative</code> 天然带上任务维度。方案 ② 更贴合现有结构，也复用了 F-002 已有的分类能力。
+</div>
+<h3>5.3 词表质量问题</h3>
+<p>去重后 177 条，10 个重复词需要清洗：<code>东北超哥</code> / <code>外穿东北超</code> / <code>东北超火</code> / <code>东北超姐</code> / <code>东北超人</code> / <code>东北超冷</code> / <code>超级恶劣</code> / <code>超级水区</code> / <code>淮安市城市足球联赛</code> / <code>超级特产</code>。<code>yq_keyword</code> 有 <code>uk_yq_kwgroup_name</code> 类的唯一约束倾向（同一分类下文本唯一，见 F-002 验收标准 2），导入时需先去重，否则会触发唯一键冲突。</p>
+</section>
+
+<section id="s6">
+<h2>6 表结构层面发现</h2>
+<h3>6.1 悬空外键字段</h3>
+<p><code>yq_channel</code> 里有三个字段指向<b>不存在的表</b>：</p>
+<table>
+<thead><tr><th>字段</th><th>注释</th><th>表是否存在</th></tr></thead>
+<tbody>
+<tr><td><code>collector_id</code></td><td>绑定采集器ID</td><td><span class="tag bad">无 yq_collector</span></td></tr>
+<tr><td><code>ua_pool_id</code></td><td>UA 池ID</td><td><span class="tag bad">无 yq_ua_pool</span></td></tr>
+</tbody>
+</table>
+<p>当前实现里这两个字段<b>从未被读写</b>（UA 由 <code>HeaderPool</code> 内置 10 个真实 UA 轮换，代理由 <code>proxy_group_id</code> 驱动）。建议：要么补上这两张表，要么从表结构和前端表单里移除，避免用户填了没反应。</p>
+<h3>6.2 配置时的间隔约束（容易踩）</h3>
+<p>引擎有一条硬校验：<b>任务采集间隔 ≥ max(min-interval-seconds, 渠道请求间隔 × 并发上限)</b>。</p>
+<p>当前默认值：<code>request_interval=3000ms</code>、<code>concurrency_limit=2</code>、<code>min-interval-seconds=30</code> → 3000×2 = 6 秒 &lt; 30 秒 ✓ 通过。</p>
+<div class="note warn">
+<b>但如果</b>给百度这类站点配 <code>request_interval=500ms</code>、<code>concurrency_limit=4</code>，会得到 2 秒的下限，而 <code>min-interval-seconds</code> 还是 30 → 单元直接被打上 <code>skipReason</code>，日志显示「采集间隔不得低于该渠道限流下限」，任务静默不执行。配置真实站点时<b>必须同步下调 <code>min-interval-seconds</code></b>。
+</div>
+</section>
+
+<section id="s7">
+<h2>7 修复建议</h2>
+<h3>P0 · 不修就跑不通</h3>
+<table>
+<thead><tr><th>#</th><th>动作</th><th>改动位置</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>采集侧关键词生效改造：<code>loadKeywords</code> 带出 <code>keyword_type</code>/<code>keyword_category</code>/<code>combo_expression</code>；<code>firstKeyword</code> 改为按类型分派（negative/block 不进检索词、combo 走本地判定）；新增 <code>KeywordResolver</code></td><td><code>YqCollectServiceImpl</code> / <code>AbstractSiteAdapter</code> / <code>CollectUnit</code></td></tr>
+<tr><td>2</td><td>组合表达式语法统一 + 写校验器（F-002 验收标准 3），非法时给出错误位置</td><td><code>YqKeywordServiceImpl</code> + 新 <code>ComboExpressionParser</code></td></tr>
+<tr><td>3</td><td>任务级降噪：排除词挂 <code>yq_task_keyword</code>（<code>keyword_type=negative</code>），或给 <code>yq_noise_rule</code> 加 <code>task_id</code></td><td><code>yq_schema.sql</code> + F-006</td></tr>
+<tr><td>4</td><td>词表导入工具：把关键词样例拆条 + 排除词去重后导入 <code>yq_keyword</code> / <code>yq_task_keyword</code></td><td>新 SQL 脚本（可脚本生成）</td></tr>
+</tbody>
+</table>
+<h3>P1 · 决定渠道覆盖范围</h3>
+<table>
+<thead><tr><th>#</th><th>动作</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>5</td><td>登录态 / 授权通道</td><td>给 <code>AdapterSpec</code> 加 cookie 托管与账号池，或明确「抖音/快手/微博等 7 条走 F-005 链接导入 + 人工」</td></tr>
+<tr><td>6</td><td>数字报「按期号遍历」适配器</td><td>URL 模板增加 <code>{date}</code>/<code>{issue}</code> 占位符</td></tr>
+<tr><td>7</td><td>渠道类别字典补 <code>wechat</code> / <code>gov</code> / <code>app</code></td><td>否则来源统计口径失真</td></tr>
+<tr><td>8</td><td>清理 <code>collector_id</code> / <code>ua_pool_id</code></td><td>补表或移除</td></tr>
+</tbody>
+</table>
+<h3>P2 · 接入准备</h3>
+<ul>
+<li>把已确认的 6 条网址逐条实测选择器，落成 <code>yq_collect.yml</code> 的真实 adapter 配置（替换掉现在的 4 个 DEMO_* 示例）；</li>
+<li>百度那条要先还原 <code>wd=</code> 为 <code>{kw}</code> 占位符，避免双重编码；</li>
+<li>18 条无 URL 的渠道，需要业务侧补齐搜索入口或改用官方授权接口，建议单独立项而非塞进本期。</li>
+</ul>
+</section>
+
+<section id="s8">
+<h2>8 核对依据</h2>
+<h3>核对的输入</h3>
+<ul>
+<li><code>C:\Users\name\Desktop\舆情\网址收集.xls</code> —— Sheet1，已用区域 B1:F34，32 条数据</li>
+<li><code>C:\Users\name\Desktop\舆情\关键词样例.txt</code> —— 3 段（样例 1 / 样例 2 / 排除）</li>
+</ul>
+<h3>核对的代码</h3>
+<table>
+<thead><tr><th>文件</th><th>核对内容</th></tr></thead>
+<tbody>
+<tr><td><code>collect/service/impl/YqCollectServiceImpl.java</code></td><td><code>loadKeywords</code> / <code>buildUnits</code> 关键词装载逻辑</td></tr>
+<tr><td><code>collect/adapter/AbstractSiteAdapter.java</code></td><td><code>firstKeyword</code> / <code>fillUrl</code> / <code>urlEncode</code></td></tr>
+<tr><td><code>collect/adapter/AdapterSpec.java</code></td><td>四档 <code>entryType</code> 与全部可配字段（无 cookie / 无登录态）</td></tr>
+<tr><td><code>collect/adapter/AdapterRegistry.java</code></td><td><code>render</code> 未接 Playwright 时降级为 static</td></tr>
+<tr><td><code>script/sql/yuqing/yq_schema.sql</code></td><td><code>yq_channel</code> / <code>yq_keyword</code> / <code>yq_task_keyword</code> / <code>yq_noise_rule</code> 结构</td></tr>
+<tr><td><code>script/sql/yuqing/yq_dict.sql</code></td><td><code>yq_keyword_type</code> / <code>yq_channel_category</code> / <code>yq_match_type</code> 枚举</td></tr>
+<tr><td><code>my-feature.prd</code> §5.2 / <code>dev-specs/F-002-keyword.md</code> / <code>F-006-dedup.md</code></td><td>组合表达式定义与降噪验收标准</td></tr>
+</tbody>
+</table>
+<h3>复现命令</h3>
+<pre><code># 网址清单（本地 xls 读取）
+edsdk.py call sheet_get_cell_data file_id="C:/Users/name/Desktop/舆情/网址收集.xls" \
+  sheet_id=000001 start_row=0 start_col=0 end_row=34 end_col=8 return_csv=true
+
+# 关键词样例统计
+python -c "..."   # 见核查脚本：长度 / 条数 / 去重 / 分组
+
+# 代码侧
+grep -rn "comboExpression" ruoyi-admin/src/main/java/org/dromara/yuqing/
+grep -n "private " collect/adapter/AdapterSpec.java</code></pre>
+</section>
+
+</main>
+</div>
+</div>
+<footer>YUQING-System-Project · F-004 采集调度 · 数据核验报告 · 2026-09-22</footer>
+</body>
+</html>

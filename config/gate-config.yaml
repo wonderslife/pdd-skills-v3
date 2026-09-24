@@ -1,0 +1,73 @@
+# Gate Engine Configuration / 门控引擎配置
+#
+# 唯一真相源 (Single Source of Truth)
+# gate-engine.js 必须从此文件读取配置，不得硬编码
+#
+# 修改流程:
+#   1. 在此文件中修改BLOCKER规则列表或评分权重
+#   2. gate-engine.js 自动读取最新配置
+#   3. 无需修改JS代码
+
+meta:
+  version: "1.0.0"
+  last_updated: "2026-04-15"
+
+gate_levels:
+  - id: blocker
+    exit_code: 1
+    message: "🚫 BLOCKER: 流程被阻断，必须修复后才能继续"
+    color: "red"
+
+  - id: critical
+    exit_code: 1
+    message: "🔴 CRITICAL: 严重问题，必须修复"
+    color: "red"
+
+  - id: warning
+    exit_code: 0
+    message: "🟡 WARNING: 建议修复，非阻塞"
+    color: "yellow"
+
+  - id: info
+    exit_code: 0
+    message: "🔵 INFO: 可选优化"
+    color: "blue"
+
+severity_mapping:
+  error: critical
+  warn: warning
+  info: info
+
+blocker_rule_ids:
+  - uiux-no-uuid-input
+  - dm-enum-convention
+  - dm-permission-matrix
+  - uiux-form-mapping-exists
+  - uiux-options-api-listed
+  - api-options-endpoint
+  - prd-has-out-of-scope
+
+blocker_fix_suggestions:
+  uiux-no-uuid-input: "外键字段使用Select组件而非手动输入"
+  dm-enum-convention: "在PRD中添加枚举编码约定章节"
+  dm-permission-matrix: "在PRD中添加角色×状态×操作权限矩阵"
+  uiux-form-mapping-exists: "在PRD中添加表单字段组件映射表"
+  uiux-options-api-listed: "在PRD中列出所有Options API数据源"
+  api-options-endpoint: "在PRD接口设计中声明/options端点"
+  prd-has-out-of-scope: "在PRD中明确声明超出范围的功能"
+
+score_weights:
+  blocker_base: 0
+  critical_max_issues_for_nonzero: 5
+  critical_floor_score: 20
+  base_score: 100
+  critical_penalty: 15
+  warning_penalty: 5
+  info_penalty: 1
+
+grade_thresholds:
+  A: 90
+  B: 80
+  C: 70
+  D: 60
+  F: 0

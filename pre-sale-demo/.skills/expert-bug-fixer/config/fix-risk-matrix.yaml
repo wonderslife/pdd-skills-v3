@@ -1,0 +1,544 @@
+# 修复方案风险评估矩阵 / Fix Proposal Risk Assessment Matrix
+
+> **版本**: 2.0.0
+> **目标**: 在实施修复前评估方案风险，预防引入新问题
+> **触发时机**: Step 3（精准修复）阶段，选择修复方案时执行
+
+---
+
+## 🎯 评估维度
+
+### 维度1: 复杂度风险（COMPLEXITY_RISK）
+
+**定义**: 修复方案的代码复杂度是否合理
+
+**评分标准**:
+
+| 等级 | 分数 | 判定标准 | 示例 |
+|------|------|---------|------|
+| ✅ LOW | 1-2分 | 单行修改，逻辑清晰 | `this.flag = true` |
+| ⚠️ MEDIUM | 3-5分 | 多行修改，简单条件判断 | 添加if/else分支 |
+| 🔴 HIGH | 6-8分 | 引入新概念，复杂逻辑 | 重构数据结构、引入新依赖 |
+| 💀 CRITICAL | 9-10分 | 架构变更，影响范围大 | 改用新的状态管理方案 |
+
+**计算公式**:
+```
+复杂度分数 = 基础分 + 新增代码行数/10 + 条件分支数×2 + 新增依赖数×3
+```
+
+**示例计算**:
+```javascript
+// 方案A: 直接splice（LOW - 2分）
+this.form.internalDecisions[decisionIndex].resolutionFiles.splice(fileIndex, 1);
+// 分数: 1(基础) + 0(1行<10) + 0(无分支) + 0(无依赖) = 1分 ✅
+
+// 方案B: 使用$set+filter（MEDIUM - 4分）
+const newFiles = this.form.internalDecisions[decisionIndex].resolutionFiles.filter((_, idx) => idx !== fileIndex);
+this.$set(this.form.internalDecisions[decisionIndex], 'resolutionFiles', newFiles);
+// 分数: 1(基础) + 0(2行<10) + 1(filter算1个分支) + 0(无依赖) = 2分 ✅
+
+// 方案C: 引入新状态管理（HIGH - 7分）
+import { createStore } from 'vuex';
+const store = createStore({ ... });
+// 分数: 1(基础) + 0 + 0 + 3(新增1个依赖) = 4分（但架构影响大，人工调高至7分）⚠️
+```
+
+---
+
+### 维度2: 兼容性风险（COMPATIBILITY_RISK）
+
+**定义**: 修复方案是否与现有系统兼容
+
+**检查项清单**:
+
+| # | 检查项 | 权重 | 风险点 |
+|---|--------|------|--------|
+| 2.1 | 浏览器兼容性 | 20% | 是否使用了新版API？旧浏览器支持吗？ |
+| 2.2 | Vue版本兼容 | 25% | 是否使用了Vue 2.7+/Vue 3特性？项目版本支持吗？ |
+| 2.3 | 第三方库兼容 | 20% | 是否升级了依赖？是否有breaking change？ |
+| 2.4 | 若依框架约定 | 20% | 是否违反了框架的编码规范？ |
+| 2.5 | 向后兼容性 | 15% | 是否会影响现有功能？历史数据是否兼容？ |
+
+**常见不兼容模式**:
+
+```javascript
+// ❌ 高风险：使用可选链操作符（Vue 2不支持）
+const fileName = this.detail?.internalDecisions?.[0]?.resolutionFiles?.[0]?.fileName;
+// → Vue 2编译错误或需要@babel/plugin-proposal-optional-chaining
+
+// ✅ 低安全：使用传统方式
+const fileName = this.detail && 
+                  this.detail.internalDecisions && 
+                  this.detail.internalDecisions[0] && 
+                  this.detail.internalDecisions[0].resolutionFiles && 
+                  this.detail.internalDecisions[0].resolutionFiles[0] ?
+                  this.detail.internalDecisions[0].resolutionFiles[0].fileName : 
+                  null;
+
+// ❌ 高风险：使用.native修饰符（el-button不需要）
+<el-button @click.native="handleClick">点击</el-button>
+// → 可能导致事件无法触发或行为异常
+
+// ✅ 低风险：普通@click
+<el-button @click="handleClick">点击</el-button>
+
+// ❌ 高风险：修改核心数据结构
+// 将 internalDecisions 从字符串改为对象数组
+// → 影响所有读写该字段的代码，需全面回归测试
+
+// ✅ 低风险：在现有结构上扩展
+// 保持JSON格式，增加新字段
+// → 向后兼容，旧数据不受影响
+```
+
+---
+
+### 维度3: 副作用风险（SIDE_EFFECT_RISK）
+
+**定义**: 修复方案是否会引发连锁反应
+
+**副作用类型**:
+
+| 类型 | 描述 | 检测方法 | 风险等级 |
+|------|------|---------|---------|
+| **状态污染** | 修改了全局/shared状态 | 检查是否修改了Vuex store、eventBus | 🔴 HIGH |
+| **DOM泄漏** | 未清理的事件监听器/定时器 | 检查beforeDestroy钩子 | 🟡 MEDIUM |
+| **内存泄漏** | 循环引用、闭包占用 | 检查大型数组的引用关系 | 🟡 MEDIUM |
+| **性能退化** | O(n²)算法、频繁重渲染 | 检查v-for的key、computed vs methods | 🟢 LOW |
+| **样式冲突** | scoped样式泄漏 | 检查CSS选择器优先级 | 🟢 LOW |
+
+**检测脚本**:
+```javascript
+// 副作用快速检测
+function detectSideEffects(fixCode) {
+  const warnings = [];
+  
+  // 检测全局状态修改
+  if (fixCode.includes('this.$store') || fixCode.includes('Vuex.Store')) {
+    warnings.push({
+      type: 'STATE_POLLUTION',
+      severity: 'HIGH',
+      message: '修改了Vuex全局状态，可能影响其他组件'
+    });
+  }
+  
+  // 检测事件监听器添加
+  if (fixCode.includes('.addEventListener') && !fixCode.includes('.removeEventListener')) {
+    warnings.push({
+      type: 'DOM_LEAK',
+      severity: 'MEDIUM',
+      message: '添加了事件监听器但未看到对应的移除代码'
+    });
+  }
+  
+  // 检测定时器
+  if ((fixCode.includes('setInterval') || fixCode.includes('setTimeout')) && 
+      !fixCode.includes('clearInterval') && !fixCode.includes('clearTimeout')) {
+    warnings.push({
+      type: 'MEMORY_LEAK',
+      severity: 'MEDIUM',
+      message: '创建了定时器但未看到清除代码'
+    });
+  }
+  
+  return warnings;
+}
+```
+
+---
+
+### 维度4: 可回滚性（ROLLBACKABILITY）
+
+**定义**: 如果修复失败，能否快速恢复到修复前状态
+
+**评级标准**:
+
+| 等级 | 标准 | 回滚时间 | 示例 |
+|------|------|---------|------|
+| ✅ **EXCELLENT** | 纯代码替换，无副作用 | < 1分钟 | 修改常量值、修正拼写错误 |
+| ✅ **GOOD** | 局部改动，影响可控 | 1-5分钟 | 修改单个方法的实现 |
+| ⚠️ **FAIR** | 需要数据库回滚或配置还原 | 5-30分钟 | 修改字段类型、添加索引 |
+| ❌ **POOR** | 涉及数据迁移或不可逆操作 | > 30分钟 | 删除表字段、重构API |
+
+**回滚方案模板**:
+```markdown
+### 回滚步骤
+
+**回滚复杂度**: {{complexity}}  
+**预计耗时**: {{estimatedTime}}
+
+#### Step 1: 代码回滚
+```bash
+# Git回滚（如果已提交）
+git revert <commit-hash>
+
+# 或手动回滚（如果未提交）
+# 将以下文件恢复到修改前：
+# - {{file1}}
+# - {{file2}}
+```
+
+#### Step 2: 数据回滚（如需要）
+```sql
+-- 如果有数据库变更
+-- 执行回滚SQL脚本
+ROLLBACK;
+-- 或执行预准备的回滚语句
+UPDATE table SET field = old_value WHERE condition;
+```
+
+#### Step 3: 配置回滚（如需要）
+```bash
+# 还原配置文件
+cp config.yml.backup config.yml
+# 重启服务
+systemctl restart myapp
+```
+
+#### Step 4: 验证回滚
+- [ ] 确认已恢复到修复前状态
+- [ ] 核心功能正常
+- [ ] 无残留影响
+```
+
+---
+
+### 维度5: 测试覆盖度（TEST_COVERAGE）
+
+**定义**: 修复方案是否有充分的测试保障
+
+**评估标准**:
+
+| 覆盖级别 | 要求 | 说明 |
+|---------|------|------|
+| **T1-最小化** | 手动测试主场景 | 仅验证Bug本身是否修复 |
+| **T2-基本** | 主场景 + 边界测试 | 包含空值、异常输入等边界 |
+| **T3-完整** | T2 + 回归测试 | 验证相关功能未受影响 |
+| **T4-全面** | T3 + 自动化测试 | 编写单元/集成测试用例 |
+
+**测试用例生成指南**:
+
+```yaml
+# 必须包含的测试场景
+test_cases:
+  - id: TC-HAPPY_PATH
+    name: 正常路径测试
+    priority: P0
+    steps:
+      - 操作: 正常使用功能
+      - 预期: Bug症状消失
+      - 验证: 无新问题出现
+  
+  - id: TC-EDGE_CASE_1
+    name: 边界测试-空值
+    priority: P1
+    steps:
+      - 操作: 传入空值/null/undefined
+      - 预期: 优雅降级，不崩溃
+      - 验证: 控制台无报错
+  
+  - id: TC-EDGE_CASE_2
+    name: 边界测试-极值
+    priority: P1
+    steps:
+      - 操作: 传入超大数组/超长字符串
+      - 预期: 性能可接受，不卡顿
+      - 验证: 响应时间 < 3秒
+  
+  - id: TC-REGRESSION_1
+    name: 回归测试-关联功能A
+    priority: P0
+    steps:
+      - 操作: 测试与修复代码相关的其他功能
+      - 预期: 功能正常
+      - 验证: 无副作用
+  
+  - id: TC-NEGATIVE
+    name: 反向测试
+    priority: P2
+    steps:
+      - 操作: 尝试绕过修复逻辑
+      - 预期: 安全限制生效
+      - 验证: 无安全漏洞
+```
+
+---
+
+## 📊 综合风险评估报告
+
+### 报告模板
+
+```markdown
+## 🔒 修复方案风险评估报告
+
+**Bug ID**: BUG-{{id}}  
+**修复方案**: {{proposalName}}  
+**评估时间**: {{timestamp}}  
+**评估人**: expert-bug-fixer v2.0  
+
+---
+
+### 🎯 总体风险评级: {{overallRating}}
+
+| 维度 | 得分 | 权重 | 加权得分 | 评级 |
+|------|------|------|---------|------|
+| 复杂度风险 | {{complexityScore}}/10 | 20% | {{weightedComplexity}} | {{complexityLevel}} |
+| 兼容性风险 | {{compatScore}}/10 | 25% | {{weightedCompat}} | {{compatLevel}} |
+| 副作用风险 | {{sideEffectScore}}/10 | 25% | {{weightedSideEffect}} | {{sideEffectLevel}} |
+| 可回滚性 | {{rollbackScore}}/10 | 15% | {{weightedRollback}} | {{rollbackLevel}} |
+| 测试覆盖度 | {{testScore}}/10 | 15% | {{weightedTest}} | {{testLevel}} |
+| **总分** | - | **100%** | **{{totalScore}}/10** | **{{overallRating}}** |
+
+---
+
+### 📈 详细分析
+
+#### 1. 复杂度风险分析（{{complexityScore}}/10）
+
+**当前方案**:
+```javascript
+{{fixCodeSnippet}}
+```
+
+**复杂度分解**:
+- 基础分: {{baseScore}}
+- 代码量: +{{codeSizeBonus}} ({{linesOfCode}}行)
+- 条件分支: +{{branchBonus}} ({{branchCount}}个)
+- 新增依赖: +{{depBonus}} ({{depCount}}个)
+
+**对比备选方案**:
+
+| 方案 | 复杂度得分 | 优缺点 | 推荐 |
+|------|-----------|--------|------|
+| 方案A (当前) | {{scoreA}} | {{prosConsA}} | {{recommendationA}} |
+| 方案B | {{scoreB}} | {{prosConsB}} | {{recommendationB}} |
+| 方案C | {{scoreC}} | {{prosConsC}} | {{recommendationC}} |
+
+---
+
+#### 2. 兼容性风险分析（{{compatScore}}/10）
+
+**兼容性检查结果**:
+
+| 检查项 | 结果 | 风险说明 |
+|--------|------|---------|
+| 浏览器兼容 | {{browserCompat}} | {{browserRisk}} |
+| Vue版本兼容 | {{vueCompat}} | {{vueRisk}} |
+| 第三方库兼容 | {{libCompat}} | {{libRisk}} |
+| 框架规范遵循 | {{frameworkCompat}} | {{frameworkRisk}} |
+| 向后兼容 | {{backwardCompat}} | {{backwardRisk}} |
+
+**⚠️ 发现的兼容性问题**:
+{{#each compatIssues}}
+- {{this}}
+{{/each}}
+
+---
+
+#### 3. 副作用风险分析（{{sideEffectScore}}/10）
+
+**检测结果**:
+{{#each sideEffects}}
+- [{{this.severity}}] **{{this.type}}**: {{this.message}}
+{{/each}}
+
+**缓解措施**:
+{{mitigationPlan}}
+
+---
+
+#### 4. 可回滚性评估（{{rollbackScore}}/10）
+
+**回滚复杂度**: {{rollbackComplexity}}  
+**预计回滚耗时**: {{estimatedRollbackTime}}
+
+**回滚方案**:
+{{rollbackPlan}}
+
+---
+
+#### 5. 测试覆盖度评估（{{testScore}}/10）
+
+**当前覆盖级别**: {{testCoverageLevel}}
+
+**必须补充的测试用例**:
+{{#each requiredTests}}
+- [ ] {{this.id}}: {{this.name}} ({{this.priority}})
+{{/each}}
+
+**建议提升到级别**: {{suggestedTestLevel}}
+
+---
+
+### ✅ 最终建议
+
+{{#if isRecommended}}
+#### 🎉 推荐采用此方案
+
+**理由**:
+1. 风险可控（总体评分 ≥ 7.0）
+2. 收益明显（能解决核心问题）
+3. 副作用有限且可接受
+4. 可快速回滚
+
+**前提条件**:
+- [ ] 完成建议的测试用例
+- [ ] 准备好回滚方案
+- [ ] 在测试环境先验证
+{{else}}
+#### ⚠️ 不推荐此方案 / 建议优化后重新评估
+
+**理由**:
+1. 风险过高（总体评分 < 6.0）
+2. 可能引入新问题
+3. 存在更安全的替代方案
+
+**替代建议**:
+{{alternativeSuggestions}}
+
+**优化方向**:
+{{optimizationTips}}
+{{/if}}
+
+---
+
+### 📝 风险缓解措施
+
+{{#if hasHighRiskItems}}
+针对高风险项的缓解措施：
+
+{{#each highRiskItems}}
+#### {{@index+1}}. {{this.type}} ({{this.severity}})
+- **当前风险**: {{this.description}}
+- **缓解措施**: {{this.mitigation}}
+- **应急预案**: {{contingencyPlan}}
+{{/each}}
+{{else}}
+✅ 所有风险项均在可控范围内，无需额外缓解措施。
+{{/if}}
+
+---
+
+**评估结束**
+
+*本报告由expert-bug-fixer v2.0自动生成，仅供参考。最终决策请结合实际情况判断。*
+```
+
+---
+
+## 🎬 决策流程图
+
+```
+开始评估修复方案
+  │
+  ├─► 计算各维度得分
+  │   ├─ 复杂度风险 (权重20%)
+  │   ├─ 兼容性风险 (权重25%)
+  │   ├─ 副作用风险 (权重25%)
+  │   ├─ 可回滚性 (权重15%)
+  │   └─ 测试覆盖度 (权重15%)
+  │
+  ├─► 计算加权总分
+  │   └─ Total = Σ(score_i × weight_i)
+  │
+  ├─► 判断风险等级
+  │   ├─ ≥ 8.0 → ✅ 低风险，强烈推荐
+  │   ├─ 7.0-7.9 → ✅ 中低风险，推荐采用
+  │   ├─ 6.0-6.9 → ⚠️ 中等风险，需缓解措施
+  │   ├─ 4.0-5.9 → 🔴 较高风险，不建议或重大改进
+  │   └─ < 4.0 → 💀 极高风险，禁止采用
+  │
+  └─► 输出决策建议
+      ├─ 推荐采用 → 生成测试计划和回滚方案
+      ├─ 有条件采用 → 列出必须满足的前提条件
+      └─ 不推荐 → 提供替代方案或优化建议
+```
+
+---
+
+## 📚 参考案例库
+
+### 案例1: Vue响应式问题修复（来自真实案例）
+
+**Bug**: 点击删除按钮无反应
+
+**方案A**: `$forceUpdate()` 强制渲染
+```
+风险评分:
+- 复杂度: 2/10 (LOW)
+- 兼容性: 9/10 (EXCELLENT)
+- 副作用: 7/10 (GOOD)
+- 可回滚: 9/10 (EXCELLENT)
+- 测试: 5/10 (FAIR)
+
+总分: 6.4/10 → ⚠️ 中等风险
+结论: 不推荐，治标不治本
+```
+
+**方案B**: `$set()` + 展开运算符
+```
+风险评分:
+- 复杂度: 4/10 (MEDIUM)
+- 兼容性: 9/10 (EXCELLENT)
+- 副作用: 8/10 (GOOD)
+- 可回滚: 9/10 (EXCELLENT)
+- 测试: 6/10 (FAIR)
+
+总分: 7.2/10 → ✅ 推荐
+结论: 推荐采用，符合Vue最佳实践
+```
+
+**方案C**: 重命名冲突方法（根因修复）
+```
+风险评分:
+- 复杂度: 2/10 (LOW)
+- 兼容性: 10/10 (PERFECT)
+- 副作用: 10/10 (PERFECT)
+- 可回滚: 10/10 (PERFECT)
+- 测试: 7/10 (GOOD)
+
+总分: 8.2/10 → ✅ 强烈推荐
+结论: 最佳方案，从根源解决问题
+```
+
+**教训**: 始终选择根因修复而非表面修复
+
+---
+
+### 案例2: 数据流断裂修复（来自真实案例）
+
+**Bug**: 删除后重新上传数据不更新
+
+**方案A**: 修改后端Service处理逻辑
+```
+风险评分:
+- 复杂度: 7/10 (HIGH)
+- 兼容性: 8/10 (GOOD)
+- 副作用: 6/10 (FAIR) - 可能影响其他接口
+- 可回滚: 5/10 (FAIR) - 需要数据库回滚
+- 测试: 4/10 (POOR) - 需大量回归测试
+
+总分: 5.8/10 → 🔴 不推荐
+原因: 改动范围大，风险高
+```
+
+**方案B**: 前端整合附件数据（实际采用的方案）
+```
+风险评分:
+- 复杂度: 4/10 (MEDIUM)
+- 兼容性: 10/10 (PERFECT)
+- 副作用: 9/10 (EXCELLENT)
+- 可回滚: 10/10 (PERFECT)
+- 测试: 7/10 (GOOD)
+
+总分: 8.0/10 → ✅ 强烈推荐
+优势: 零后端改动，复用现有架构
+```
+
+**教训**: 寻找最小侵入的修复路径
+
+---
+
+**文档结束**
+
+*本风险评估矩阵将持续积累案例，为未来的修复决策提供参考。*

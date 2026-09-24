@@ -1,0 +1,146 @@
+# 机房巡检系统 - 统计报表
+#
+# 用途: 验证统计页的粒度切换（日/周/月）、机房筛选、时间范围、点位异常率排名
+# 依赖: 已有若干巡检记录与异常项（h5-001 / h5-002 产生）
+
+test_id: "INSP-PC-011-stats"
+title: "统计报表：粒度切换、机房筛选、异常率排名"
+priority: "P1"
+tags: ["统计报表", "图表", "PC"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 统计报表」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/stats"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/trend*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "默认「按日」粒度，验证趋势图与排名表已渲染"
+    action: assert_multiple
+    assertions:
+      - type: element_visible
+        target: "统计粒度"
+        confidence: high
+      - type: element_visible
+        target: "异常率"
+        confidence: high
+
+  - step: 3
+    desc: "「统计粒度」切换为「按周」，验证趋势接口按新粒度重新请求"
+    action: select_option
+    target: "按日"
+    option: "按周"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/trend*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 4
+    desc: "「统计粒度」切换为「按月」"
+    action: select_option
+    target: "按周"
+    option: "按月"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/trend*"
+        method: GET
+        response_code: 200
+        confidence: medium
+
+  - step: 5
+    desc: "「所属机房」选择目标机房，验证趋势与排名随机房过滤"
+    action: select_option
+    target: "全部机房"
+    option: "${ROOM_NAME}"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/pointRank*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 6
+    desc: "设置「时间范围」为本月，并点击「查询」"
+    action: click
+    target: "查询"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 7
+    desc: "校验异常率排名表列完整：排名 / 点位名称 / 所属机房 / 巡检次数 / 异常次数 / 异常率"
+    action: assert_multiple
+    assertions:
+      - type: element_visible
+        target: "点位名称"
+        confidence: high
+      - type: element_visible
+        target: "巡检次数"
+        confidence: high
+      - type: element_visible
+        target: "异常次数"
+        confidence: high
+      - type: element_visible
+        target: "异常率"
+        confidence: high
+
+  - step: 8
+    desc: "点击「重置」，验证筛选条件清空并恢复默认（按日 + 全部机房）"
+    action: click
+    target: "重置"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/stats/*"
+        method: GET
+        response_code: 200
+        confidence: medium
+
+teardown:
+  - action: screenshot
+    name: "stats-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "40-70s"
+  risk_level: "low"

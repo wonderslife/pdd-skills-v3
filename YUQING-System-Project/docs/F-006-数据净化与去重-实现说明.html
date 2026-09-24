@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-006 数据净化与链接去重 · 实现说明</title>
+<style>
+  :root { --bg:#0f1419; --card:#161b22; --bd:#2a3138; --tx:#e6edf3; --tx2:#9aa7b4;
+          --ok:#3fb950; --warn:#d29922; --bad:#f85149; --acc:#58a6ff; --mut:#6e7681; }
+  * { box-sizing: border-box; }
+  body { background:var(--bg); color:var(--tx); font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         line-height:1.75; margin:0; padding:32px 20px 80px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:28px; margin:0 0 6px; letter-spacing:.5px; }
+  .sub { color:var(--tx2); font-size:14px; margin-bottom:28px; }
+  h2 { font-size:20px; margin:36px 0 14px; padding-left:11px; border-left:4px solid var(--acc); }
+  h3 { font-size:16px; margin:22px 0 10px; color:var(--tx); }
+  p, li { font-size:14.5px; }
+  code { background:#1f262d; padding:1px 6px; border-radius:4px; font-size:13px;
+         font-family:"SFMono-Regular",Consolas,monospace; color:#e3b341; }
+  table { width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:13.5px; }
+  th, td { border:1px solid var(--bd); padding:8px 11px; text-align:left; vertical-align:top; }
+  th { background:#1c2430; color:var(--tx); font-weight:600; }
+  tr:nth-child(even) td { background:#131920; }
+  .ok { color:var(--ok); font-weight:600; }
+  .bad { color:var(--bad); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  .mut { color:var(--mut); }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:8px; padding:16px 20px; margin:14px 0; }
+  .lead { background:linear-gradient(90deg,rgba(88,166,255,.12),transparent); border-left:3px solid var(--acc);
+          padding:14px 18px; border-radius:0 8px 8px 0; margin-bottom:26px; }
+  ul, ol { padding-left:22px; }
+  li { margin:5px 0; }
+  .mono { font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; }
+  .tag { display:inline-block; background:#1f2a37; color:var(--acc); border:1px solid #2d4a6b;
+         border-radius:4px; padding:1px 7px; font-size:12px; margin-right:6px; }
+  .kv { color:var(--tx2); }
+  footer { margin-top:48px; padding-top:16px; border-top:1px solid var(--bd); color:var(--mut); font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>F-006 数据净化与链接去重 · 实现说明</h1>
+<div class="sub">全自动化舆情监测研判报送平台 · RuoYi-Vue-Plus v6 · 生成器驱动 · 2026-09-22</div>
+
+<div class="lead">
+<p style="margin:0"><b>结论：F-006 已落地并通过全链路校验。</b>
+离线自测 <span class="ok">53 / 53 PASS</span>（新增 19 条）、SQL 交付前校验 <span class="ok">ALL PASS · 警告 0</span>（含新增第 11 类）、
+PC <code>vue-tsc</code> <span class="ok">0 错误</span>、后端 <code>test-compile</code> <span class="ok">exit=0</span>。
+核心能力：<b>正文标准化 + 七类降噪 + 按天链接去重 + 跨渠道合并 + 历史数据重跑</b>。</p>
+</div>
+
+<h2>一、两个拍板的决策与落地方式</h2>
+<table>
+<tr><th style="width:22%">决策项</th><th style="width:16%">选定</th><th>落地方式与代价</th></tr>
+<tr>
+  <td>跨天去重</td>
+  <td class="ok">按天（A）</td>
+  <td>去重键 = <code>(collect_date, url_hash)</code>，与 Doris <code>Unique Key</code> 分区语义天然对齐。
+      不加表、不多一次 IO，且保留「同一事件连续多天被转载」的传播态势观测能力。
+      代价：跨天同一链接会在台账里出现多次（这是<b>刻意保留</b>的信息，不是缺陷）。</td>
+</tr>
+<tr>
+  <td>重跑记录载体</td>
+  <td class="ok">新建 <code>yq_clean_batch</code>（A）</td>
+  <td>MySQL 表数 22 → <b>23</b>。语义干净：一次重跑一行，含范围、七类剔除量、去重率/降噪率、耗时、成败。
+      代价是多一张表 + 一组 CRUD（由生成器自动产出，无手写成本）。</td>
+</tr>
+</table>
+
+<h2>二、交付清单（实测计数，非估算）</h2>
+<table>
+<tr><th style="width:26%">层</th><th style="width:12%">新增</th><th style="width:12%">改写</th><th>内容</th></tr>
+<tr><td>后端 Java</td><td class="ok">18</td><td class="warn">5</td>
+    <td>新增：<code>collect/clean/</code> 10 个（NoiseCategory / ContentPurifier / CompiledNoiseRule / NoiseRuleCompiler / NoiseHit / CleanVerdict / NoiseEngine / CrossChannelMerger / CleanBatchScope / CleanBatchStats）+ <code>YqCleanBatch</code> CRUD 5 个 + 重跑服务与控制器 3 个。<br>
+    改写：<code>YqCollectProperties</code>（加 Clean 配置段）、<code>RawOpinion</code>（+4 字段）、<code>CollectResult</code>（+dupChannelCount）、<code>CollectPipeline</code>（接入净化）、<code>YqOpinion</code>（+2 字段）。</td></tr>
+<tr><td>后端测试</td><td class="ok">1</td><td class="warn">3</td>
+    <td>新增 <code>F006CleanTest</code>（19 用例）；改写两个既有测试补齐 <code>CollectPipeline</code> 第 9 个构造参数，并把净化开关关掉以保住原有断言口径。</td></tr>
+<tr><td>SQL</td><td>0</td><td class="warn">5</td>
+    <td><code>yq_schema.sql</code>（+1 表）、<code>yq_doris_schema.sql</code> 与 <code>yq_doris_mysql_fallback.sql</code>（yq_opinion +2 列，两侧同步）、<code>yq_dict.sql</code>（+2 类）、<code>yq_menu.sql</code>（+1 菜单 6 按钮）。</td></tr>
+<tr><td>PC 前端</td><td class="ok">5</td><td>0</td>
+    <td><code>api/yuqing/cleanBatch/{types,index}.ts</code>、<code>api/yuqing/clean/replay.ts</code>、<code>views/yuqing/cleanBatch/index.vue</code>、<code>views/yuqing/cleanBatch/CleanReplayDialog.vue</code>。</td></tr>
+<tr><td>H5</td><td class="ok">1</td><td>0</td><td><code>api/yuqing/cleanBatch.js</code>（生成器统一产出，页面未做）。</td></tr>
+</table>
+
+<h2>三、数据模型变更</h2>
+
+<h3>3.1 新表 <code>yq_clean_batch</code>（MySQL，第 23 张）</h3>
+<table>
+<tr><th style="width:28%">字段组</th><th>字段</th><th>用途</th></tr>
+<tr><td>标识</td><td class="mono">batch_id / batch_name / batch_type</td><td>批次主键、名称、类型（<code>incremental</code> / <code>condition_replay</code> / <code>full_replay</code>）</td></tr>
+<tr><td>范围</td><td class="mono">scope_task_id / scope_channel_id / scope_start_date / scope_end_date</td><td>重跑范围，落库留痕便于追溯「当时扫的是哪一段」</td></tr>
+<tr><td>总量</td><td class="mono">total_count / cleaned_count / rejected_count / dup_count / dup_channel_count</td><td>扫描、保留、剔除、链接去重、跨渠道重复</td></tr>
+<tr><td>七类剔除量</td><td class="mono">noise_spam / noise_advertisement / noise_flooding / noise_meaningless / noise_bot / noise_blank / noise_violation</td><td class="ok">验收标准 3「按原因统计剔除量」的直接数据源</td></tr>
+<tr><td>执行</td><td class="mono">preview_only / status / fail_reason / cost_ms</td><td>是否只预览、成败、失败原因、耗时</td></tr>
+</table>
+<p class="mut" style="margin-top:-6px">注：带 <code>dup_rate</code> / <code>reject_rate</code> 两个虚拟字段（前端计算展示），不落库。</p>
+
+<h3>3.2 <code>yq_opinion</code> 新增两列（Doris 与 MySQL 镜像同步）</h3>
+<table>
+<tr><th style="width:22%">列</th><th style="width:20%">类型</th><th>为什么必须加</th></tr>
+<tr><td class="mono">dup_channel_ids</td><td class="mono">VARCHAR(500)</td>
+    <td>验收标准 8 要求「在首条记录上补充其他渠道标识」。现有 <code>channel_id</code> 是单值，装不下多个渠道。</td></tr>
+<tr><td class="mono">clean_time</td><td class="mono">DATETIME</td>
+    <td>重跑会多次改写同一行的净化状态，没有时间戳就无法判断「这条是什么时候被哪一轮规则判定的」。</td></tr>
+</table>
+
+<h3>3.3 字典与菜单</h3>
+<ul>
+  <li>新增字典 2 类：<code>yq_clean_batch_type</code>（3 项）、<code>yq_clean_batch_status</code>（3 项）。字典总数 39 → <b>41</b>。</li>
+  <li>新增菜单「净化批次」（<code>menu_id=…912</code>，order 12），6 个按钮含 <code>yuqing:clean:replay</code>。</li>
+  <li>菜单号段上界从 <code>…6119</code> 抬到 <code>…6139</code>（新增按钮号段），<code>check-yuqing-sql.mjs</code> 的常量已同步。</li>
+</ul>
+
+<h2>四、引擎设计</h2>
+
+<h3>4.1 正文净化四步（<code>ContentPurifier</code>）</h3>
+<div class="card">
+<b>① 整块抹掉 script / style / iframe / object / embed / noscript</b>（连内容一起丢，防脚本文本被当正文） →
+<b>② 剥全部 HTML 标签</b> → <b>③ 解码常用实体</b>（<code>&amp;nbsp; &amp;amp; &amp;lt; &amp;gt; &amp;quot; &amp;#39;</code>） →
+<b>④ 归一</b>（空白/全角转半角/零宽与控制字符清理/连续空行压缩到 ≤2）。
+</div>
+<ul>
+  <li><b>全程字符扫描，不用正则。</b>抓回来的 HTML 脏得没边（缺闭合、嵌套错乱），正则既慢又容易在畸形输入上回溯爆栈。</li>
+  <li><b>安全基线：</b>只产出纯文本，不做「白名单标签放行」。舆情正文属不可信内容，一律降级为文本后再入库与展示，从源头消掉 XSS。</li>
+  <li>有效字符数按<b>码点</b>统计，避免把 emoji（代理对）算成 2 个字符而误判长文本为短句。</li>
+</ul>
+
+<h3>4.2 七类降噪判定顺序（<code>NoiseEngine</code>）</h3>
+<table>
+<tr><th style="width:8%">序</th><th style="width:20%">判定</th><th style="width:16%">来源</th><th>说明</th></tr>
+<tr><td>1</td><td>空白内容 <code>blank</code></td><td>内置</td><td>最快，先挡掉空壳记录；空文本跑规则没有意义</td></tr>
+<tr><td>2</td><td>库表规则</td><td class="ok">业务自定义</td>
+    <td>按 <code>priority</code> 升序，先命中先判定。<b>放在内置判定之前</b>，让「业务说这条该留/该杀」优先于通用启发式</td></tr>
+<tr><td>3</td><td>机器人内容 <code>bot</code></td><td>内置</td><td>作者名 / 设备信息命中爬虫特征（大小写不敏感）</td></tr>
+<tr><td>4</td><td>灌水评论 <code>flooding</code></td><td>内置</td><td>连续重复字符 ≥20，或首 12 字片段重复 ≥3 次</td></tr>
+<tr><td>5</td><td>无意义短句 <code>meaningless</code></td><td>内置</td><td>有效字符数 &lt; 15（可配）</td></tr>
+</table>
+<p><code>spam</code> / <code>advertisement</code> / <code>violation</code> 三类没有通用启发式，靠库表规则覆盖；
+<code>yq_noise_rule</code> 此前是<b>死表</b>（有表、有 CRUD、无消费者），本次才真正接上引擎。</p>
+
+<h3>4.3 正则写错的处理：降级而非中断</h3>
+<div class="card">
+业务在后台填的正则经常写错。编译失败时 <b>不抛异常、不停链路</b>，降级为「按字面量包含匹配」并在
+<code>compileError</code> 里留下证据，剔除原因会带上「（正则已降级）」标记，便于后台定位是哪条规则写坏了。
+<b>一条坏规则不该让整批采集静默失败</b> —— 这与 P0 阶段修掉的「采不到东西且不报错」是同一类防线。
+</div>
+
+<h3>4.4 去重与跨渠道合并（<code>CrossChannelMerger</code>）</h3>
+<ul>
+  <li><b>按天分组</b>：<code>(collect_date, url_hash)</code>；首条 = 采集时间最早的那条（时间相同按列表顺序），保证「首条」语义稳定可复现。</li>
+  <li><b>渠道合并</b>：其余条目的 <code>channel_id</code> 并入首条的 <code>dup_channel_ids</code>（去重、排除自身），统计口径仍只算 1 条。</li>
+  <li><b>管线内的顺序</b>：关键词过滤 → 净化降噪 → 按天跨渠道合并 → 跨批次 Redis 去重 → 快照落盘。
+      刻意<b>先净化后去重</b>：反过来会让「首次进来被判垃圾、以后就再也不进来」的错误永久化。</li>
+</ul>
+
+<h2>五、接口</h2>
+<table>
+<tr><th style="width:34%">端点</th><th style="width:22%">权限</th><th>说明</th></tr>
+<tr><td class="mono">POST /yuqing/clean/preview</td><td class="mono">yuqing:clean:replay</td><td>只算影响条数，不写业务数据</td></tr>
+<tr><td class="mono">POST /yuqing/clean/execute</td><td class="mono">yuqing:clean:replay</td><td>真正改写净化状态并落一条批次记录（成功/失败都落）</td></tr>
+<tr><td class="mono">POST /yuqing/clean/rules/refresh</td><td class="mono">yuqing:clean:list</td><td>强制刷新规则缓存，改完规则不必等 TTL</td></tr>
+<tr><td class="mono">POST /yuqing/clean/rules/try</td><td class="mono">yuqing:clean:list</td><td>规则试跑：给一段样本，返回会不会被剔除，用来验证新正则是否误杀</td></tr>
+<tr><td class="mono">/yuqing/cleanBatch/**</td><td class="mono">yuqing:clean:*</td><td>批次台账通用 CRUD（生成器产出）</td></tr>
+</table>
+<p><b>安全基线：</b>写操作一律 <code>@SaCheckPermission</code>；用户身份只从 Sa-Token 取，不信请求体里的任何用户标识；
+范围查询全部走 <code>LambdaQueryWrapper</code>，禁用 <code>${}</code> 拼接（<code>limit</code> 用常量整数拼，不含外部输入）。</p>
+
+<h3>5.1 重跑范围的三道硬校验</h3>
+<ul>
+  <li>采集日范围必须闭合，且跨度 ≤ 366 天；</li>
+  <li>任务ID与渠道ID<b>至少要给一个</b> —— 「不限任务 + 不限渠道 + 不限日期」等价于全表重扫，一律拒绝；</li>
+  <li><code>full_replay</code> 不允许再指定任务/渠道（语义冲突）。</li>
+</ul>
+
+<h2>六、验收标准逐条对照</h2>
+<table>
+<tr><th style="width:6%">#</th><th style="width:32%">验收标准</th><th style="width:12%">状态</th><th>实现与证据</th></tr>
+<tr><td>1</td><td>内置七类降噪</td><td class="ok">达成</td>
+    <td><code>NoiseCategory</code> 七值与字典 <code>yq_noise_category</code> 一一对应；单测 <code>noiseCategoryCoversSeven</code> 断言 7 类 + 编码回环</td></tr>
+<tr><td>2</td><td>自定义关键词/正则规则，动态启停与优先级</td><td class="ok">达成</td>
+    <td><code>yq_noise_rule</code> 装载 + 60s 缓存 + <code>/rules/refresh</code> 强制刷新；按 <code>priority</code> 升序执行（单测 <code>rulesOrderedByPriority</code>）</td></tr>
+<tr><td>3</td><td>记录剔除原因、按原因统计、不进研判</td><td class="ok">达成</td>
+    <td><code>yq_opinion.noise_reason</code>（类别+依据）、<code>yq_clean_batch.noise_*</code> 七列；被剔除的行 <code>clean_status=rejected</code>，下游只看 <code>cleaned</code></td></tr>
+<tr><td>4</td><td>原文链接为唯一去重主键</td><td class="ok">达成</td>
+    <td>归一化后 SHA-256，去重键 <code>(collect_date, url_hash)</code>；Doris <code>Unique Key</code> 兜底最终一致</td></tr>
+<tr><td>5</td><td>三态清洗状态与筛选</td><td class="ok">达成</td>
+    <td><code>raw</code> / <code>cleaned</code> / <code>rejected</code>，字典 <code>yq_clean_status</code> 已定义，台账可按状态筛</td></tr>
+<tr><td>6</td><td>净化不得丢失发布时间/来源/原文链接</td><td class="ok">达成</td>
+    <td>引擎只回写 title/content；单测 <code>normalAcceptedKeepsSourceFields</code> 显式断言 <code>opinionUrl</code> / <code>publishTime</code> 不变</td></tr>
+<tr><td>7</td><td>看板展示去重率与降噪率，支持下钻</td><td class="ok">达成（数据侧）</td>
+    <td><code>CleanBatchStats.dupRate()/rejectRate()</code> + 七类明细；按任务/渠道/日期范围下钻已由 <code>CleanBatchScope</code> 提供。
+        <span class="warn">看板 UI（F-009 多维分析）尚未接入这些指标</span></td></tr>
+<tr><td>8</td><td>跨渠道重复只留首条并补充渠道标识</td><td class="ok">达成</td>
+    <td><code>CrossChannelMerger</code> + 新列 <code>dup_channel_ids</code>；单测 <code>crossChannelKeepsFirstAndMergesChannels</code>（3 条同日同链接 → 1 首条 + 2 重复 + 渠道合并）</td></tr>
+<tr><td>9</td><td>按新规则批量重跑 + 影响条数预览 + 执行记录</td><td class="ok">达成</td>
+    <td><code>preview</code> / <code>execute</code> 双接口 + <code>yq_clean_batch</code> 留痕；PC 端「净化重跑」对话框先预览后执行</td></tr>
+</table>
+
+<h2>七、验证矩阵</h2>
+<table>
+<tr><th style="width:30%">验证项</th><th style="width:18%">结果</th><th>备注</th></tr>
+<tr><td>生成器语法自检</td><td class="ok">×2 exit=0</td><td><code>gen-yuqing.mjs</code> / <code>gen-yuqing-collect.mjs</code></td></tr>
+<tr><td>代码生成</td><td class="ok">30 表 / 41 类字典 / 82 行菜单 / 6 个 PC 页面</td><td>MySQL 23 + Doris 7</td></tr>
+<tr><td>部署落盘</td><td class="ok">+25 新增 / ~12 覆盖 / 297 未变</td><td>7 个目标目录，与 dry-run 完全一致</td></tr>
+<tr><td>后端 <code>test-compile</code></td><td class="ok">exit=0</td><td>205 个 yuqing 主类 + 5 个测试类</td></tr>
+<tr><td>离线自测</td><td class="ok">53 / 53 PASS</td><td>原 34 + F-006 新增 19</td></tr>
+<tr><td>SQL 交付前校验</td><td class="ok">ALL PASS · 警告 0</td><td>11 类，含本次新增的第 11 类（16 项）</td></tr>
+<tr><td>PC <code>vue-tsc</code></td><td class="ok">0 错误</td><td>全项目，非仅 yuqing 模块</td></tr>
+<tr><td>残留 <code>.bak-*</code></td><td class="ok">0</td><td>已 <code>--clean-bak</code> 清理 14 个历史备份</td></tr>
+</table>
+
+<h2>八、已知边界（不粉饰）</h2>
+<ol>
+  <li><b>跨渠道合并只覆盖「同一次调度内」。</b>
+      同一天、跨批次（间隔数小时）撞车的跨渠道重复，会被 Redis 去重拦下并计入 <code>dupChannelCount</code>，
+      但<b>不会回写首条的渠道列表</b> —— 攒批写入已落盘，回头改首条要再读一次全量内容，性价比极低。
+      若后续要补全，正确做法是加一张 <code>(collect_date, url_hash, channel_id)</code> 的旁路表，由净化批次统一回补。</li>
+  <li><code>dedupScope=global</code> <b>未实现</b>：配置成 global 会按 day 处理并打告警日志，不会静默走错逻辑。</li>
+  <li><b>净化会改写历史行的 title/content。</b>重跑执行后，正文是净化后的版本；原文快照仍留在 MinIO（<code>snapshot_key</code>），可回溯。</li>
+  <li><b>不加 <code>@Transactional</code>。</b><code>yq_opinion</code> 在 Doris、<code>yq_clean_batch</code> 在 MySQL，两者无法共享本地事务；
+      改用「逐条更新 + 失败即停 + 批次记录标记 failed」，重跑一次即可继续，不会出现半截脏数据被当成成功。</li>
+  <li><code>yq_doris_mysql_fallback.sql</code> 仍是<b>手写模板</b>（在 <code>gen-yuqing-collect.mjs</code> 里）。
+      本次给它补了两列，但长期看应改为生成器产出 —— 中途尝试过由 <code>gen-yuqing.mjs</code> 产出，发现两个生成器会互相覆盖，已回退并保留单一归属。</li>
+</ol>
+
+<h2>九、上线步骤</h2>
+<ol>
+  <li><b>建表</b>：<code>script/sql/yuqing/yq_schema.sql</code>（幂等，含 <code>DROP TABLE</code>，会清空业务数据 —— 生产请先确认）。</li>
+  <li><b>加列</b>：Doris 侧执行 <code>yq_doris_schema.sql</code>；本地联调环境执行 <code>yq_doris_mysql_fallback.sql</code>。<span class="warn">两处必须都加，否则本地与生产结构不一致。</span></li>
+  <li><b>字典 + 菜单</b>：<code>yq_dict.sql</code> → <code>yq_menu.sql</code>（均可重复执行，先清本号段再插）。</li>
+  <li><b>配置</b>：在 <code>yuqing.collect.clean.*</code> 下按需调整阈值（默认即可用：<code>enabled=true</code>、<code>meaninglessChars=15</code>、<code>dedupScope=day</code>）。</li>
+  <li><b>验证顺序建议</b>：先建规则 → 用 <code>/yuqing/clean/rules/try</code> 试跑几条正例与反例 → 再对一天的数据做 <code>preview</code> → 数量吻合才 <code>execute</code>。</li>
+</ol>
+
+<footer>
+生成时间 2026-09-22 · 文档对应代码状态：deploy 报告「+0 新增 / ~0 覆盖 / 334 未变」（稳定态）·
+全部计数由脚本实测，未采用估算值。
+</footer>
+
+</div>
+</body>
+</html>

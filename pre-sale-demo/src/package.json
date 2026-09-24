@@ -1,0 +1,14 @@
+{
+  "name": "pre-sale-demo",
+  "version": "1.0.0",
+  "description": "预售商城 - PDD 生成的骨架项目",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "node index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  }
+}

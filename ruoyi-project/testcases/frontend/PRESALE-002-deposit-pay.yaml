@@ -1,0 +1,69 @@
+# 定金支付 - 买家支付定金正常流程
+# 对应功能点: F-102 定金支付
+# 前置: 已登录买家账号，存在预售中商品
+
+test_id: "PRESALE-002-deposit-pay"
+title: "买家支付定金锁定订单流程"
+priority: "P0"
+tags: ["预售", "定金支付", "正常路径", "E2E"]
+author: "PDD Testcase Modeler"
+
+context_check:
+  login_url: "${BASE_URL}/login"
+  home_indicator: "首页"
+  credentials:
+    username: "${TEST_USER}"
+    password: "${TEST_PASS}"
+    display_name: "${TEST_DISPLAY_NAME}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入预售商品详情页"
+    action: navigate
+    url: "${BASE_URL}/presale/goods/detail"
+    assertion:
+      type: text_contains
+      expected: "定金"
+
+  - step: 2
+    desc: "点击支付定金"
+    action: click
+    target: "支付定金"
+    assertion:
+      type: toast_visible
+      expected: "支付成功"
+
+  - step: 3
+    desc: "校验定金支付接口调用成功"
+    action: verify_network
+    assertion:
+      type: network_called
+      url_pattern: "/api/presale/orders/deposit"
+      method: POST
+      response_code: 200
+
+  - step: 4
+    desc: "跳转我的预售订单，确认订单状态为待付尾款"
+    action: navigate
+    url: "${BASE_URL}/presale/orders"
+    assertion:
+      type: text_contains
+      expected: "待付尾款"
+
+  - step: 5
+    desc: "再次点击支付定金（校验幂等：不重复扣款）"
+    action: click
+    target: "支付定金"
+    assertion:
+      type: toast_visible
+      expected: "重复支付"
+
+  - step: 6
+    desc: "校验幂等接口返回（铁律3）"
+    action: verify_network
+    assertion:
+      type: network_called
+      url_pattern: "/api/presale/orders/deposit"
+      method: POST
+      response_code: 200

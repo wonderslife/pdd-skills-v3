@@ -1,0 +1,191 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "ruoyi-project",
+    "version": "1.0.0",
+    "description": "",
+    "features": [
+      {
+        "id": "F-101",
+        "name": "预售商品管理",
+        "description": "",
+        "stage": "implementing",
+        "priority": "P0",
+        "timeline": [
+          {
+            "stage": "spec",
+            "timestamp": 1787547945354,
+            "duration": 0,
+            "note": "由对齐器自动发现"
+          },
+          {
+            "stage": "implementing",
+            "timestamp": 1787548939557,
+            "duration": 0,
+            "note": "通过 pdd-stage 工具推进至 implementing"
+          }
+        ],
+        "artifacts": [
+          {
+            "type": "spec",
+            "path": "F-101-presale-goods.md",
+            "size": 475,
+            "lastModified": 1787541157951,
+            "checksum": "2eebc1ff98382e7f"
+          }
+        ],
+        "quality": null,
+        "tokens": {
+          "total": 0,
+          "used": 0,
+          "remaining": 0,
+          "byStage": {},
+          "history": []
+        },
+        "iterations": [],
+        "tags": [
+          "_auto-discovered"
+        ],
+        "createdAt": 1787547945353,
+        "updatedAt": 1787555987838
+      },
+      {
+        "id": "F-102",
+        "name": "定金支付",
+        "description": "",
+        "stage": "implementing",
+        "priority": "P0",
+        "timeline": [
+          {
+            "stage": "spec",
+            "timestamp": 1787547945354,
+            "duration": 0,
+            "note": "由对齐器自动发现"
+          },
+          {
+            "stage": "implementing",
+            "timestamp": 1787548939559,
+            "duration": 0,
+            "note": "通过 pdd-stage 工具推进至 implementing"
+          }
+        ],
+        "artifacts": [
+          {
+            "type": "spec",
+            "path": "F-102-deposit-pay.md",
+            "size": 366,
+            "lastModified": 1787541179509,
+            "checksum": "763003465b03a9fa"
+          }
+        ],
+        "quality": null,
+        "tokens": {
+          "total": 0,
+          "used": 0,
+          "remaining": 0,
+          "byStage": {},
+          "history": []
+        },
+        "iterations": [],
+        "tags": [
+          "_auto-discovered"
+        ],
+        "createdAt": 1787547945354,
+        "updatedAt": 1787555987845
+      },
+      {
+        "id": "F-103",
+        "name": "尾款支付",
+        "description": "",
+        "stage": "implementing",
+        "priority": "P0",
+        "timeline": [
+          {
+            "stage": "spec",
+            "timestamp": 1787547945354,
+            "duration": 0,
+            "note": "由对齐器自动发现"
+          },
+          {
+            "stage": "implementing",
+            "timestamp": 1787548939559,
+            "duration": 0,
+            "note": "通过 pdd-stage 工具推进至 implementing"
+          }
+        ],
+        "artifacts": [
+          {
+            "type": "spec",
+            "path": "F-103-tail-pay.md",
+            "size": 389,
+            "lastModified": 1787541196447,
+            "checksum": "d05e6fe33010db57"
+          }
+        ],
+        "quality": null,
+        "tokens": {
+          "total": 0,
+          "used": 0,
+          "remaining": 0,
+          "byStage": {},
+          "history": []
+        },
+        "iterations": [],
+        "tags": [
+          "_auto-discovered"
+        ],
+        "createdAt": 1787547945354,
+        "updatedAt": 1787555957154
+      },
+      {
+        "id": "F-104",
+        "name": "预售订单管理",
+        "description": "",
+        "stage": "implementing",
+        "priority": "P1",
+        "timeline": [
+          {
+            "stage": "spec",
+            "timestamp": 1787547945354,
+            "duration": 0,
+            "note": "由对齐器自动发现"
+          },
+          {
+            "stage": "implementing",
+            "timestamp": 1787548939559,
+            "duration": 0,
+            "note": "通过 pdd-stage 工具推进至 implementing"
+          }
+        ],
+        "artifacts": [
+          {
+            "type": "spec",
+            "path": "F-104-presale-order.md",
+            "size": 342,
+            "lastModified": 1787541214076,
+            "checksum": "5012b40ae4d70001"
+          }
+        ],
+        "quality": null,
+        "tokens": {
+          "total": 0,
+          "used": 0,
+          "remaining": 0,
+          "byStage": {},
+          "history": []
+        },
+        "iterations": [],
+        "tags": [
+          "_auto-discovered"
+        ],
+        "createdAt": 1787547945354,
+        "updatedAt": 1787555895149
+      }
+    ]
+  },
+  "metadata": {
+    "lastUpdated": 1787555987845,
+    "schemaVersion": "1.0.0",
+    "generatedBy": "pdd-vm/1.0.0"
+  }
+}

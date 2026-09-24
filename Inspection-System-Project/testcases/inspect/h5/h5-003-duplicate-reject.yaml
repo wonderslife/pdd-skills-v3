@@ -1,0 +1,133 @@
+# 机房巡检系统 - H5 同周期重复巡检拦截
+#
+# 用途: 验证同一周期内重复巡检同一点位会被拦截（H5 端禁止重复，PC 补录为唯一兜底通道）
+# 前置: 点位已在本周期内被巡检过（执行 h5-001 后再跑本用例，或直接重复提交本用例）
+
+test_id: "INSP-H5-003-duplicate-reject"
+title: "H5 扫码巡检：同周期重复巡检被拦截"
+priority: "P1"
+tags: ["H5", "扫码巡检", "重复校验", "边界"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${H5_URL}/#/pages/login/index"
+  home_indicator: "扫码巡检"
+  credentials:
+    username: "${H5_USER}"
+    password: "${H5_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "打开 H5「扫码巡检」页（已有登录态时自动跳过登录）"
+    action: navigate
+    url: "${H5_URL}/#/pages/inspect/scan"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: text_contains
+        expected: "扫码巡检"
+        confidence: medium
+
+  - step: 2
+    desc: "输入本周期内已巡检过的点位编码（${POINT_CODE}）"
+    action: fill
+    target: "例如 RM-A-001"
+    value: "${POINT_CODE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 3
+    desc: "点击「查询」，验证解析接口返回重复提示"
+    action: click
+    target: "查询"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/scan/resolve*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+  - step: 4
+    desc: "断言出现「该点位本周期已巡检」确认框，且未被直接放行到执行页"
+    action: assert_multiple
+    assertions:
+      - type: text_contains
+        expected: "本周期已巡检"
+        confidence: high
+
+  - step: 5
+    desc: "点击「取消」，验证停留在扫码页（不进入巡检执行页）"
+    action: click
+    target: "取消"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: element_visible
+        target: "扫一扫"
+        confidence: medium
+      - type: element_hidden
+        target: "提交巡检"
+        confidence: medium
+
+  - step: 6
+    desc: "再次查询并在确认框中选择「确定」，验证跳转到历史记录页（而非新的巡检执行页）"
+    action: click
+    target: "查询"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: text_contains
+        expected: "本周期已巡检"
+        confidence: medium
+
+  - step: 7
+    desc: "确认跳转到「我的记录」页查看历史记录"
+    action: click
+    target: "确定"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: element_visible
+        target: "我的记录"
+        confidence: medium
+      - type: text_contains
+        expected: "${POINT_NAME}"
+        confidence: medium
+
+  # ===== 兜底通道校验：PC 补录仍可用 =====
+  - step: 8
+    desc: "验证 H5 重复被拦截时，PC 端仍有「逾期补录」通道（切到 PC 记录页确认入口存在）"
+    action: navigate
+    url: "${PC_URL}/inspect/record"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: element_visible
+        target: "逾期补录"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "h5-duplicate-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "同周期重复拦截行为已记录；重跑本用例需先清理该点位本周期记录"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  browser: "chromium (移动视图 390x844)"
+  estimated_duration: "50-80s"
+  risk_level: "medium"
+  depends_on:
+    - "h5-001（先产生本周期记录）"

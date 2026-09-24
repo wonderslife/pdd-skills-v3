@@ -1,0 +1,90 @@
+wing: pdd_skills_v3
+rooms:
+- name: admin
+  description: Files from admin/
+  keywords:
+  - admin
+  - admin
+- name: bin
+  description: Files from bin/
+  keywords:
+  - bin
+  - bin
+- name: common
+  description: Files from common/
+  keywords:
+  - common
+  - common
+- name: configuration
+  description: Files from config/
+  keywords:
+  - configuration
+  - config
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: framework
+  description: Files from framework/
+  keywords:
+  - framework
+  - framework
+- name: hooks
+  description: Files from hooks/
+  keywords:
+  - hooks
+  - hooks
+- name: lib
+  description: Files from lib/
+  keywords:
+  - lib
+  - lib
+- name: openspec
+  description: Files from openspec/
+  keywords:
+  - openspec
+  - openspec
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: skills
+  description: Files from skills/
+  keywords:
+  - skills
+  - skills
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: system
+  description: Files from system/
+  keywords:
+  - system
+  - system
+- name: templates
+  description: Files from templates/
+  keywords:
+  - templates
+  - templates
+- name: testcases
+  description: Files from testcases/
+  keywords:
+  - testcases
+  - testcases
+- name: frontend
+  description: Files from ui/
+  keywords:
+  - frontend
+  - ui
+- name: backend
+  description: Files from backend/
+  keywords:
+  - backend
+  - backend
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

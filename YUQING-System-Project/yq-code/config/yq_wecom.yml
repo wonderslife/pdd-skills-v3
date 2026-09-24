@@ -1,0 +1,52 @@
+# ============================================================================
+# 企业微信 H5 端配置（F-012）
+# 放置位置：与 application.yml 同级，或作为配置中心 dataId
+#
+# ⚠ 安全：corpSecret 禁止硬编码进代码仓库，生产环境请用环境变量注入：
+#     corp-secret: ${WECOM_CORP_SECRET:}
+# ============================================================================
+yuqing:
+  wecom:
+    # 免登总开关：关闭后 /yuqing/wecom/auth 直接返回未启用，H5 自动降级到账号密码登录
+    enabled: true
+
+    # 企业微信接口基址（一般无需修改）
+    api-base: https://qyapi.weixin.qq.com
+
+    # ---- 凭据（必填，否则免登不可用）----
+    # 企业 ID
+    corp-id: ${WECOM_CORP_ID:}
+    # 自建应用 Secret（从环境变量注入，勿写死）
+    corp-secret: ${WECOM_CORP_SECRET:}
+    # 自建应用 AgentId
+    agent-id: ${WECOM_AGENT_ID:}
+
+    # ---- 网页授权 ----
+    # 授权 scope：snsapi_base（仅取成员ID）/ snsapi_privateinfo（可另取手机号邮箱）
+    oauth-scope: snsapi_base
+    # 回调地址（需在企业微信应用后台配置为可信域名下的地址）
+    redirect-uri: https://your-domain.example.com/pages/yuqing/auth
+
+    # ---- 超时 ----
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000
+
+    # ---- 绑定策略 ----
+    # 首次免登时若企微成员ID匹配不到若依用户，是否按「登录名 == 企微成员ID」自动绑定
+    # ⚠ 生产环境若两者不一致，务必置为 false，改由管理员在 PC 端手工维护绑定（防同名误绑越权）
+    auto-bind-by-login-name: true
+
+    # 免登令牌有效期（秒），0 表示沿用 Sa-Token 客户端默认
+    token-timeout-seconds: 0
+
+    # ---- 指令解析 ----
+    # 单次指令文本最大长度
+    max-command-length: 500
+    # 是否允许指令触发采集任务创建（写操作，谨慎开启）
+    command-allow-task-create: true
+    # 是否允许指令触发报告生成
+    command-allow-report-trigger: true
+
+    # ---- 首页聚合 ----
+    home-todo-report-limit: 5
+    home-recent-analysis-limit: 5

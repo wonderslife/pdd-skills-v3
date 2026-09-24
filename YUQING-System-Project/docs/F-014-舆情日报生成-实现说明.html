@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-014 舆情日报生成 · 实现说明</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --bg2: #161b22;
+    --bg3: #1c2430;
+    --border: #2a3441;
+    --text: #e6edf3;
+    --text2: #9aa7b5;
+    --text3: #6b7887;
+    --accent: #58a6ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --err: #f85149;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 48px 32px 96px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 40px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 12px; letter-spacing: .5px; }
+  .meta { color: var(--text3); font-size: 13px; }
+  .meta span { margin-right: 18px; }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 500; line-height: 1.6;
+  }
+  .b-ok { background: rgba(63,185,80,.15); color: var(--ok); }
+  .b-p0 { background: rgba(248,81,73,.15); color: var(--err); }
+  h2 {
+    font-size: 19px; font-weight: 600; margin: 48px 0 18px;
+    padding-left: 12px; border-left: 3px solid var(--accent);
+  }
+  h3 { font-size: 15px; font-weight: 600; margin: 28px 0 12px; color: var(--accent); }
+  p { margin: 12px 0; color: var(--text2); }
+  strong { color: var(--text); font-weight: 600; }
+  code {
+    background: var(--bg3); padding: 2px 6px; border-radius: 4px;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; color: var(--purple);
+  }
+  pre {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 18px; overflow-x: auto; margin: 16px 0;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 13px;
+    line-height: 1.65; color: var(--text);
+  }
+  pre code { background: none; padding: 0; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 13px; }
+  th {
+    background: var(--bg3); text-align: left; padding: 10px 14px;
+    font-weight: 600; color: var(--text); border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  tr:hover td { background: rgba(88,166,255,.04); }
+  ul, ol { color: var(--text2); padding-left: 22px; }
+  li { margin: 7px 0; }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 24px; margin: 20px 0;
+  }
+  .card.accent { border-left: 3px solid var(--accent); }
+  .card.ok { border-left: 3px solid var(--ok); }
+  .card.warn { border-left: 3px solid var(--warn); }
+  .card.err { border-left: 3px solid var(--err); }
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 22px 0; }
+  .kpi-item { background: var(--bg3); border-radius: 8px; padding: 16px 18px; }
+  .kpi-item .label { font-size: 12px; color: var(--text3); }
+  .kpi-item .value { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .v-ok { color: var(--ok); }
+  .v-acc { color: var(--accent); }
+  .flow {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 20px; margin: 16px 0; font-family: monospace; font-size: 13px;
+    color: var(--text2); line-height: 2; white-space: pre; overflow-x: auto;
+  }
+  .flow b { color: var(--accent); }
+  .flow em { color: var(--warn); font-style: normal; }
+  footer {
+    margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border);
+    color: var(--text3); font-size: 12px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>F-014 舆情日报生成 · 实现说明</h1>
+  <div class="meta">
+    <span>舆情监测研判报送平台 · YUQING</span>
+    <span><span class="badge b-p0">P0</span></span>
+    <span><span class="badge b-ok">后端 + PC + H5 已落地</span></span>
+  </div>
+  <div class="meta" style="margin-top:8px">
+    <span>验收标准 11 条</span>
+    <span>交付 26 文件 / 146.3 KB</span>
+    <span>自测 39 用例全通过</span>
+  </div>
+</header>
+
+<div class="kpi">
+  <div class="kpi-item"><div class="label">新增生成器</div><div class="value v-acc">6 个</div></div>
+  <div class="kpi-item"><div class="label">产物文件</div><div class="value v-acc">26</div></div>
+  <div class="kpi-item"><div class="label">离线自测</div><div class="value v-ok">228 / 228</div></div>
+  <div class="kpi-item"><div class="label">PC 类型检查</div><div class="value v-ok">0 错</div></div>
+</div>
+
+<h2>一、开工前的摸底结论</h2>
+
+<p>F-014 与 F-012 一样，属于「骨架已铺、引擎为空」的典型状态。摸清三件事才动手：</p>
+
+<table>
+<thead><tr><th>检查项</th><th>现状</th><th>处置</th></tr></thead>
+<tbody>
+<tr><td>三张表结构</td><td><code>yq_report</code> 16 业务字段 / <code>yq_report_section</code> / <code>yq_report_opinion</code> 全在位</td><td>不动 SQL，直接复用</td></tr>
+<tr><td><code>IYqReportService</code></td><td>只有 6 个纯 CRUD 方法，无任何生成逻辑</td><td>新建 ExtService 承载业务端点</td></tr>
+<tr><td><code>YqReportController</code></td><td><strong>不存在</strong></td><td>由本功能新建</td></tr>
+<tr><td>F-009 分析基建</td><td><code>IYqAnalyticsService.handoff()</code> → <code>ReportSection</code>、<code>ReportHandoffBuilder.build()</code> → 七章节 Markdown</td><td><strong>直接复用</strong>，不重复造分析轮子</td></tr>
+<tr><td>F-011 推送基建</td><td><code>PushRequest</code> / <code>PushDispatcher</code> / <code>PushTargetResolver</code> 齐备</td><td><strong>直接复用</strong></td></tr>
+<tr><td>导出能力</td><td>v6 只有 Fesod（Excel），无 Word / PDF 渲染</td><td>引入 poi-tl + openhtmltopdf</td></tr>
+</tbody>
+</table>
+
+<div class="card accent">
+<strong>核心结论：</strong>F-014 的工作量不在「取数」，而在「取完数怎么渲染成可交付的文档」。
+取数能力 F-009 已经建好，本功能要解决的是 Word / PDF 渲染、模板裁剪、条目人工补充这三件事。
+</div>
+
+<h2>二、生成器归属边界（先定边界再写代码）</h2>
+
+<p>本项目铁律：<strong>一个产物文件只能有一个归属生成器</strong>。两个都产 → 后者静默覆盖，唯一现象是「部署报告 ~0 覆盖」。开工第一件事是确认主生成器已让出 <code>report</code> 相关产物。</p>
+
+<pre><code>gen-yuqing.mjs 中对 report / reportOpinion 实体的声明：
+  ctrl: false, pcPage: false, svcHandwritten: true
+
+含义：Controller / PC 页面 / 扩展 Service 留给手写（即本功能的新生成器）
+不影响：主生成器自身仍产 domain / mapper / 基础 service 接口 / 基础 api</code></pre>
+
+<p>实测确认：<code>views/yuqing/</code> 下无 <code>report/</code> 目录，<code>controller/</code> 下无 <code>YqReportController</code>。边界干净，可以开工。</p>
+
+<h2>三、交付清单</h2>
+
+<h3>生成器（新建 6 个）</h3>
+
+<table>
+<thead><tr><th>生成器</th><th>职责</th><th>产物数</th></tr></thead>
+<tbody>
+<tr><td><code>gen-yuqing-report.mjs</code></td><td>主入口薄壳：重复路径自检、缺失检测、反引号硬拦截</td><td>—</td></tr>
+<tr><td><code>gen-yuqing-report-tpl1.mjs</code></td><td>配置 + 渲染工具</td><td>6</td></tr>
+<tr><td><code>gen-yuqing-report-tpl2.mjs</code></td><td>纯函数正文构建</td><td>6</td></tr>
+<tr><td><code>gen-yuqing-report-tpl3.mjs</code></td><td>BO + ExtService + Controller</td><td>6</td></tr>
+<tr><td><code>gen-yuqing-report-tpl4.mjs</code></td><td>PDF 渲染 + 推送 + 定时任务</td><td>4</td></tr>
+<tr><td><code>gen-yuqing-report-tpl5.mjs</code></td><td>PC api + views + 测试</td><td>4</td></tr>
+</tbody>
+</table>
+
+<h3>后端产物（26 个文件 / 146.3 KB）</h3>
+
+<pre><code>report/build/     3 文件   正文构建（纯函数）
+report/render/    6 文件   Word / PDF / Markdown 渲染
+report/domain/    6 文件   传输对象（BO / DTO / Result）
+report/config/    1 文件   配置属性
+report/service/   2 文件   扩展服务接口 + 实现
+report/push/      1 文件   报告推送编排
+job/              1 文件   定时任务执行器
+pc/               3 文件   PC api + views
+config/           1 文件   配置样例 yq_report.yml
+test/             1 文件   离线自测</code></pre>
+
+<h3>关键类职责</h3>
+
+<table>
+<thead><tr><th>类</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td><code>DailyReportBuilder</code></td><td><strong>核心纯函数</strong>：<code>build(DailyReportContext)</code> 确定性输出九章节 Markdown，无副作用可单测</td></tr>
+<tr><td><code>ReportScopeResolver</code></td><td>日历日口径：<code>daily(date)</code> 取当日 00:00–24:00，<code>defaultDate()</code> 取昨天</td></tr>
+<tr><td><code>ReportFileName</code></td><td>文件名生成 + 非法字符清洗，UTF-8 截断 120 字节</td></tr>
+<tr><td><code>MarkdownToHtml</code></td><td>纯函数 Markdown → HTML，<strong>先转义再开标签</strong>（XSS 防线）</td></tr>
+<tr><td><code>WordRenderer</code></td><td>poi-tl 渲染，内置最小 OOXML 模板，不依赖外部 .docx</td></tr>
+<tr><td><code>PdfRenderer</code></td><td>openhtmltopdf 渲染，找不到中文字体时<strong>明确失败</strong>（不产乱码 PDF）</td></tr>
+<tr><td><code>YqReportExtServiceImpl</code></td><td>编排：取数 → 构建 → 渲染 → 上传 OSS → 落库 → 可选推送</td></tr>
+<tr><td><code>ReportPusher</code></td><td>查规则 → 解析目标 → 渲染 docx → 调 F-011 分发器</td></tr>
+</tbody>
+</table>
+
+<h2>四、9 个接口清单</h2>
+
+<table>
+<thead><tr><th>方法</th><th>路径</th><th>权限码</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/yuqing/report/list</code></td><td><code>yuqing:report:list</code></td><td>列表分页</td></tr>
+<tr><td>GET</td><td><code>/yuqing/report/optionselect</code></td><td><code>yuqing:report:query</code></td><td>下拉选项（声明在 <code>/{id}</code> 之前）</td></tr>
+<tr><td>POST</td><td><code>/yuqing/report/generate</code></td><td><code>yuqing:report:generate</code></td><td>生成报告，强制 <code>triggerType=manual</code></td></tr>
+<tr><td>POST</td><td><code>/yuqing/report/regenerate/{id}</code></td><td><code>yuqing:report:generate</code></td><td>重新生成，递增版本</td></tr>
+<tr><td>GET</td><td><code>/yuqing/report/opinions/{id}</code></td><td><code>yuqing:report:query</code></td><td>查看纳入条目</td></tr>
+<tr><td>PUT</td><td><code>/yuqing/report/opinions</code></td><td><code>yuqing:report:edit</code></td><td>增删条目（人工补充）</td></tr>
+<tr><td>POST</td><td><code>/yuqing/report/submit/{id}</code></td><td><code>yuqing:report:submit</code></td><td>提交/报送</td></tr>
+<tr><td>POST</td><td><code>/yuqing/report/push/{id}</code></td><td><code>yuqing:report:push</code></td><td>推送企微</td></tr>
+<tr><td>GET</td><td><code>/yuqing/report/export/{id}?format=</code></td><td><code>yuqing:report:export</code></td><td>导出 docx / pdf / md</td></tr>
+</tbody>
+</table>
+
+<div class="card warn">
+<strong>权限码必须与菜单一致：</strong>本轮 SQL 校验抓出一处真实缺陷 —— PC 页面用了
+<code>yuqing:report:remove</code>，但菜单 SQL 里没有这个 F 节点。若非超管登录，按钮看得见、一点就 403。
+已在 <code>gen-yuqing.mjs</code> 补上该节点（menu_id <code>1761400000000006087</code>），校验恢复 ALL PASS。
+</div>
+
+<h2>五、生成流水线（数据流）</h2>
+
+<div class="flow">
+<em>① 触发</em>
+   PC 手动 <b>POST /generate</b>  ├─ 定时任务 <b>yuqingDailyReport</b>  └─ 企微 H5「生成日报」指令
+        │
+        ▼
+<em>② 前置校验</em>
+   props.isEnabled()  ──►  同日判重（非 failed 且未 overwrite 则跳过）
+        │
+        ▼
+<em>③ 先落 generating 记录</em>  ──►  yq_report.status = 'generating'
+        │
+        ▼
+<em>④ collectContext() 取数</em>（每一步独立 try-catch，失败写 notices 不阻断）
+   ├─ analyticsService.handoff(scope, "day", "heat")  → ReportSection（七章节）
+   ├─ yq_alert where trigger_time ∈ [date 00:00, +1d)  → 当日新增预警
+   ├─ yq_opinion where collect_date = date order by heat_score desc limit N
+   └─ loadRequiredSections(templateId)  → 模板裁剪依据
+        │
+        ▼
+<em>⑤ DailyReportBuilder.build()</em>  ──►  九章节 Markdown（纯函数，确定性）
+        │
+        ▼
+<em>⑥ WordRenderer.render()</em>  ──►  docx 字节流
+        │
+        ▼
+<em>⑦ uploadQuietly()</em>  ──►  OSS，失败仅 warn 不回滚
+        │
+        ▼
+<em>⑧ 置 generated + syncReportOpinions("auto")</em>  ──►  只删 auto 行，manual 原样保留
+        │
+        ▼
+<em>⑨ 可选推送 / 失败置 failed + failReason（截断 900）</em>
+</div>
+
+<h2>六、三个设计决策</h2>
+
+<h3>决策 1：重新生成时人工补充不被吃掉</h3>
+
+<p><code>syncReportOpinions()</code> <strong>只删 <code>includeSource='auto'</code> 的行</strong>，人工添加的条目原样保留。
+这是「机器给初稿、人来补关键条」的实际工作方式决定的 —— 如果重生成把人工补的条目清掉，编辑就不敢重新生成了。</p>
+
+<h3>决策 2：模板裁剪用「空清单 = 不裁剪」语义</h3>
+
+<pre><code>skip(code, requiredSections)  // requiredSections 为空 → 不裁剪任何章节
+                              // 有值 → 只保留清单内章节</code></pre>
+
+<p>避免「模板没配章节」被解读成「一个章节都不要」，产出空报告。</p>
+
+<h3>决策 3：PDF 找不到中文字体时明确失败</h3>
+
+<div class="card err">
+<strong>不产乱码 PDF。</strong> 字体探测顺序：
+<code>C:/Windows/Fonts/msyh.ttc</code> → <code>simhei.ttf</code> → <code>simsun.ttc</code> →
+<code>/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc</code>。
+全部找不到 → 抛异常，报告置 <code>failed</code>，<code>failReason</code> 写明缺字体。
+Linux 部署需 <code>apt install fonts-noto-cjk</code>（已写入 <code>yq_report.yml</code> 注释）。
+</div>
+
+<h2>七、本轮抓出的 6 个真实缺陷</h2>
+
+<table>
+<thead><tr><th>#</th><th>缺陷</th><th>根因</th><th>修法</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>unclosed string literal</code></td><td>模板里用了单反斜杠 <code>\n</code>，被 JS 解析成真实换行</td><td>改双反斜杠，并建 <code>check-escape.mjs</code> 机器判定</td></tr>
+<tr><td>2</td><td><code>package org.dromara.common.idempotent does not exist</code></td><td>臆造的包名，真实位置在 <code>common.redis.annotation</code></td><td>改 import</td></tr>
+<tr><td>3</td><td><code>F014ReportTest is not public</code></td><td>Runner 在别的包，测试类漏写 <code>public</code></td><td>补 <code>public</code>，与 F-009/F-010/F-012 对齐</td></tr>
+<tr><td>4</td><td><code>TS2305: AxiosPromise</code></td><td>从 <code>axios</code> 导入，v6 已移除该导出</td><td>改 <code>@/utils/api-types</code></td></tr>
+<tr><td>5</td><td><code>TS2304: Cannot find name 'PageResult'</code></td><td>漏了 import，它不是全局类型</td><td>补 <code>import type { PageResult } from '@/api/types'</code></td></tr>
+<tr><td>6</td><td><code>TS2345: DefaultRow 不可赋给 YqReportVO</code> ×6</td><td>VO 字段全是必需属性</td><td>VO 字段改可选（见下节）</td></tr>
+</tbody>
+</table>
+
+<h2>八、一个重要发现：PC 端 VO 字段必须全部可选</h2>
+
+<div class="card err">
+<strong>代价很小、坑很深的一条约定。</strong>
+</div>
+
+<p>Element Plus 的 <code>el-table</code> <strong>不是泛型组件</strong>，插槽 <code>scope.row</code> 的类型固定是
+<code>DefaultRow = Record&lt;PropertyKey, any&gt;</code>。而 TS 的规则是：<strong>索引签名不能用来满足具名必需属性</strong>。</p>
+
+<pre><code>// YqReportTemplateVO —— 全字段可选 → 与 DefaultRow 兼容 → 不报错
+export interface YqReportTemplateVO { templateId?: string; ... }
+
+// YqReportVO —— 字段必需 → DefaultRow 不满足 → TS2345
+export interface YqReportVO { reportId: string | number; ... }   ← 报错源头</code></pre>
+
+<p>现象极具迷惑性：<strong>属性访问不报错</strong>（<code>scope.row.status</code> 走索引签名 <code>any</code>），
+只有<strong>函数传参报错</strong>（<code>handleXxx(scope.row)</code> 需要具名类型）。所以表现为「模板里一半正常一半飘红」。</p>
+
+<p><strong>约定：</strong>PC 端 <code>api/yuqing/*/types.ts</code> 里凡是会作为 <code>el-table</code> 行类型的 VO，字段一律用 <code>?</code> 可选。</p>
+
+<h2>九、验证矩阵（全部实测）</h2>
+
+<table>
+<thead><tr><th>验证项</th><th>命令</th><th>结果</th></tr></thead>
+<tbody>
+<tr><td>生成器语法</td><td><code>node --check gen-yuqing-report*.mjs</code></td><td><span class="badge b-ok">6/6 通过</span></td></tr>
+<tr><td>三层转义体检</td><td><code>node check-escape.mjs</code></td><td><span class="badge b-ok">致命 0 处 / 492 文件</span></td></tr>
+<tr><td>部署</td><td><code>node deploy-yuqing.mjs</code></td><td><span class="badge b-ok">三端 505 文件（+24 新增）</span></td></tr>
+<tr><td>幂等性</td><td>再生成一次</td><td><span class="badge b-ok">+0 ~0 =505</span></td></tr>
+<tr><td>后端编译</td><td><code>java "@mvn13.args"</code></td><td><span class="badge b-ok">exit=0 / 0 ERROR</span></td></tr>
+<tr><td>离线自测</td><td><code>java "@run.args"</code></td><td><span class="badge b-ok">228 / 228（F-014 占 39）</span></td></tr>
+<tr><td>SQL 校验</td><td><code>node check-yuqing-sql.mjs</code></td><td><span class="badge b-ok">ALL PASS 警告 0</span></td></tr>
+<tr><td>PC 类型检查</td><td><code>vue-tsc --noEmit</code></td><td><span class="badge b-ok">0 错</span></td></tr>
+<tr><td>备份清理</td><td><code>node deploy-yuqing.mjs --clean-bak</code></td><td><span class="badge b-ok">已清 17 个</span></td></tr>
+</tbody>
+</table>
+
+<h3>测试覆盖（F014ReportTest，39 用例）</h3>
+
+<pre><code>标题与骨架      标题拼接 / 统计日期 / 数据截止 / 生成提示区
+章节组装        F-009 交接件正文融入 / 剥除重复 H1 / 空清单不裁剪
+当日预警        八章节渲染 / 七列表格 / 竖线清洗 / 空时给说明
+重点舆情        列表式渲染 / 原文链接 / 非法链接被隐藏
+模板裁剪        指定章节保留 / 未指定章节剔除
+范围解析        日历日边界 / 默认取昨天 / 月初月末
+文件名          非法字符替换 / 超长截断
+格式枚举        docx / pdf / md 解析 / 未知回落
+Markdown→HTML   转义优先 / 加粗 / 标题 / 表格
+渲染结果        ok / fail 语义 / size 计算</code></pre>
+
+<h2>十、已知边界（不藏着）</h2>
+
+<ul>
+<li><strong>PDF 上传实测缺失</strong>：<code>PdfRenderer</code> 逻辑完备且自检通过，但未见真实带中文字体的环境跑通 PDF 产出。</li>
+<li><strong>企微推送未在真实凭据下跑通</strong>：<code>ReportPusher</code> 复用 F-011 链路，与 F-011 同一阻塞项（PRD §8.4 待确认 1：企微凭据）。</li>
+<li><strong>企微 file 消息类型限制</strong>：仅支持 doc/docx/xls/xlsx/ppt/pptx/pdf，<strong>纯文本 txt 不支持</strong>，20MB 上限。渲染失败时降级为 text 消息（摘要取正文尾部 1800 字）。</li>
+<li><strong>月报（F-015）未实现</strong>：<code>ReportScopeResolver.monthly()</code> 已就绪，但 <code>autoType</code> 当前只走日维度；月报属 F-015 范围。</li>
+<li><strong>F-012 联动已打通</strong>：<code>YqWecomExtServiceImpl.triggerReport</code> 从「返回 unavailable」改为真调用 <code>IYqReportExtService.generate()</code>，含类型白名单校验与异常兜底。</li>
+</ul>
+
+<h2>十一、上线步骤</h2>
+
+<ol>
+<li>执行 <code>script/sql/yuqing/</code> 下 SQL（含新增的 <code>yuqing:report:remove</code> 菜单节点）</li>
+<li>Linux 环境安装中文字体：<code>apt install fonts-noto-cjk</code></li>
+<li>配置 <code>yuqing.report.*</code>（<code>enabled</code> / <code>autoGenerate</code> / <code>autoType</code> / <code>pdfFontPath</code>）</li>
+<li>重启后端，确认 <code>PdfRenderer</code> 自检日志无字体告警</li>
+<li>超管登录 → 报告管理 → 手动生成一次日报，验证 docx 可下载</li>
+<li>PC 端给角色勾选 <code>yuqing:report:*</code> 全部权限码</li>
+</ol>
+
+<h2>十二、下一步</h2>
+
+<p>按既定顺序推进：<strong>F-016 → F-007 → F-018 → F-015 → F-013 收尾 → F-017 收尾</strong>。</p>
+
+<p>其中 F-015 月报可直接复用本功能的 <code>ReportScopeResolver.monthly()</code> 与全部渲染链路，
+预计是「配置 + 编排」量级，不再是引擎量级。</p>
+
+<footer>
+  舆情监测研判报送平台 · F-014 舆情日报生成 · 实现说明<br>
+  生成时间 2026-09-23 · 全部数据为脚本实测
+</footer>
+
+</div>
+</body>
+</html>

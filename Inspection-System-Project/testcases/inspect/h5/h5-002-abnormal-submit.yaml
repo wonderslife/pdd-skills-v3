@@ -1,0 +1,235 @@
+# 机房巡检系统 - H5 扫码巡检（含异常项）→ PC 异常处理闭环
+#
+# 用途: 验证「异常项必填说明 + 必须拍照」校验规则，以及异常项自动进入 PC 异常池
+# 前置: 点位 2 已配置巡检项，本周期未巡检
+# 说明: H5 拍照走 uni.chooseImage，在浏览器中等价于 input[type=file]；
+#       若自动化无法触发系统文件选择器，该步降级为人工验证（已在步骤中标注）
+
+test_id: "INSP-H5-002-abnormal-submit"
+title: "H5 扫码巡检：异常项校验（说明必填 + 照片必传）并进入异常池"
+priority: "P0"
+tags: ["H5", "扫码巡检", "异常项", "校验", "闭环"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${H5_URL}/#/pages/login/index"
+  home_indicator: "扫码巡检"
+  credentials:
+    username: "${H5_USER}"
+    password: "${H5_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "打开 H5 并完成登录（若已有登录态会被自动跳过）"
+    action: navigate
+    url: "${H5_URL}/#/pages/inspect/scan"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: text_contains
+        expected: "扫码巡检"
+        confidence: medium
+
+  - step: 2
+    desc: "进入「扫码巡检」页并手动输入点位 2 的编码"
+    action: fill
+    target: "例如 RM-A-001"
+    value: "${POINT_CODE_2}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 3
+    desc: "点击「查询」进入巡检执行页"
+    action: click
+    target: "查询"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/scan/resolve*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+  - step: 4
+    desc: "确认进入「巡检执行」页并显示校验提示「判定为「异常」的巡检项必须填写说明并上传至少 1 张照片」"
+    action: assert_multiple
+    assertions:
+      - type: text_contains
+        expected: "${POINT_2_NAME}"
+        confidence: high
+      - type: text_contains
+        expected: "必须填写说明"
+        confidence: medium
+
+  # ===== 反向用例 1：只判异常不填说明 =====
+  - step: 5
+    desc: "把第 1 个巡检项判定为「异常」"
+    action: click
+    target: "异常"
+    wait_after:
+      type: time
+      duration: 600
+    assertions:
+      - type: element_visible
+        target: "异常说明（必填）"
+        confidence: high
+
+  - step: 6
+    desc: "不填异常说明、不上传照片，直接点「提交巡检」，验证被拦截"
+    action: click
+    target: "提交巡检"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: toast_visible
+        expected: "异常说明不能为空"
+        confidence: high
+      - type: element_visible
+        target: "提交巡检"
+        confidence: medium
+
+  # ===== 正向：填说明 + 上传照片 =====
+  - step: 7
+    desc: "填写该巡检项的「异常说明」"
+    action: fill
+    target: "请描述异常现象"
+    value: "${ABN_DESC}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 8
+    desc: "填写该巡检项的「填写数值」"
+    action: fill
+    target: "请输入数值"
+    value: "${ABN_VALUE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  # ===== 反向用例 2：有说明但无照片 =====
+  - step: 9
+    desc: "再次点「提交巡检」，验证「异常必须上传至少 1 张照片」拦截"
+    action: click
+    target: "提交巡检"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: toast_visible
+        expected: "上传至少 1 张照片"
+        confidence: high
+
+  - step: 10
+    desc: "点击该异常项的拍照占位，上传现场照片（若浏览器文件选择器无法自动触发，此步人工完成）"
+    action: upload_file
+    target: "拍照"
+    path: "${TEST_IMAGE_PATH}"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: element_visible
+        target: "1/9"
+        confidence: medium
+
+  - step: 11
+    desc: "填写「整体备注」"
+    action: fill
+    target: "本点位整体情况说明"
+    value: "${H5_ABN_REMARK}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 12
+    desc: "点击「提交巡检」提交（此时说明与照片均满足，应成功）"
+    action: click
+    target: "提交巡检"
+    wait_after:
+      type: time
+      duration: 4000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/submit*"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "巡检记录已提交"
+        confidence: high
+
+  # ===== PC 侧闭环 =====
+  - step: 13
+    desc: "切到 PC 管理端「机房巡检 > 异常处理」，验证新异常项已入池（待处理）"
+    action: navigate
+    url: "${PC_URL}/inspect/abnormal"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 14
+    desc: "「处理状态」选择「待处理」并搜索"
+    action: select_option
+    target: "请选择状态"
+    option: "待处理"
+    assertions:
+      - type: element_text
+        expected: "待处理"
+        confidence: medium
+
+  - step: 15
+    desc: "点击「搜索」，校验刚提交的异常项出现在列表中（点位名 + 异常说明）"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: text_contains
+        expected: "${POINT_2_NAME}"
+        confidence: high
+      - type: text_contains
+        expected: "${ABN_DESC}"
+        confidence: medium
+
+  - step: 16
+    desc: "打开该异常项「详情」，确认现场照片可预览"
+    action: click
+    target: "详情"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: element_visible
+        target: "异常说明"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "h5-abnormal-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "该异常项将作为 pc-010「异常处理」用例的数据来源"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  browser: "chromium (移动视图 390x844)"
+  estimated_duration: "90-120s"
+  risk_level: "high"
+  note: "步骤 6 / 9 为规则校验断言；步骤 10 受浏览器文件选择器限制，可能需人工介入"

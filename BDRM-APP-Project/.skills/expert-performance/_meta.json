@@ -1,0 +1,1 @@
+{"name": "expert-performance", "version": "1.0.0", "category": "expert", "description": "性能优化专家，提供瓶颈识别、SQL调优、缓存策略设计、压测与JVM调优指导。触发：性能优化、性能分析、瓶颈定位、慢接口优化、压测、JVM调优、performance tuning、load testing。", "triggers": ["性能优化", "性能分析", "瓶颈定位", "慢接口优化", "压测", "JVM调优", "performance tuning", "bottleneck analysis", "load testing", "API optimization"]}

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-009 多维分析与统计看板 · 实现说明</title>
+<style>
+  :root { --bg:#0f1419; --card:#161b22; --bd:#2a3138; --tx:#e6edf3; --tx2:#9aa7b4;
+          --ok:#3fb950; --warn:#d29922; --bad:#f85149; --acc:#58a6ff; --mut:#6e7681; }
+  * { box-sizing: border-box; }
+  body { background:var(--bg); color:var(--tx); font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         line-height:1.75; margin:0; padding:32px 20px 80px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:28px; margin:0 0 6px; letter-spacing:.5px; }
+  .sub { color:var(--tx2); font-size:14px; margin-bottom:28px; }
+  h2 { font-size:20px; margin:36px 0 14px; padding-left:11px; border-left:4px solid var(--acc); }
+  h3 { font-size:16px; margin:22px 0 10px; color:var(--tx); }
+  p, li { font-size:14.5px; }
+  code { background:#1f262d; padding:1px 6px; border-radius:4px; font-size:13px;
+         font-family:"SFMono-Regular",Consolas,monospace; color:#e3b341; }
+  table { width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:13.5px; }
+  th, td { border:1px solid var(--bd); padding:8px 11px; text-align:left; vertical-align:top; }
+  th { background:#1c2430; color:var(--tx); font-weight:600; }
+  tr:nth-child(even) td { background:#131920; }
+  .ok { color:var(--ok); font-weight:600; }
+  .bad { color:var(--bad); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  .mut { color:var(--mut); }
+  .card { background:var(--card); border:1px solid var(--bd); border-radius:8px; padding:16px 20px; margin:14px 0; }
+  .lead { background:linear-gradient(90deg,rgba(88,166,255,.12),transparent); border-left:3px solid var(--acc);
+          padding:14px 18px; border-radius:0 8px 8px 0; margin-bottom:26px; }
+  ul, ol { padding-left:22px; }
+  li { margin:5px 0; }
+  .mono { font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; }
+  pre { background:#0d1117; border:1px solid var(--bd); border-radius:8px; padding:14px 16px;
+        overflow-x:auto; font-size:12.5px; line-height:1.6; color:#c9d1d9; }
+  footer { margin-top:48px; padding-top:16px; border-top:1px solid var(--bd); color:var(--mut); font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>F-009 多维分析与统计看板 · 实现说明</h1>
+<div class="sub">全自动化舆情监测研判报送平台 · RuoYi-Vue-Plus v6 · 生成器驱动 · 2026-09-22</div>
+
+<div class="lead">
+<p style="margin:0"><b>结论：F-009 已落地并通过全链路校验。</b>
+离线自测 <span class="ok">159 / 159 PASS</span>（本轮新增 <code>F009AnalyticsTest</code> 43 例）、
+SQL 交付前校验 <span class="ok">ALL PASS · 警告 0</span>（含新增第 13 类 20 项）、
+PC <code>vue-tsc</code> <span class="ok">0 错误</span>、后端 <code>test-compile</code> <span class="ok">exit=0</span>。
+核心能力：<b>七类分布指标 + 三级粒度趋势 + 四口径热点榜 + 一键下钻 + 结构化结论 + 报告交接包 + 定时预聚合</b>。</p>
+<p style="margin:8px 0 0" class="mut">定位：F-006 把数据洗干净、F-010/011 把价值送到人手上之后，这一段是<b>「把数据变成结论」</b>的地方 ——
+它既给看板，也给 F-014 报告供料，是「采集 → 研判 → 预警 → 触达 → <b>分析 → 报告</b>」的中间枢纽。</p>
+</div>
+
+<h2>一、四个架构决策与落地方式</h2>
+<table>
+<tr><th style="width:20%">决策点</th><th style="width:22%">拍板结果</th><th>理由与代价</th></tr>
+<tr>
+  <td>聚合算在哪</td>
+  <td class="ok">Doris 预聚合<br><span class="mut mono">Unique Key + Merge-on-Write</span></td>
+  <td>验收 8 要求「看板响应不随数据量增长而显著变慢」。同键重复写入即覆盖 ⇒ <b>重跑天然幂等</b>，
+      不需要「先删后插」也不需要事务。代价：多 3 张 Doris 表 + 1 张批次台账表要维护。</td>
+</tr>
+<tr>
+  <td>聚合逻辑放哪</td>
+  <td class="ok">纯函数 <code>StatsAggregator</code><br><span class="mut mono">不碰 DB、不碰 Spring</span></td>
+  <td>定时任务与 PC「看板重算」共用同一份实现，杜绝「任务一套口径、手动一套口径」的数字漂移；
+      且能完全离线单测 —— 手搓几十条样本就覆盖了分桶、排序、归一、占比的全部分支。代价：明细必须一次性读进内存。</td>
+</tr>
+<tr>
+  <td>趋势曲线放哪</td>
+  <td class="ok">塞进 <code>yq_stats_dim</code><br><span class="mut mono">dim_type='trend' + time_grain</span></td>
+  <td>趋势本质上也是「某个时间桶的计数」，与分布同构。复用同一张表、同一套读写路径、同一个 Unique Key，
+      <b>少一张表、少一套代码</b>。代价：<code>dim_key</code> 语义随 <code>dim_type</code> 变化，读代码时需留意。</td>
+</tr>
+<tr>
+  <td>聚合失败了怎么办</td>
+  <td class="ok">批次台账留痕 + 降级展示<br><span class="mut mono">yq_stats_batch</span></td>
+  <td>验收 9 要求「不影响主流程，展示最近一次成功聚合并标注截止时间」。所以批次<b>先 begin 后 success</b>，
+      失败写 <code>fail_reason</code>；看板读最近一次<b>成功</b>批次，把 <code>data_until</code> 与失败提示一并下发。
+      代价：看板可能展示「不是最新」的数据，因此必须在页面上显式标注，不能让人误判。</td>
+</tr>
+</table>
+
+<h2>二、交付清单（实测计数，非估算）</h2>
+<p>全部由新生成器 <code>gen-yuqing-analytics.mjs</code>（主入口 + 7 个模板分片）产出，共 <b>58 个文件 / 298.7 KB</b>
+（<code>node gen-yuqing-analytics.mjs --dry-run</code> 实测）：</p>
+<table>
+<tr><th style="width:24%">分组</th><th style="width:10%">文件</th><th>内容</th></tr>
+<tr><td><code>analytics/</code></td><td>36</td>
+  <td>纯函数引擎：StatsAggregator / DashboardAssembler / DrilldownQuery / HeatScorer / RegionNormalizer /
+      TopicSplitter / ConclusionExtractor / DerivedConclusionBuilder / ReportHandoffBuilder / StatsExportBuilder /
+      DimType / DimLabels / RankBy / StatsGrain / PropagationStage + 各类 VO（<code>AnalysisConclusion</code> /
+      <code>DashboardView</code> / <code>DimRow</code> / <code>HotRow</code> / <code>DailyRow</code> / <code>OpinionSlice</code> 等）</td></tr>
+<tr><td><code>analytics/jdbc/</code></td><td>8</td>
+  <td>JdbcOpinionStatsReader（Doris 明细读取）/ JdbcProcessMetricsReader（主库预警·推送量）/
+      JdbcStatsWriter（预聚合写入）/ JdbcStatsQuery（看板读取）/ JdbcDrilldownReader（下钻）/ SqlMaps / SliceLoad / StatsBatchLedger</td></tr>
+<tr><td><code>analytics/config/</code></td><td>2</td>
+  <td><code>YqAnalyticsConfig</code> / <code>YqAnalyticsProperties</code>（前缀 <code>yuqing.analytics</code>，13 个可调项）</td></tr>
+<tr><td><code>service/</code></td><td>2</td>
+  <td><code>IYqAnalyticsService</code> / <code>YqAnalyticsServiceImpl</code></td></tr>
+<tr><td><code>controller/</code></td><td>1</td>
+  <td><code>YqAnalyticsController</code>（<b>6 端点</b>）</td></tr>
+<tr><td><code>job/</code></td><td>1</td><td><code>YqStatsAggregateJobExecutor</code>（<code>@JobExecutor("yuqingStatsAggregate")</code>）</td></tr>
+<tr><td><code>config/</code></td><td>1</td><td><code>yq_analytics.yml</code> 配置样例</td></tr>
+<tr><td>PC 端</td><td>6</td>
+  <td><code>api/yuqing/analytics/{index,types}.ts</code> +
+      <code>views/yuqing/dashboard/index.vue</code>（看板主页）、<code>DimBars.vue</code>（分布柱）、
+      <code>ConclusionPanel.vue</code>（结论面板）、<code>DrilldownDrawer.vue</code>（下钻抽屉）</td></tr>
+<tr><td>测试</td><td>1</td><td><code>F009AnalyticsTest.java</code>（<b>43 用例</b>），已注册进 <code>OfflineCollectTestRunner.TARGETS</code></td></tr>
+</table>
+
+<h3>2.1 归属边界（本项目踩过「两个生成器抢同一产物」）</h3>
+<div class="card">
+本生成器<b>只产出</b>上表内容，<b>不碰</b>下列文件：<code>domain/</code>、<code>mapper/</code>、
+<code>service/I[Yq*]Service</code>（CRUD 接口）、<code>service/impl/Yq*ServiceImpl</code>（CRUD 实现）、
+<code>pc/api/yuqing/*/index.ts|types.ts</code>（除 <code>analytics/</code>）、<code>h5/**</code>、
+<code>collect/**</code>、<code>alert/**</code>、<code>push/**</code>、<code>sql/**</code>。
+<p style="margin:8px 0 0" class="warn">⚠ 四张统计表（<code>yq_stats_batch</code> / <code>yq_stats_daily</code> / <code>yq_stats_dim</code> / <code>yq_stats_hot</code>）
+的建表 DDL <b>不归本生成器</b>：Doris 侧由 <code>gen-yuqing.mjs</code> 产出，MySQL 镜像侧由 <code>gen-yuqing-collect.mjs</code> 产出。
+加列/改结构必须去那两个源头改，改这里无效。</p>
+</div>
+
+<h2>三、数据模型变更</h2>
+
+<h3>3.1 新增 1 张 MySQL 表：<code>yq_stats_batch</code>（聚合批次台账）</h3>
+<p>共 <b>15 个业务列 + 5 个审计列</b>。它同时承担三件事：</p>
+<table>
+<tr><th style="width:24%">列</th><th>作用</th></tr>
+<tr><td class="mono">batch_no / begin_date / end_date / trigger_type / status</td>
+  <td>批次身份与范围。<code>trigger_type</code> 取 <code>auto</code> / <code>manual</code> / <code>replay</code>（验收 8 的定时任务、手动重算、补算历史三态）。</td></tr>
+<tr><td class="mono">source_count / daily_rows / dim_rows / hot_rows / cost_ms</td>
+  <td>产出规模与耗时，用于排查「聚合跑了但看板没数」这类问题。</td></tr>
+<tr><td class="mono">data_until / notice / fail_reason</td>
+  <td class="ok"><b>验收 9 的全部载体</b>：数据截止时间、非致命提示（如明细命中上限被截断）、失败原因。</td></tr>
+<tr><td class="mono">conclusion_json</td>
+  <td class="ok"><b>验收 5 的载体</b>：结构化分析结论（核心事件 / 传播路径 / 舆论焦点 / 风险点）以 JSON 落库，
+      类型 <code>TEXT</code> 而非 <code>VARCHAR</code> —— 结论体积随事件数增长，VARCHAR 迟早截断。</td></tr>
+</table>
+
+<h3>3.2 3 张 Doris 预聚合表（含 MySQL 镜像）</h3>
+<table>
+<tr><th style="width:22%">表</th><th style="width:34%">Unique Key</th><th>说明</th></tr>
+<tr><td class="mono">yq_stats_daily</td><td class="mono">(stats_date, task_id, channel_id)</td>
+  <td>日聚合：总量 / 正负面 / 去重剔除 / 降噪剔除 / 预警数 / 推送数 / 报告数 +
+      <b>四项互动量</b>（<code>read_sum</code> / <code>comment_sum</code> / <code>share_sum</code> / <code>like_sum</code>）+
+      <code>negative_rate DECIMAL(5,2)</code>。</td></tr>
+<tr><td class="mono">yq_stats_dim</td><td class="mono">(stats_date, dim_type, dim_key, time_grain, task_id, channel_id)</td>
+  <td>维度分布 + 趋势：<code>dim_type</code> 取 <code>channel / region / topic / senti / risk / level / spread / trend</code> 八类；
+      <code>time_grain</code> 取 <code>hour / day / week</code>。</td></tr>
+<tr><td class="mono">yq_stats_hot</td><td class="mono">(stats_date, rank_by, rank_no)</td>
+  <td>热点榜：<code>rank_by</code> 取 <code>read / share / comment / heat</code> 四口径，各存当日 TopN。</td></tr>
+</table>
+<p><b>为什么 <code>negative_rate</code> 用定点数而不是浮点：</b>负面占比要落库、要进报表、要和阈值比较。
+<code>DECIMAL(5,2)</code> 与 <code>double</code> 在「正好 30.00% 算不算超阈值」这类判断上结果不同，定点数没有这个歧义。
+同理，热度打分 <code>HeatScorer</code> 全程 <code>long</code> 整数运算 —— 见 §4.3。</p>
+
+<h3>3.3 字典与菜单</h3>
+<table>
+<tr><th style="width:22%">字典 / 菜单</th><th style="width:24%">取值</th><th>ID</th></tr>
+<tr><td class="mono">yq_stats_trigger_type</td><td class="mono">auto 定时任务 / manual 手动重算 / replay 补算历史</td><td class="mono">dict_id 1770000000000001041</td></tr>
+<tr><td class="mono">yq_stats_batch_status</td><td class="mono">running 执行中 / success 成功 / failed 失败</td><td class="mono">dict_id 1770000000000001042</td></tr>
+<tr><td class="mono">菜单「统计看板」</td><td class="mono">C 菜单 + 3 个 F 按钮</td><td class="mono">1761400000000006011~6013</td></tr>
+<tr><td class="mono">权限码</td><td class="mono">yuqing:dashboard:list / :export / :aggregate</td><td>—</td></tr>
+</table>
+<p class="mut" style="margin-top:-6px">共 43 个字典类型（新增 2）+ 83 个菜单节点（C×12 / F×70 / M×1），全部通过
+<code>check-yuqing-sql.mjs</code> 的「22 值逐行 / ID 唯一 / parent 存在 / 号段内 / 权限闭环 / 幂等」六重校验。</p>
+
+<h2>四、引擎设计</h2>
+
+<h3>4.1 聚合流水线（<code>YqAnalyticsServiceImpl.aggregate</code>）</h3>
+<div class="card">
+<pre style="margin:0">① ledger.begin(scope, trigger)            开批次，status=running，拿到 batch_no
+② opinionReader.loadSlices(scope, 上限)   读 Doris 明细 → List&lt;OpinionSlice&gt;（命中上限则 truncated=true）
+③ aggregator.aggregate(slices, scope, truncated)   ← 纯函数，一次遍历同时产出三张表
+      ├─ buildDaily()  按 (collect_date, task_id, channel_id) 分桶
+      ├─ buildDims()   八类维度 + 趋势三种粒度
+      └─ buildHot()    每天 × 四口径 × TopN
+④ mergeProcessMetrics(scope, outcome)     主库预警数/推送数按日"全量覆盖"进 daily 行（不是累加！）
+⑤ conclusionExtractor.extract(slices, dim) 提炼结论 —— 必须在明细还在手里时做
+⑥ 计算 dataUntil = 明细中最大发布时间
+⑦（可选）purgeRange()                     先清该范围旧聚合行
+⑧ statsWriter.write(outcome)              写 Doris 三张表（Unique Key 覆盖写）
+⑨ ledger.success(batch, outcome, dataUntil, cost, conclusionJson)
+</pre>
+<ul style="margin:10px 0 0">
+  <li><b>「先写数据、后标成功」的顺序是有意的</b>：若第 ⑧ 步成功但第 ⑨ 步崩了，看板会认为最近批次失败而回退到上一次结果 ——
+      宁可少展示，不可展示半截数据。</li>
+  <li><b>④ 必须是覆盖而非累加</b>：daily 行由明细重算得出，流程量若累加，重跑一次就翻倍。这是幂等的另一半。</li>
+  <li><b>④ 单独 try-catch</b>：主库流程量读不到不拖垮整次聚合，主指标照常产出，只在 <code>notice</code> 里说明「相关列已置零」。</li>
+  <li><b>⑤ 为什么不能在读看板时算</b>：核心事件与传播路径需要逐条明细与时间序，看板只有预聚合行。所以结论<b>产在聚合那一刻、存在批次上</b>。</li>
+</ul>
+</div>
+
+<h3>4.2 归属口径（这里最容易产生「数字对不上」的疑问）</h3>
+<table>
+<tr><th style="width:26%">指标</th><th style="width:24%">归属依据</th><th>后果</th></tr>
+<tr><td>总量 / 正负面 / 分布类维度</td><td class="mono">collect_date（采集日）</td>
+  <td>与 Doris 分区列一致，扫描最快。</td></tr>
+<tr><td>趋势曲线</td><td class="mono">publish_time（发布时间）<br><span class="mut">可配 trendByPublishTime=false 切回采集时间</span></td>
+  <td class="warn">跨日传播时「曲线累计 ≠ 总量卡片」。这是<b>设计内差异</b>，不是 bug：
+      一条前天发布、今天采到的舆情，按发布日归到前天，按采集日归到今天。
+      看板把 <code>trendBase</code> 字段一并下发，由前端在图上标注口径。</td></tr>
+</table>
+<p class="mut">时间缺失的记录<b>只计入总量、不进曲线</b>（<code>addTrend</code> 提前 return），避免伪造一个 <code>0000-00-00</code> 的桶。</p>
+
+<h3>4.3 热度打分（<code>HeatScorer</code>）</h3>
+<pre>score = 阅读×1 + 评论×3 + 转发×5 + 点赞×1 + 内容热度分值×10（全部 long 整数运算）</pre>
+<p>权重逻辑是<b>「主动行为高于被动浏览，转发权重最高」</b>——转发是唯一能跨圈层扩散的动作。
+<b>为什么强制整数：</b>热度既用于排序、又要落库、还要做报表；浮点在「相等则按时间倒序」的 tie-break 上会因精度抖动
+导致同一天重跑名次变化，幂等直觉就没了。整数运算可复现，同输入必得同输出。</p>
+<p>热点榜排序的 tie-break 显式三级：<b>主指标降序 → 发布时间降序 → 舆情ID降序</b>。
+三级写完整才保证「同一天重跑名次不变」——单测 <code>rankTopStableTieBreak</code> 就是钉这条的。</p>
+
+<h3>4.4 看板装配与结论三态</h3>
+<table>
+<tr><th style="width:18%">conclusionMode</th><th style="width:30%">触发条件</th><th>含义</th></tr>
+<tr><td class="mono">batch</td><td>最近成功批次的范围 == 当前查询范围<br>且批次有 <code>conclusion_json</code></td>
+  <td class="ok">最完整：含核心事件、传播路径、舆论焦点、风险点。</td></tr>
+<tr><td class="mono">derived</td><td>范围不一致，或批次没存结论</td>
+  <td class="warn">由预聚合行<b>推导</b>的结论：只有占比、峰值桶、集中度这类统计判断，
+      <b>没有核心事件与传播路径</b>（那需要明细）。看板会显式提示口径。</td></tr>
+<tr><td class="mono">none</td><td>该范围尚未生成预聚合数据</td>
+  <td>返回空视图 + <code>notice</code>「请先执行看板重算」，<b>不报 500</b>。</td></tr>
+</table>
+<p>批次失败时（<code>BatchMeta.isDegraded()</code>），额外下发
+「最近一次聚合执行失败：{原因}，当前展示的是上一次成功聚合的结果」——这是验收 9 的落地形态。</p>
+
+<h3>4.5 下钻与报告交接</h3>
+<ul>
+  <li><b>下钻（验收 6）</b>：<code>DrilldownQuery.of(scope, dimType, dimKey, dimLabel, grain)</code> → <code>JdbcDrilldownReader</code>
+      回明细表按维度条件查。八类维度 + 趋势行（趋势行按时间桶反解出时间区间）都能下钻，分页上限
+      <code>maxDrilldownPageSize=200</code>。维度类型非法返回 <code>R.fail("不支持的维度类型")</code>，<b>不做静默兜底</b>。</li>
+  <li><b>报告交接（验收 7）</b>：<code>GET /handoff</code> 返回<b>自描述数据包</b> <code>ReportSection</code>（标题 + 指标 map + 表格块 + 结论），
+      F-014 报告生成直接消费，<b>不用反向调用本模块</b>。范围与批次不一致时，包内额外带 <code>conclusionMode</code>，让报告侧知道结论的成色。</li>
+  <li><b>导出（验收 10）</b>：<code>POST /export</code> 走 <code>ExcelBuilder</code> 输出<b>长表</b>（区块 / 维度 / 取值 / 数值 / 占比 / 说明），
+      七类指标齐在一张 sheet —— 下游做透视比多 sheet 更顺手。</li>
+</ul>
+
+<h2>五、接口清单</h2>
+<table>
+<tr><th style="width:32%">端点</th><th style="width:22%">权限码</th><th>说明</th></tr>
+<tr><td class="mono">GET&nbsp;&nbsp;/yuqing/analytics/dashboard</td><td class="mono">yuqing:dashboard:list</td><td>看板数据（验收 1/2/3/4）</td></tr>
+<tr><td class="mono">GET&nbsp;&nbsp;/yuqing/analytics/drilldown</td><td class="mono">yuqing:dashboard:list</td><td>下钻明细（验收 6）</td></tr>
+<tr><td class="mono">GET&nbsp;&nbsp;/yuqing/analytics/handoff</td><td class="mono">yuqing:dashboard:list</td><td>报告章节交接包（验收 7）</td></tr>
+<tr><td class="mono">GET&nbsp;&nbsp;/yuqing/analytics/batches</td><td class="mono">yuqing:dashboard:list</td><td>聚合批次台账</td></tr>
+<tr><td class="mono">POST /yuqing/analytics/aggregate</td><td class="mono">yuqing:dashboard:aggregate</td><td>手动重算 / 补算历史（验收 8/9）</td></tr>
+<tr><td class="mono">POST /yuqing/analytics/export</td><td class="mono">yuqing:dashboard:export</td><td>导出 Excel（验收 10）</td></tr>
+</table>
+<p><b>筛选条件（8 维联动，验收 2）</b>：<code>dateFrom / dateTo / taskId / channelId / sentiAttr / riskLevel / opinionLevel / spreadLevel</code>，
+另加展示参数 <code>grain</code>（hour/day/week）与 <code>rankBy</code>（read/share/comment/heat）。
+日期解析失败<b>一律忽略该条件、回落默认范围</b>，不抛 500 —— 看板裸 URL 打开也要能用。</p>
+<p class="mut">前端与后端权限码逐一对齐：PC 看板查询/下钻/交接/批次 = <code>yuqing:dashboard:list</code>；
+重算按钮 = <code>yuqing:dashboard:aggregate</code>；导出按钮 = <code>yuqing:dashboard:export</code>。不存在「按钮看得见、点了 403」的错配。</p>
+
+<h2>六、验收标准映射</h2>
+<h3>6.1 十条验收标准（<code>dev-specs/F-009-analytics.md</code> 实测 10 条）</h3>
+<table>
+<tr><th style="width:6%">#</th><th style="width:46%">验收标准</th><th>落地位置 / 证据</th></tr>
+<tr><td>1</td><td>同一看板展示舆情总量、正负面占比、平台分布、热点 TOP、传播趋势、互动数据、地域分布七类指标</td>
+  <td><code>DimType.distributions()</code> 七类 + <code>TotalsView</code> + <code>DimBars</code>/<code>ConclusionPanel</code>；
+      单测 <code>assemblerTotals</code> / <code>assemblerItemsSorting</code> / <code>aggregateDimsCoverage</code></td></tr>
+<tr><td>2</td><td>按时间范围、任务、渠道、舆情属性、风险等级多维筛选，指标联动刷新</td>
+  <td><code>AggregateScope</code> 八条件 + <code>normalized()</code> 范围归一（封顶 <code>maxScopeDays=366</code>）；
+      单测 <code>scopeNormalized</code> / <code>scopeNormalizedFilters</code></td></tr>
+<tr><td>3</td><td>热点 TOP 排行，支持按阅读量、转发量、评论量或综合热度排序</td>
+  <td><code>RankBy</code>（read/share/comment/heat）+ <code>StatsAggregator.buildHot</code>；
+      单测 <code>aggregateHotRanking</code> / <code>rankTopStableTieBreak</code> / <code>heatScoreWeights</code> / <code>heatScoreClampsNegative</code></td></tr>
+<tr><td>4</td><td>传播趋势曲线，支持按小时 / 日 / 周粒度切换</td>
+  <td><code>StatsGrain</code> + <code>bucketKey/bucketLabel</code>（周桶用 ISO 周：<code>2026-W36</code>）；
+      单测 <code>bucketKeyAndLabel</code> / <code>aggregateTrendHourWindow</code></td></tr>
+<tr><td>5</td><td>自动提炼核心舆情事件、传播路径、舆论焦点、潜在风险点</td>
+  <td><code>ConclusionExtractor</code>（明细 + 维度行）+ <code>DerivedConclusionBuilder</code>（退化路径）；
+      单测 <code>conclusion*</code> 9 例 + <code>derivedConclusion*</code> 2 例</td></tr>
+<tr><td>6</td><td>点击任一统计数值，下钻到对应舆情台账明细</td>
+  <td><code>DrilldownQuery</code> + <code>JdbcDrilldownReader</code> + PC <code>DrilldownDrawer.vue</code>；
+      单测 <code>drilldownChannel</code> / <code>drilldownRegion</code> / <code>drilldownTrendRange</code> / <code>drilldownPaging</code></td></tr>
+<tr><td>7</td><td>当前分析结果一键带入报告生成流程，作为「数据分析」章节来源</td>
+  <td><code>GET /handoff</code> + <code>ReportHandoffBuilder</code> → <code>ReportSection</code>；单测 <code>reportHandoff</code></td></tr>
+<tr><td>8</td><td>定时任务预聚合，保证看板响应不随数据量增长而显著变慢</td>
+  <td><code>YqStatsAggregateJobExecutor</code>（<code>yuqingStatsAggregate</code>，回看 <code>jobLookbackDays=2</code>）+
+      Doris Unique Key 覆盖写；单测 <code>aggregateDailyGrouping</code></td></tr>
+<tr><td>9</td><td>预聚合失败不影响主流程，展示最近成功结果并标注数据截止时间</td>
+  <td><code>StatsBatchLedger.begin/fail/success</code> + <code>BatchMeta.isDegraded()</code> + <code>data_until</code> + <code>notice</code>；
+      单测 <code>aggregateTruncationNotice</code></td></tr>
+<tr><td>10</td><td>支持看板数据导出为 Excel</td>
+  <td><code>POST /export</code> + <code>StatsExportBuilder</code>/<code>StatsExportRow</code>（长表 6 列）；单测 <code>exportBuilderBlocks</code></td></tr>
+</table>
+
+<h2>七、验证矩阵（全部脚本实测）</h2>
+<table>
+<tr><th style="width:30%">检查项</th><th style="width:24%">结果</th><th>说明</th></tr>
+<tr><td>生成器 <code>node --check</code> ×8</td><td class="ok">exit 0</td><td>主入口 + tpl1~tpl7 全部分片语法自检前置</td></tr>
+<tr><td>生成</td><td class="ok">58 文件 / 298.7 KB</td><td>36 引擎 + 8 jdbc + 2 config + 2 service + 1 controller + 1 job + 1 yml + 6 PC + 1 test</td></tr>
+<tr><td>部署</td><td class="ok">+0 新增 / ~4 覆盖 / 457 未变</td><td>末轮只改 4 个文件（趋势桶守卫 + 重复主键列），三端总落地 <b>461 文件 / 8 个落点</b></td></tr>
+<tr><td>后端 <code>test-compile</code></td><td class="ok">exit 0</td><td>yuqing 主类 <b>304</b> 文件 / 测试类 <b>7</b> 文件</td></tr>
+<tr><td>离线自测</td><td class="ok">159 / 159 PASS</td><td>6 个测试类：F009 <b>43</b> + F010/011 <b>63</b> + F006 <b>19</b> + 关键词 13 + 词表导入 11 + 采集引擎 10</td></tr>
+<tr><td><code>check-yuqing-sql.mjs</code></td><td class="ok">ALL PASS · 警告 0</td><td>13 类 + Doris 专项；新增第 13 类 <b>20 项</b>（含「三份 SQL 无重复列」与「types.ts 无重复字段」两条防回归守卫）</td></tr>
+<tr><td>PC <code>vue-tsc --noEmit</code></td><td class="ok">0 错误</td><td>全项目（含新写的看板主页与三个子组件）</td></tr>
+</table>
+
+<h2>八、本轮自测抓出的两个真实缺陷</h2>
+<p>两条都是「不报错、不写日志、界面只是『没数据』」的静默缺陷 —— 人工点页面基本发现不了。</p>
+<table>
+<tr><th style="width:26%">缺陷</th><th style="width:36%">现象</th><th>修法</th></tr>
+<tr>
+  <td><code>DrilldownQuery.trendRange</code> 的长度守卫把周桶挡在门外</td>
+  <td>守卫写的是「<code>bucketKey.length() &lt; 10</code> 直接返回 null」，
+      而<b>周桶键是 <code>2026-W36</code>，只有 8 个字符</b> —— 于是<b>周粒度下钻在生产里永远返回空明细</b>：
+      点趋势图上的周柱子，抽屉里什么都没有。日桶（10 字符）与小时桶（13 字符）恰好都能过，所以只坏周这一档。</td>
+  <td>把「长度 &lt; 10 就退出」的粗粒度守卫<b>下移到各分支内部</b>：小时分支单独要求 ≥13，
+      周分支不要求长度、只要求能按 <code>yyyy-Www</code> 反解。同时补上 <code>drilldownTrendRange</code> 断言覆盖三档粒度。</td>
+</tr>
+<tr>
+  <td>表定义里重复声明了主键列</td>
+  <td><code>yq_stats_dim</code> 的字段清单里手写了 <code>L('dimId','dim_id',…)</code>、<code>yq_stats_hot</code> 写了 <code>L('hotId','hot_id',…)</code>，
+      而生成器本身就会为每张表补主键列 ⇒ 产出的建表 SQL 与 TS <code>types.ts</code> <b>出现重复列 / 重复字段</b>（<code>vue-tsc</code> 报 TS2300）。</td>
+  <td>从 <code>gen-yuqing.mjs</code> 的表定义中删掉这两行（主键交给生成器统一补）。
+      并在 checker 第 13 类新增两条守卫：「三份 SQL 的全部建表语句均无重复列」「PC 端 <code>yuqing/*/types.ts</code> 接口无重复字段」，防回归。</td>
+</tr>
+</table>
+
+<h2>九、已知边界（没藏着）</h2>
+<ol>
+  <li><b>未在真实 Doris 集群上跑过端到端。</b>本机无 Doris 实例，<code>JdbcStatsWriter</code> / <code>JdbcStatsQuery</code> 的 SQL 只经过离线单测与
+      <code>check-yuqing-sql.mjs</code> 静态校验。验收 8 的「不随数据量变慢」是<b>架构上成立</b>，<b>不是压测结论</b> —— 首次上真实环境后需要人工跑一次大数据量看板。</li>
+  <li><b>结论的成色取决于范围是否与批次一致。</b>跨范围查询只能拿到「派生结论」（无核心事件与传播路径）。
+      F-014 报告若要用完整结论，请<b>先按同范围重算再看交接包</b>，或直接读批次的 <code>conclusion_json</code>。</li>
+  <li><b>小时粒度只回算最近 <code>hourTrendDays=30</code> 天。</b>小时桶行数增长最快，必须封顶；更早的小时桶查不到（日 / 周不受限）。
+      需要历史小时曲线时手动重算并临时调大该值。</li>
+  <li><b>明细读取有硬上限 <code>maxSourceRecords=200000</code>。</b>命中即截断，指标为不完全统计，批次 <code>notice</code> 与看板 <code>notices</code> 双处留痕，
+      但<b>不会报错</b>——必须有人看懂那条提示，否则会把截断后的数字当成全量。</li>
+  <li><b>口径差异是设计内的。</b>趋势按发布时间、总量按采集日，跨日传播时「曲线累计 ≠ 总量卡片」。
+      看板下发 <code>trendBase</code> 供前端标注，但<b>若下游系统（报告、导出）不读这个字段，就会误以为数据不对</b>。</li>
+  <li><b>预聚合粒度固定为「按天 × 按任务 × 按渠道」。</b>想按「周 × 地域」这类组合直接聚合是不支持的，只能下钻到明细或另建预聚合。
+      这是「表数量 vs 灵活性」的取舍，本期选了表少。</li>
+  <li><b>本模块不做数据行级鉴权。</b>按需求，舆情台账对所有持权角色可见，因此仅靠 <code>yuqing:dashboard:*</code> 三枚权限码控制；
+      将来若要做「按部门 / 按任务隔离看到的统计」，需要在这里补范围条件，属<b>新增需求</b>，不是配置项。</li>
+</ol>
+
+<h2>十、上线步骤</h2>
+<ol>
+  <li>执行 SQL（顺序不能反）：<code>script/sql/yuqing/yq_schema.sql</code>（含新表 <code>yq_stats_batch</code>）→
+      <code>yq_doris_schema.sql</code> 与 <code>yq_doris_mysql_fallback.sql</code>（3 张预聚合表，按实际数据源二选一或都执行）→
+      <code>yq_dict.sql</code> → <code>yq_menu.sql</code>。</li>
+  <li>导入配置：<code>script/sql/yuqing/config/yq_analytics.yml</code>。重点确认
+      <code>trendByPublishTime</code>（趋势口径）、<code>hotTopN</code>、<code>hourTrendDays</code>、<code>maxSourceRecords</code>。</li>
+  <li>SnailJob 控制台新建执行器 <code>yuqingStatsAggregate</code>，调度周期建议 <b>600~1800s</b>（回看天数默认 2 天，允许失败后自愈）。</li>
+  <li>重启后端 → 进 PC「统计看板」→ 点<b>看板重算</b>生成首份预聚合（首次必须先手动跑一次，否则看板是空的）。</li>
+  <li>验收自测：粒度 <code>hour / day / week</code> 各切一次 → 确认<b>周粒度下钻有明细</b> → 点任一数字下钻 → 导出 Excel →
+      点「带入报告」看交接包 → 最后到「聚合批次台账」确认批次为 <code>success</code> 且 <code>data_until</code> 合理。</li>
+</ol>
+
+<footer>
+生成器：<code>gen-yuqing-analytics.mjs</code>（+ tpl1~tpl7）· 部署：<code>deploy-yuqing.mjs</code>（8 个落点）·
+校验：<code>check-yuqing-sql.mjs</code> 第 13 类 · 自测：<code>OfflineCollectTestRunner</code> 注册 <code>F009AnalyticsTest</code><br>
+文档版本 1.0 · 2026-09-22 · 所有计数均由脚本实测得出，未沿用前文叙述。
+</footer>
+
+</div>
+</body>
+</html>

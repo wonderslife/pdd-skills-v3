@@ -1,0 +1,250 @@
+# 机房巡检系统 - 巡检项模板主子表（模板 + 明细）
+#
+# 用途: 验证「巡检项模板」弹窗内可维护明细并回显，列表「模板明细数」正确
+# 背景: 该功能曾回归为「只能填名称、保存后明细丢失」，导致点位管理「从模板导入」永远为空
+
+test_id: "INSP-PC-004-template-detail"
+title: "巡检项模板：新增模板并录入明细，修改时明细回显"
+priority: "P0"
+tags: ["巡检项模板", "主子表", "明细", "PC", "回归"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 巡检项模板」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/itemTemplate"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/itemTemplate/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "点击「新增」，打开新增模板窗口（弹窗内应含「模板明细」子表格）"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "模板名称"
+        confidence: high
+      - type: element_visible
+        target: "添加明细"
+        confidence: high
+
+  - step: 3
+    desc: "填入「模板名称」"
+    action: fill
+    target: "请输入模板名称"
+    value: "${TPL_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 4
+    desc: "填入「模板说明」"
+    action: fill
+    target: "请输入模板说明"
+    value: "${TPL_DESC}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  # ===== 明细第 1 行 =====
+  - step: 5
+    desc: "点击「添加明细」，在子表格新增一行"
+    action: click
+    target: "添加明细"
+    wait_after:
+      type: time
+      duration: 800
+    assertions:
+      - type: element_visible
+        target: "巡检项名称"
+        confidence: high
+
+  - step: 6
+    desc: "填写明细行 1 的「巡检项名称」"
+    action: fill
+    target: "请输入巡检项名称"
+    value: "${TPL_ITEM_NAME_1}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 7
+    desc: "明细行 1 的「巡检项类型」选择「数值」"
+    action: select_option
+    target: "请选择巡检项类型"
+    option: "数值"
+    assertions:
+      - type: element_text
+        expected: "数值"
+        confidence: medium
+
+  - step: 8
+    desc: "明细行 1 填写「判定标准」"
+    action: fill
+    target: "请输入判定标准"
+    value: "${TPL_STANDARD_1}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  # ===== 明细第 2 行 =====
+  - step: 9
+    desc: "再次点击「添加明细」，新增第 2 行"
+    action: click
+    target: "添加明细"
+    wait_after:
+      type: time
+      duration: 800
+    assertions:
+      - type: element_count_greater_than
+        target: "请输入巡检项名称"
+        min_count: 1
+        confidence: medium
+
+  - step: 10
+    desc: "填写明细行 2 的「巡检项名称」"
+    action: fill
+    target: "请输入巡检项名称"
+    value: "${TPL_ITEM_NAME_2}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 11
+    desc: "明细行 2 的「巡检项类型」选择「单选」"
+    action: select_option
+    target: "请选择巡检项类型"
+    option: "单选"
+    assertions:
+      - type: element_text
+        expected: "单选"
+        confidence: medium
+
+  - step: 12
+    desc: "点击「确 定」提交，主表与明细应一并落库"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/itemTemplate"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  # ===== 关键回归点：列表明细数列 =====
+  - step: 13
+    desc: "在搜索区按模板名称过滤"
+    action: fill
+    target: "请输入模板名称"
+    value: "${TPL_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 14
+    desc: "点击「搜索」，确认列表「模板明细数」列为 2（不是 0）"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${TPL_NAME}"
+        confidence: high
+      # 「模板明细数」= 0 表示明细没存进去，是本次回归的核心断言
+      - type: element_visible
+        target: "2"
+        confidence: medium
+
+  # ===== 关键回归点：修改时明细回显 =====
+  - step: 15
+    desc: "点击该行「修改」，验证弹窗内明细行被回显（名称/类型/标准都在）"
+    action: click
+    target: "修改"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/itemTemplate/*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: text_contains
+        expected: "${TPL_ITEM_NAME_1}"
+        confidence: high
+      - type: text_contains
+        expected: "${TPL_ITEM_NAME_2}"
+        confidence: high
+
+  - step: 16
+    desc: "删除明细行 2（点该行「删除」），保存后明细数应变为 1"
+    action: click
+    target: "删除"
+    wait_after:
+      type: time
+      duration: 800
+    assertions:
+      - type: element_hidden
+        target: "${TPL_ITEM_NAME_2}"
+        confidence: medium
+
+  - step: 17
+    desc: "点击「确 定」保存（覆盖式更新明细）"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/itemTemplate"
+        method: PUT
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "template-detail-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "模板 ${TPL_NAME} 已保留 1 条明细（${TPL_ITEM_NAME_1}），供点位导入用例复用"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "70-100s"
+  risk_level: "medium"
+  note: "步骤 14/15 是本次回归的判定点：明细数必须>0，且修改时明细必须回显"

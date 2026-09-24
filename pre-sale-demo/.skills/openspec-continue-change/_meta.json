@@ -1,0 +1,1 @@
+{"name": "openspec-continue-change", "version": "1.0.0", "category": "openspec", "description": "Continue an OpenSpec change by creating the next artifact. Invoke when progressing a change or creating the next artifact.", "triggers": ["继续变更", "continue change", "下一步"]}

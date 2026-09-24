@@ -1,0 +1,164 @@
+# 机房巡检系统 - 点位批量导入（Excel）
+#
+# 用途: 验证「下载模板 → 上传 Excel → 逐行校验 → 确认导入」全流程，
+#       以及含非法行时只入库校验通过的行
+# 依赖: 机房（pc-002）；需要一个 .xlsx 样例文件，路径由 Excel 变量提供
+
+test_id: "INSP-PC-007-point-import"
+title: "点位批量导入：下载模板、校验、部分成功导入"
+priority: "P1"
+tags: ["点位管理", "批量导入", "Excel", "PC"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 点位管理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/point"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "点击「批量导入」，打开导入弹窗"
+    action: click
+    target: "批量导入"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "下载模板"
+        confidence: high
+      - type: element_visible
+        target: "选择 Excel 文件"
+        confidence: high
+
+  - step: 3
+    desc: "点击「下载模板」，验证下载接口被调用（返回 xlsx）"
+    action: click
+    target: "下载模板"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/importTemplate*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 4
+    desc: "上传准备好的 Excel 文件（含 1 条合法行 + 1 条非法行，用于验证部分成功）"
+    action: upload_file
+    target: "选择 Excel 文件"
+    path: "${IMPORT_XLSX_PATH}"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: element_visible
+        target: "${IMPORT_XLSX_NAME}"
+        confidence: medium
+
+  - step: 5
+    desc: "点击「开始校验」，等待后端逐行校验结果返回"
+    action: click
+    target: "开始校验"
+    wait_after:
+      type: time
+      duration: 3500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/importData*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+  - step: 6
+    desc: "校验结果表格出现「行号 / 校验结果 / 点位名称 / 失败原因」列，非法行给出失败原因"
+    action: assert_multiple
+    assertions:
+      - type: element_visible
+        target: "行号"
+        confidence: high
+      - type: element_visible
+        target: "失败原因"
+        confidence: medium
+
+  - step: 7
+    desc: "点击「确认导入（N 条）」，只入库校验通过的行"
+    action: click
+    target: "确认导入"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/importConfirm*"
+        method: POST
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: medium
+
+  - step: 8
+    desc: "关闭导入弹窗，回到列表"
+    action: click
+    target: "关 闭"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: element_hidden
+        target: "确认导入"
+        confidence: medium
+
+  - step: 9
+    desc: "按导入的点位编码搜索，确认合法行已入库"
+    action: fill
+    target: "请输入点位编码"
+    value: "${IMPORT_POINT_CODE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 10
+    desc: "点击「搜索」校验导入结果"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${IMPORT_POINT_CODE}"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "point-import-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "60-90s"
+  risk_level: "medium"
+  note: "需先准备样例 Excel，见 README「测试数据准备」；无样例文件时可只跑到步骤 6"

@@ -1,0 +1,273 @@
+# 机房巡检系统 - 机房管理 CRUD + 导出
+#
+# 用途: 验证机房的新增（含必填校验）/ 查询 / 修改 / 删除 / 导出 全链路
+# 备注: 机房是区域、点位的上游基础数据，本用例是后续所有用例的数据前置
+
+test_id: "INSP-PC-002-room-crud"
+title: "机房管理：新增 / 查询 / 修改 / 删除 / 导出"
+priority: "P0"
+tags: ["机房管理", "CRUD", "PC", "E2E"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  # ===== 进入机房管理 =====
+  - step: 1
+    desc: "进入「机房巡检 > 机房管理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/room"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  # ===== 必填校验（反向用例）=====
+  - step: 2
+    desc: "点击「新增」按钮，打开新增机房窗口"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "机房名称"
+        confidence: high
+
+  - step: 3
+    desc: "不填写任何内容，直接点击「确 定」，验证必填校验拦截"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 1000
+    assertions:
+      # 未填必填项时不应发起新增请求，且窗口仍停留在编辑态
+      - type: element_visible
+        target: "请输入机房名称"
+        confidence: medium
+
+  # ===== 正常新增 =====
+  - step: 4
+    desc: "在新增窗口的「机房名称」输入框填入机房名称"
+    action: fill
+    target: "请输入机房名称"
+    locator:
+      uid_cache_key: "room_form_name"
+    value: "${ROOM_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 5
+    desc: "填入「机房编码」"
+    action: fill
+    target: "请输入机房编码"
+    value: "${ROOM_CODE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 6
+    desc: "填入「机房地址」"
+    action: fill
+    target: "请输入机房地址"
+    value: "${ROOM_ADDR}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 7
+    desc: "填入「负责人姓名」（该字段为文本输入框，非下拉）"
+    action: fill
+    target: "请输入负责人姓名"
+    value: "${ROOM_MANAGER}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 8
+    desc: "填入「负责人电话」"
+    action: fill
+    target: "请输入负责人电话"
+    value: "${ROOM_PHONE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 9
+    desc: "「状态」下拉选择「正常」（选项显示名不带括号）"
+    action: select_option
+    target: "请选择状态"
+    option: "正常"
+    assertions:
+      - type: element_text
+        expected: "正常"
+        confidence: medium
+
+  - step: 10
+    desc: "点击「确 定」提交新增"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  # ===== 查询 =====
+  - step: 11
+    desc: "在搜索区「机房名称」输入框填入刚创建的机房名称并搜索"
+    action: fill
+    target: "请输入机房名称"
+    value: "${ROOM_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 12
+    desc: "点击「搜索」"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${ROOM_NAME}"
+        confidence: high
+      - type: network_called
+        url_pattern: "*/inspect/room/list*"
+        method: GET
+        response_code: 200
+        confidence: medium
+
+  # ===== 修改 =====
+  - step: 13
+    desc: "点击目标行操作列的「修改」按钮"
+    action: click
+    target: "修改"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: element_visible
+        target: "机房名称"
+        confidence: medium
+
+  - step: 14
+    desc: "把「负责人姓名」改为带后缀的值，验证修改保存"
+    action: fill
+    target: "请输入负责人姓名"
+    value: "${ROOM_MANAGER}改"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 15
+    desc: "点击「确 定」保存修改"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 1800
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room"
+        method: PUT
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  # ===== 导出 =====
+  - step: 16
+    desc: "点击「导出」按钮"
+    action: click
+    target: "导出"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room/export*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+  # ===== 删除（可选清理）=====
+  - step: 17
+    desc: "勾选目标行的复选框"
+    action: checkbox
+    target: "选择该行"
+    checked: true
+    assertions:
+      - type: element_visible
+        expected: "已选中"
+        confidence: low
+
+  - step: 18
+    desc: "点击「删除」按钮"
+    action: click
+    target: "删除"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: text_contains
+        expected: "确认"
+        confidence: medium
+
+  - step: 19
+    desc: "在确认框中点击「确 定」完成删除"
+    action: click
+    target: "确定"
+    wait_after:
+      type: time
+      duration: 1800
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room/*"
+        method: DELETE
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: medium
+
+teardown:
+  - action: screenshot
+    name: "room-crud-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "机房 CRUD 用例结束；若后续用例需要该机房，请跳过步骤 17-19（删除）"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "60-90s"
+  risk_level: "medium"
+  note: "步骤 17-19 会删除测试机房，作为独立回归时执行；串联执行请止于步骤 16"

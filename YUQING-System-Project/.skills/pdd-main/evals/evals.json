@@ -1,0 +1,215 @@
+{
+  "skill_name": "pdd-main",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我想开发ZCCZ-2资产转让模块",
+      "expected_output": "触发pdd-main，扫描docs/业务分析/目录发现PRD文档",
+      "should_trigger": true,
+      "trigger_reason": "明确提到模块编号和开发意图"
+    },
+    {
+      "id": 2,
+      "prompt": "帮我基于这个PRD文档开发国有产权转让功能",
+      "expected_output": "触发pdd-main，进入PDD流程",
+      "should_trigger": true,
+      "trigger_reason": "明确提到PRD文档和功能开发"
+    },
+    {
+      "id": 3,
+      "prompt": "docs/业务分析/资产处置/ZCCZ-1/PRD-国有产权转让.md 这个文档需要实现",
+      "expected_output": "触发pdd-main，解析PRD文档开始开发流程",
+      "should_trigger": true,
+      "trigger_reason": "提供了具体PRD文档路径，需要实现"
+    },
+    {
+      "id": 4,
+      "prompt": "我有一个需求文档，想把它转成代码",
+      "expected_output": "触发pdd-main，询问PRD文档位置",
+      "should_trigger": true,
+      "trigger_reason": "需求文档转代码是PDD核心场景"
+    },
+    {
+      "id": 5,
+      "prompt": "根据功能规格生成后端代码",
+      "expected_output": "触发pdd-main或pdd-implement-feature",
+      "should_trigger": true,
+      "trigger_reason": "功能规格生成代码是PDD流程的一部分"
+    },
+    {
+      "id": 6,
+      "prompt": "执行PDD流程开发ZCCZ-1模块",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "明确提到PDD流程"
+    },
+    {
+      "id": 7,
+      "prompt": "这个模块需要从需求分析到代码实现完整走一遍",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "需求分析到代码实现的完整流程"
+    },
+    {
+      "id": 8,
+      "prompt": "我有PRD，想生成功能点和开发规格",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "PRD生成功能点和规格是PDD流程"
+    },
+    {
+      "id": 9,
+      "prompt": "继续执行上次中断的开发任务",
+      "expected_output": "触发pdd-task-manager",
+      "should_trigger": false,
+      "trigger_reason": "这是任务恢复场景，应触发pdd-task-manager而非pdd-main"
+    },
+    {
+      "id": 10,
+      "prompt": "审查这段代码的质量",
+      "expected_output": "触发expert-code-quality或pdd-multi-review",
+      "should_trigger": false,
+      "trigger_reason": "代码审查场景，不是PDD主流程"
+    },
+    {
+      "id": 11,
+      "prompt": "帮我优化这个SQL查询",
+      "expected_output": "触发expert-mysql",
+      "should_trigger": false,
+      "trigger_reason": "SQL优化场景，应触发expert-mysql"
+    },
+    {
+      "id": 12,
+      "prompt": "这个BPMN流程定义有问题吗？",
+      "expected_output": "触发expert-activiti",
+      "should_trigger": false,
+      "trigger_reason": "工作流问题，应触发expert-activiti"
+    },
+    {
+      "id": 13,
+      "prompt": "若依框架的菜单怎么配置？",
+      "expected_output": "触发expert-ruoyi",
+      "should_trigger": false,
+      "trigger_reason": "若依框架问题，应触发expert-ruoyi"
+    },
+    {
+      "id": 14,
+      "prompt": "帮我重构这段代码，消除重复",
+      "expected_output": "触发expert-code-quality",
+      "should_trigger": false,
+      "trigger_reason": "代码重构场景，不是PDD流程"
+    },
+    {
+      "id": 15,
+      "prompt": "写一个快速排序算法",
+      "expected_output": "不触发任何PDD相关skill",
+      "should_trigger": false,
+      "trigger_reason": "简单算法实现，与PDD无关"
+    },
+    {
+      "id": 16,
+      "prompt": "这个接口返回404错误怎么解决？",
+      "expected_output": "不触发pdd-main",
+      "should_trigger": false,
+      "trigger_reason": "调试问题，不是开发流程"
+    },
+    {
+      "id": 17,
+      "prompt": "帮我设计一个用户注册的接口",
+      "expected_output": "可能触发software-architect",
+      "should_trigger": false,
+      "trigger_reason": "单一接口设计，不是完整PDD流程"
+    },
+    {
+      "id": 18,
+      "prompt": "根据这个spec.md实现功能点FP-ZCCZ1-001",
+      "expected_output": "触发pdd-implement-feature",
+      "should_trigger": true,
+      "trigger_reason": "有规格文档实现功能点，是PDD实现阶段"
+    },
+    {
+      "id": 19,
+      "prompt": "从PRD提取功能点",
+      "expected_output": "触发pdd-extract-features或pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "PRD提取功能点是PDD流程的一部分"
+    },
+    {
+      "id": 20,
+      "prompt": "帮我写一个单元测试",
+      "expected_output": "不触发pdd-main",
+      "should_trigger": false,
+      "trigger_reason": "单一测试任务，不是完整PDD流程"
+    },
+    {
+      "id": 21,
+      "prompt": "根据这个文档开发",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "模糊表述但有文档和开发意图"
+    },
+    {
+      "id": 22,
+      "prompt": "帮我搞个资产转让的功能",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "口语化表述，有业务功能开发意图"
+    },
+    {
+      "id": 23,
+      "prompt": "这个spec要实现",
+      "expected_output": "触发pdd-implement-feature或pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "简短表述，有规格和实现意图"
+    },
+    {
+      "id": 24,
+      "prompt": "开发ZCCZ模块",
+      "expected_output": "触发pdd-main",
+      "should_trigger": true,
+      "trigger_reason": "只有模块编号，但有开发意图"
+    },
+    {
+      "id": 25,
+      "prompt": "接着上次做",
+      "expected_output": "触发pdd-task-manager",
+      "should_trigger": false,
+      "trigger_reason": "任务恢复场景，应触发pdd-task-manager"
+    },
+    {
+      "id": 26,
+      "prompt": "代码有问题吗",
+      "expected_output": "触发pdd-multi-review",
+      "should_trigger": false,
+      "trigger_reason": "代码检查场景，应触发pdd-multi-review"
+    },
+    {
+      "id": 27,
+      "prompt": "用模板生成代码",
+      "expected_output": "触发pdd-template-engine",
+      "should_trigger": false,
+      "trigger_reason": "模板生成场景，应触发pdd-template-engine"
+    },
+    {
+      "id": 28,
+      "prompt": "生成脚手架",
+      "expected_output": "触发pdd-template-engine",
+      "should_trigger": false,
+      "trigger_reason": "脚手架生成场景，应触发pdd-template-engine"
+    },
+    {
+      "id": 29,
+      "prompt": "上次做到哪了",
+      "expected_output": "触发pdd-task-manager",
+      "should_trigger": false,
+      "trigger_reason": "进度查询场景，应触发pdd-task-manager"
+    },
+    {
+      "id": 30,
+      "prompt": "审查一下",
+      "expected_output": "触发pdd-multi-review",
+      "should_trigger": false,
+      "trigger_reason": "审查场景，应触发pdd-multi-review"
+    }
+  ]
+}

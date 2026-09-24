@@ -1,0 +1,194 @@
+# 定金支付 - 买家支付定金锁定订单流程
+# 对应功能点: F-102 定金支付（后端 insertByBo: 幂等/库存/预售期校验）
+# 前置: 无（含登录）；存在库存>0 的预售商品
+# 说明: 前端为管理端定金支付页（当前系统无独立买家端页面），通过该页提交触发后端完整业务逻辑
+
+test_id: "PRESALE-201-deposit-pay"
+title: "买家支付定金锁定订单流程"
+priority: "P0"
+tags: ["预售", "定金支付", "幂等", "正常路径+异常路径", "E2E"]
+author: "PDD Testcase Modeler"
+
+context_check:
+  login_url: "${BASE_URL}/login"
+  home_indicator: "首页"
+  credentials:
+    username: "${TEST_USER}"
+    password: "${TEST_PASS}"
+    display_name: "${TEST_DISPLAY_NAME}"
+  captcha_required: false
+
+steps:
+  # ===== 登录 =====
+  - step: 1
+    desc: "打开登录页面"
+    action: navigate
+    url: "${BASE_URL}/login"
+    assertion:
+      type: text_contains
+      expected: "登录"
+
+  - step: 2
+    desc: "输入用户名"
+    action: fill
+    target: "用户名"
+    value: "${TEST_USER}"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 3
+    desc: "输入密码"
+    action: fill
+    target: "密码"
+    value: "${TEST_PASS}"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 4
+    desc: "点击登录按钮"
+    action: click
+    target: "登 录"
+    wait_after:
+      type: time
+      duration: 3000
+
+  # ===== 场景1: 支付定金（成功路径）=====
+  - step: 5
+    desc: "打开定金支付列表页"
+    action: navigate
+    url: "${BASE_URL}/presale/deposit"
+    assertion:
+      type: text_contains
+      expected: "定金支付"
+
+  - step: 6
+    desc: "点击新增按钮"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1000
+
+  - step: 7
+    desc: "等待新增弹窗渲染完成"
+    action: wait_for
+    target: "商品ID"
+    timeout_ms: 8000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 8
+    desc: "输入商品ID"
+    action: fill
+    target: "商品ID"
+    value: "${GOODS_ID}"
+
+  - step: 9
+    desc: "输入买家ID"
+    action: fill
+    target: "买家ID"
+    value: "${BUYER_ID}"
+
+  - step: 10
+    desc: "输入定金金额"
+    action: fill
+    target: "定金金额"
+    value: "${DEPOSIT_AMOUNT}"
+
+  - step: 11
+    desc: "确认弹窗仍打开（防错点）"
+    action: wait_for
+    target: "确 定"
+    timeout_ms: 5000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 12
+    desc: "提交定金支付"
+    action: click
+    target: "确 定"
+    assertion:
+      type: toast_visible
+      expected: "新增成功"
+
+  # ===== 场景2: 重复支付（幂等拦截，验收标准 #5）=====
+  - step: 13
+    desc: "再次点击新增（测幂等）"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1000
+
+  - step: 14
+    desc: "等待新增弹窗渲染完成"
+    action: wait_for
+    target: "商品ID"
+    timeout_ms: 8000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 15
+    desc: "输入相同商品ID（重复支付）"
+    action: fill
+    target: "商品ID"
+    value: "${GOODS_ID}"
+
+  - step: 16
+    desc: "输入相同买家ID"
+    action: fill
+    target: "买家ID"
+    value: "${BUYER_ID}"
+
+  - step: 17
+    desc: "输入定金金额"
+    action: fill
+    target: "定金金额"
+    value: "${DEPOSIT_AMOUNT}"
+
+  - step: 18
+    desc: "确认弹窗仍打开"
+    action: wait_for
+    target: "确 定"
+    timeout_ms: 5000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 19
+    desc: "提交重复定金支付（应被幂等拦截）"
+    action: click
+    target: "确 定"
+    assertion:
+      type: toast_visible
+      expected: "重复支付"
+
+  # ===== 场景3: 验证订单生成（锁定订单）=====
+  - step: 20
+    desc: "打开预售订单列表页"
+    action: navigate
+    url: "${BASE_URL}/presale/order"
+    assertion:
+      type: text_contains
+      expected: "预售订单"
+
+  - step: 21
+    desc: "确认订单出现（商品标题列，锁定订单已生成）"
+    action: wait_for
+    target: "${GOODS_TITLE}"
+    timeout_ms: 8000
+    wait_after:
+      type: time
+      duration: 2000
+    assertion:
+      type: text_contains
+      expected: "${GOODS_TITLE}"
+
+teardown:
+  - action: screenshot
+    name: "presale-201-deposit-pay-result.png"

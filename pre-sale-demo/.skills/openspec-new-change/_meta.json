@@ -1,0 +1,1 @@
+{"name": "openspec-new-change", "version": "1.0.0", "category": "openspec", "description": "Start a new OpenSpec change using the experimental artifact workflow. Invoke when creating features, fixes, or modifications with structured step-by-step approach.", "triggers": ["新变更", "new change", "创建变更"]}

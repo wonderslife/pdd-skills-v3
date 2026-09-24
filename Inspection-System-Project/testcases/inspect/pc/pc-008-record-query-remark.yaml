@@ -1,0 +1,201 @@
+# 机房巡检系统 - 巡检记录：查询 / 详情 / 追加管理员备注 / 导出
+#
+# 用途: 验证记录列表的条件查询、关联字段回填、详情弹窗与「已提交不可改、只可追加备注」约束
+# 依赖: 至少 1 条巡检记录（由 H5 用例 h5-001 产生）
+
+test_id: "INSP-PC-008-record-query-remark"
+title: "巡检记录：条件查询、详情查看、追加管理员备注、导出"
+priority: "P0"
+tags: ["巡检记录", "查询", "备注", "PC"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 巡检记录」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/record"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "「所属机房」下拉选择目标机房"
+    action: select_option
+    target: "请选择机房"
+    option: "${ROOM_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${ROOM_NAME}"
+        confidence: medium
+
+  - step: 3
+    desc: "「巡检点位」下拉选择目标点位"
+    action: select_option
+    target: "请选择点位"
+    option: "${POINT_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${POINT_NAME}"
+        confidence: medium
+
+  - step: 4
+    desc: "「巡检结果」选择「已完成(异常)」（若已知本次为正常，可改选「已完成(正常)」）"
+    action: select_option
+    target: "请选择结果"
+    option: "${REC_RESULT_LABEL}"
+    assertions:
+      - type: element_text
+        expected: "${REC_RESULT_LABEL}"
+        confidence: medium
+
+  - step: 5
+    desc: "「数据来源」选择「扫码巡检」"
+    action: select_option
+    target: "请选择来源"
+    option: "扫码巡检"
+    assertions:
+      - type: element_text
+        expected: "扫码巡检"
+        confidence: medium
+
+  - step: 6
+    desc: "点击「搜索」，验证列表出现记录且「巡检点位 / 所属机房 / 巡检员」三列均有值"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: text_contains
+        expected: "${POINT_NAME}"
+        confidence: high
+      # 关联名称未回填时这里会显示数字 ID 或空白
+      - type: text_contains
+        expected: "${ROOM_NAME}"
+        confidence: high
+
+  - step: 7
+    desc: "点击该行「详情」，打开巡检记录详情弹窗（含巡检项结果与照片）"
+    action: click
+    target: "详情"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: element_visible
+        target: "关 闭"
+        confidence: high
+
+  - step: 8
+    desc: "关闭详情弹窗"
+    action: click
+    target: "关 闭"
+    wait_after:
+      type: time
+      duration: 1000
+    assertions:
+      - type: element_hidden
+        target: "关 闭"
+        confidence: low
+
+  # ===== 追加备注 =====
+  - step: 9
+    desc: "点击该行「备注」，打开「追加管理员备注」弹窗"
+    action: click
+    target: "备注"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "备注内容"
+        confidence: high
+
+  - step: 10
+    desc: "不输入内容，直接点「确 定」，验证「备注内容不能为空」拦截"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 1000
+    assertions:
+      - type: toast_visible
+        expected: "不能为空"
+        confidence: medium
+
+  - step: 11
+    desc: "填入备注内容"
+    action: fill
+    target: "已提交记录不可修改"
+    value: "${REC_REMARK}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 12
+    desc: "点击「确 定」提交备注（已提交记录只可追加，不可修改业务字段）"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/*/remark*"
+        method: PUT
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "备注已追加"
+        confidence: high
+
+  - step: 13
+    desc: "点击顶部「导出」，验证记录导出接口被调用"
+    action: click
+    target: "导出"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/export*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "record-query-remark-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "60-90s"
+  risk_level: "medium"
+  note: "步骤 6 是关联字段回填的回归断言；步骤 10 为反向校验"

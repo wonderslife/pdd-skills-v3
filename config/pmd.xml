@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="PDD-PMD-Rules" xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>PDD-Skills PMD规则集 - Java代码质量检查</description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="GuardLogStatement"/>
+    <exclude name="GuardLogStatementJavaUtil"/>
+  </rule>
+
+  <rule ref="category/java/codestyle.xml">
+    <exclude name="CommentRequired"/>
+    <exclude name="ConfusingTernary"/>
+    <exclude name="OnlyOneReturn"/>
+    <exclude name="ShortClassName"/>
+    <exclude name="ShortVariable"/>
+  </rule>
+
+  <rule ref="category/java/design.xml">
+    <exclude name="CouplingBetweenObjects"/>
+    <exclude name="DataClass"/>
+    <exclude name="LawOfDemeter"/>
+    <exclude name="LoosePackageCoupling"/>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml"/>
+
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="DoNotUseThreads"/>
+    <exclude name="UseConcurrentHashMap"/>
+  </rule>
+
+  <rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+  </rule>
+
+  <rule ref="category/java/security.xml"/>
+
+  <rule ref="category/java/codestyle.xml/LongVariable">
+    <properties>
+      <property name="minimum" value="40"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="classReportLevel" value="80"/>
+      <property name="methodReportLevel" value="15"/>
+      <property name="cycloOptions" value="{statementSwitchAsDecision:false}"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NcssTypeCount">
+    <properties>
+      <property name="maximum" value="800"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NcssMethodCount">
+    <properties>
+      <property name="maximum" value="60"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/NcssConstructorCount">
+    <properties>
+      <property name="maximum" value="10"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/TooManyFields">
+    <properties>
+      <property name="maxfields" value="15"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/design.xml/TooManyMethods">
+    <properties>
+      <property name="maxmethods" value="30"/>
+    </properties>
+  </rule>
+
+  <rule ref="category/java/codestyle.xml/MethodNamingConventions">
+    <properties>
+      <property name="methodPattern" value="^[a-z][a-zA-Z0-9_]*$"/>
+    </properties>
+  </rule>
+
+</ruleset>

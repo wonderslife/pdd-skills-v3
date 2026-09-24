@@ -1,0 +1,359 @@
+# PDD Test Skill - 全局测试配置
+# 文件位置: config/cdp-test-config.yaml
+# 用途: 控制测试框架的全局行为、环境变量、重试策略等
+#
+# ⚠️ 安全警告:
+#   - 禁止在此文件中硬编码真实密码或敏感信息
+#   - 所有敏感值必须使用 ${ENV_VAR} 格式引用系统环境变量
+#   - 执行前请确保已设置对应的环境变量
+
+# ============================================================
+# 一、MCP 服务器配置
+# ============================================================
+mcp:
+  # Chrome DevTools MCP Server 类型
+  server_type: "Chrome DevTools MCP"
+  
+  # 连接配置（未来可能需要）
+  connection:
+    timeout_ms: 30000
+    retry_attempts: 3
+
+# ============================================================
+# 二、测试执行设置
+# ============================================================
+test_settings:
+  # 截图策略
+  screenshot_on_each_step: true      # 每步都截图（铁律2强制要求）
+  screenshot_on_failure: true        # 失败时额外截图
+  screenshot_format: "png"           # 截图格式: png/jpeg/webp
+  screenshot_quality: 80             # 图片质量 (0-100)
+  
+  # 网络监控（铁律3）
+  network_monitor: true              # 是否监控网络请求
+  network_log_level: "detailed"     # 日志级别: minimal/summary/detailed
+  
+  # 自愈机制（铁律4）
+  self_healing: true                 # 是否启用自愈
+  self_heal_max_levels: 4           # 最大降级级别数
+  self_heal_timeout_ms: 5000        # 单次自愈超时时间
+  
+  # 报告生成（铁律5）
+  report_format: "html"             # 报告格式: html/json/both
+  results_dir: "test-results"       # 结果输出根目录 ⚠️ 不是 testcases/
+  
+  # 执行模式
+  headless: false                   # 是否无头模式运行浏览器
+  slow_mo: 0                       # 操作间延迟(ms)，0=不延迟，用于调试可设为100-300
+  
+  # 超时设置
+  timeouts:
+    navigation: 30000               # 页面导航超时 (ms)
+    element_locate: 10000           # 元素定位超时 (ms)
+    action_execute: 15000           # 动作执行超时 (ms)
+    assertion_check: 5000           # 断言检查超时 (ms)
+
+# ============================================================
+# 三、环境变量映射
+# ============================================================
+# 
+# 使用说明:
+#   1. 此处定义 YAML 用例中使用的环境变量名称到实际值的映射
+#   2. 值应该从系统环境变量读取，禁止硬编码真实凭据！
+#   3. 执行测试前需在系统中 export 对应的环境变量
+#
+# 设置示例 (Linux/Mac):
+#   export TEST_USER="your_username"
+#   export TEST_PASS="your_password"
+#   export BASE_URL="http://your-system"
+#
+# 设置示例 (Windows PowerShell):
+#   $env:TEST_USER = "your_username"
+#   $env:TEST_PASS = "your_password"
+
+env_mapping:
+  # ===== 认证信息（⚠️ 敏感！）=====
+  TEST_USER: "${TEST_USER}"          # 用户名 - 从环境变量读取
+  TEST_PASS: "${TEST_PASS}"          # 密码 - 从环境变量读取（绝对禁止明文！）
+  
+  # ===== 系统地址 =====
+  BASE_URL: "${BASE_URL}"            # 基础 URL
+  LOGIN_URL: "${LOGIN_URL:-http://uniportal.sjjk.com.cn}"  # 登录页 URL（有默认值）
+  
+  # ===== 测试数据 =====
+  TEST_PROJECT_NAME: "${TEST_PROJECT_NAME:-测试项目}"        # 测试项目名
+  TEST_AMOUNT: "${TEST_AMOUNT:-100万}"                       # 测试金额
+  
+  # ===== 其他可选 =====
+  TEST_PHONE: "${TEST_PHONE}"         # 测试手机号
+  TEST_EMAIL: "${TEST_EMAIL}"         # 测试邮箱
+  AUTH_TOKEN: "${AUTH_TOKEN}"         # 认证 Token
+  API_KEY: "${API_KEY}"               # API 密钥
+
+# ============================================================
+# 四、重试策略
+# ============================================================
+retry:
+  # 最大重试次数
+  max_attempts: 3
+  
+  # 退避策略: fixed | linear | exponential
+  backoff_strategy: "exponential"
+  
+  # 初始退避时间 (ms)
+  initial_backoff_ms: 1000
+  
+  # 最大退避时间 (ms)
+  max_backoff_ms: 10000
+  
+  # 重试前是否先尝试自愈
+  self_heal_before_retry: true
+  
+  # 可重试的错误类型
+  retryable_errors:
+    - TimeoutError
+    - ElementNotFoundError
+    - NetworkError
+    - StaleElementError
+  
+  # 不可重试的错误类型（直接失败）
+  non_retryable_errors:
+    - YAMLParseError
+    - PermissionDeniedError
+    - AuthenticationError
+    - AssertionError  # 断言失败通常不重试
+
+# ============================================================
+# 五、元素定位策略配置
+# ============================================================
+locator:
+  # 定位优先级顺序（从高到低）
+  priority_order:
+    - uid_cache                     # Level 1: UID 缓存查找
+    - exact_semantic                # Level 2: 精确语义匹配
+    - fuzzy_match                   # Level 3: 模糊匹配
+    - ai_assisted                   # Level 4: AI 辅助定位
+  
+  # 各级别的详细配置
+  levels:
+    uid_cache:
+      enabled: true
+      max_size: 200                  # 最大缓存条目数
+      ttl_days: 7                    # 缓存有效期（天）
+      
+    exact_semantic:
+      enabled: true
+      match_threshold: 1.0           # 完全匹配
+      
+    fuzzy_match:
+      enabled: true
+      similarity_threshold: 0.7     # 相似度阈值（0-1）
+      use_levenshtein: true         # 是否使用编辑距离算法
+      
+    ai_assisted:
+      enabled: true
+      confidence_threshold: 0.6     # AI 推荐的最低置信度
+      max_tokens: 500               # LLM 返回的最大 token 数
+
+# ============================================================
+# 六、断言配置
+# ============================================================
+assertion:
+  # 默认断言类型映射（根据动作自动推荐）
+  default_assertions:
+    navigate:
+      - type: url_contains
+      - type: text_contains
+    click:
+      - type: element_visible
+      - type: text_contains
+    fill:
+      - type: field_filled
+    submit:
+      - type: toast_visible
+      - type: network_called        # 提交操作必须包含网络校验
+    delete:
+      - type: element_hidden
+      - type: network_called
+  
+  # 断言严格程度: strict | normal | loose
+  strictness: normal
+  
+  # 断言超时
+  timeout_ms: 5000
+  
+  # 失败时的行为: stop | continue | mark_warning
+  on_failure: continue              # 继续执行后续步骤（非致命错误）
+
+# ============================================================
+# 七、报告生成配置
+# ============================================================
+report:
+  # HTML 报告模板路径
+  template_path: "skills/expert/testcase-agent/templates/report-template.html"
+  
+  # 输出目录结构
+  output_structure:
+    root: "test-results/"
+    screenshots: "screenshots/{test_id}/"
+    reports: "reports/"
+    logs: "logs/{test_id}/"
+    data: "data/{test_id}/"
+  
+  # 报告内容选项
+  include_screenshots: true          # 包含截图
+  include_network_logs: true         # 包含网络日志
+  include_console_logs: true         # 包含控制台日志
+  include_env_usage: true            # 包含环境变量使用记录（脱敏后）
+  include_uid_changes: true          # 包含 UID 缓存变更记录
+  
+  # 统计图表
+  charts:
+    pass_fail_pie: true             # 通过/失败饼图
+    duration_bar: true              # 耗时柱状图
+    assertion_distribution: true     # 断言类型分布图
+  
+  # 导出选项
+  export_formats:
+    - html                          # HTML 格式（默认）
+    # - json                        # JSON 格式（可选）
+    # - pdf                         # PDF 格式（需要额外依赖）
+
+# ============================================================
+# 八、日志配置
+# ============================================================
+logging:
+  # 日志级别: debug | info | warn | error
+  level: info
+  
+  # 日志输出位置
+  outputs:
+    console:
+      enabled: true
+      colorize: true                # 彩色输出
+      timestamp_format: "YYYY-MM-DD HH:mm:ss.SSS"
+    
+    file:
+      enabled: true
+      path: "logs/test-execution.log"
+      max_size: "10MB"              # 单文件最大大小
+      keep_files: 5                 # 保留最近 N 个日志文件
+  
+  # 记录哪些事件
+  events:
+    - step_start                    # 步骤开始
+    - step_complete                 # 步骤完成
+    - assertion_result              # 断言结果
+    - self_heal_attempt            # 自愈尝试
+    - network_request               # 网络请求
+    - error                         # 错误
+    - warning                       # 警告
+
+# ============================================================
+# 九、安全与合规
+# ============================================================
+security:
+  # 敏感字段检测
+  detect_sensitive_fields: true
+  
+  # 敏感字段关键词列表
+  sensitive_patterns:
+    - password
+    - passwd
+    - pwd
+    - secret
+    - token
+    - api_key
+    - apikey
+    - authorization
+    - credit_card
+    - ssn
+  
+  # 检测到敏感信息时的处理方式: mask | replace | abort
+  handling: mask
+  
+  # 展蔽规则
+  mask_rules:
+    password: "***"                 # 密码完全屏蔽
+    token: "{token_preview}..."      # Token 只显示前8位
+    email: "{user}@***.com"         # 邮箱只保留用户名部分
+    phone: "138****{last4}"          # 手机号只显示前后几位
+  
+  # 是否允许在报告中展示环境变量值
+  show_env_values: false             # false=只显示变量名，true=显示实际值（脱敏后）
+
+# ============================================================
+# 十、性能优化
+# ============================================================
+performance:
+  # 并发执行
+  parallel_execution:
+    enabled: false                   # 默认关闭并行
+    max_concurrent_steps: 3          # 最大并发步骤数
+    max_browser_tabs: 2              # 最大浏览器标签数
+  
+  # 缓存机制
+  caching:
+    snapshot_cache_enabled: true     # 快照缓存
+    snapshot_cache_ttl_seconds: 30   # 快照缓存有效期
+    uid_cache_enabled: true          # UID 缓存（与 locator 配合使用）
+  
+  # 内存管理
+  memory:
+    warning_threshold_mb: 512        # 内存使用警告阈值
+    max_threshold_mb: 1024          # 内存使用上限（超过则暂停并清理）
+    
+  # 资源清理
+  cleanup:
+    auto_cleanup: true               # 执行完成后自动清理临时文件
+    temp_file_retention_hours: 24    # 临时文件保留时长
+
+# ============================================================
+# 十一、高级特性开关
+# ============================================================
+features:
+  # 人机协同模式（Phase 3 实现）
+  collaborative_mode:
+    enabled: false                  # Phase 1 默认关闭
+    
+  # CI/CD 集成（Phase 3 实现）
+  ci_cd_integration:
+    enabled: false
+    jenkins_integration: false
+    github_actions: false
+    notification:
+      enabled: false
+      channels: []                  # dingtalk/wechat/email/webhook
+      
+  # 性能分析（Phase 3 实现）
+  performance_profiling:
+    enabled: false
+    collect_metrics: []
+    
+  # 数据驱动测试（Phase 2 增强）
+  data_driven_testing:
+    enabled: true                   # 支持参数化数据集
+    data_sources:
+      - yaml_array                  # YAML 内联数组
+      # - csv_file                  # CSV 文件（未来支持）
+      # - excel_file               # Excel 文件（未来支持）
+
+# ============================================================
+# 十二、开发调试选项（仅开发环境使用）
+# ============================================================
+development:
+  debug_mode: false                  # 调试模式（输出更多详细信息）
+  verbose_logging: false             # 详细日志
+  save_raw_snapshots: false         # 保存原始 DOM 快照 JSON
+  mock_mcp_calls: false             # 模拟 MCP 调用（不实际连接浏览器）
+  step_by_step_mode: false          # 单步执行模式（每步暂停等待确认）
+
+# ============================================================
+# 版本信息
+# ============================================================
+version: "1.0.0"
+last_updated: "2026-05-08"
+compatible_with:
+  pdd_skills_version: ">=3.0.0"
+  node_version: ">=18.0.0"
+  chrome_version: ">=90"

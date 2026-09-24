@@ -1,0 +1,1 @@
+{"name": "openspec-sync-specs", "version": "1.0.0", "category": "openspec", "description": "Sync delta specs from a change to main specs. Call when updating main specs with delta spec changes.", "triggers": ["同步规格", "sync specs", "更新主规格"]}

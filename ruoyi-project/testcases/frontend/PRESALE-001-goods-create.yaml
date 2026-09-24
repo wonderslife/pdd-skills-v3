@@ -1,0 +1,324 @@
+# 预售商品管理 - 创建预售商品正常流程（含不入库演示控件测试）
+# 对应功能点: F-101 预售商品管理
+# 前置: 无（包含登录步骤）
+# 说明: 步骤 9-15 为真实业务字段（可落库：标题/售价/定金/尾款/截止/限购/库存）
+#       步骤 16-32 为 form.vue 全组件版中的"不入库演示控件"（非 presale_goods 表字段，提交后端自动忽略）
+#       含多选验证：商品标签（el-select multiple ×2）、服务保障（el-checkbox ×2）
+
+test_id: "PRESALE-001-goods-create"
+title: "商家创建预售商品正常流程（含演示控件+多选）"
+priority: "P0"
+tags: ["预售", "商品管理", "正常路径", "E2E", "组件覆盖", "多选"]
+author: "PDD Testcase Modeler"
+
+# 前置状态感知（铁律1：已登录则跳过登录步骤）
+context_check:
+  login_url: "${BASE_URL}/login"
+  home_indicator: "首页"
+  credentials:
+    username: "${TEST_USER}"
+    password: "${TEST_PASS}"
+    display_name: "${TEST_DISPLAY_NAME}"
+  captcha_required: false
+
+# 测试步骤
+steps:
+  # ===== 登录流程（未登录时执行，已登录自动跳过）=====
+  - step: 1
+    desc: "打开登录页面"
+    action: navigate
+    url: "${BASE_URL}/login"
+    assertion:
+      type: text_contains
+      expected: "登录"
+
+  - step: 2
+    desc: "等待登录页渲染完成（SPA 首次加载可能较慢）"
+    action: wait_for
+    target: "登 录"
+    timeout_ms: 20000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 3
+    desc: "输入用户名"
+    action: fill
+    target: "用户名"
+    value: "${TEST_USER}"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 4
+    desc: "输入密码"
+    action: fill
+    target: "密码"
+    value: "${TEST_PASS}"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 5
+    desc: "点击登录按钮"
+    action: click
+    target: "登 录"
+    wait_after:
+      type: time
+      duration: 3000
+
+  # ===== 业务流程 =====
+  - step: 6
+    desc: "打开预售商品列表页"
+    action: navigate
+    url: "${BASE_URL}/presale/goods"
+    assertion:
+      type: text_contains
+      expected: "预售商品"
+
+  - step: 7
+    desc: "点击新增按钮"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1000
+
+  - step: 8
+    desc: "等待新增弹窗渲染完成"
+    action: wait_for
+    target: "商品标题"
+    timeout_ms: 8000
+    wait_after:
+      type: time
+      duration: 500
+
+  # ===== 真实业务字段（可落库）=====
+  - step: 9
+    desc: "输入商品标题"
+    action: fill
+    target: "商品标题"
+    value: "E2E测试预售商品-定金20元"
+
+  - step: 10
+    desc: "输入售价"
+    action: fill
+    target: "售价"
+    value: "100"
+
+  - step: 11
+    desc: "输入定金金额"
+    action: fill
+    target: "定金金额"
+    value: "20"
+
+  - step: 12
+    desc: "输入尾款金额"
+    action: fill
+    target: "尾款金额"
+    value: "80"
+
+  - step: 13
+    desc: "选择预售截止时间（7天后）"
+    action: el_date
+    target: "预售截止时间"
+    value: "2026-08-31 23:59:59"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 14
+    desc: "输入限购数量"
+    action: fill
+    target: "限购数量"
+    value: "5"
+
+  - step: 15
+    desc: "输入库存"
+    action: fill
+    target: "库存"
+    value: "10"
+
+  # ===== 不入库演示控件：输入类 =====
+  - step: 16
+    desc: "输入密码框（el-input password，不入库）"
+    action: fill
+    target: "密码框"
+    value: "test123456"
+
+  - step: 17
+    desc: "输入邮箱（el-input 带图标，不入库）"
+    action: fill
+    target: "邮箱"
+    value: "test@demo.com"
+
+  - step: 18
+    desc: "输入手机号（el-input 限长，不入库）"
+    action: fill
+    target: "手机号"
+    value: "13800138000"
+
+  - step: 19
+    desc: "输入商品描述（el-input textarea，不入库）"
+    action: fill
+    target: "商品描述"
+    value: "E2E 文本域测试内容"
+
+  # ===== 不入库演示控件：选择类（含多选）=====
+  - step: 20
+    desc: "选择商品分类（el-select 单选可搜索，不入库）"
+    action: select_option
+    target: "商品分类"
+    option: "数码家电"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 21
+    desc: "选择品牌（el-select 单选，不入库）"
+    action: select_option
+    target: "品牌"
+    option: "华为"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 22
+    desc: "选择商品标签-第一个（el-select multiple 多选下拉，不入库）"
+    action: select_option
+    target: "商品标签"
+    option: "预售"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 23
+    desc: "选择商品标签-第二个（el-select multiple 多选验证，不入库）"
+    action: select_option
+    target: "商品标签"
+    option: "限量"
+    wait_after:
+      type: time
+      duration: 800
+
+  # ===== 不入库演示控件：单选/复选/开关 =====
+  - step: 24
+    desc: "选择配送方式（el-radio，不入库）"
+    action: click
+    target: "快递"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 25
+    desc: "勾选服务保障-第一个（el-checkbox，不入库）"
+    action: click
+    target: "正品保障"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 26
+    desc: "勾选服务保障-第二个（el-checkbox 多选验证，不入库）"
+    action: click
+    target: "七天无理由退换"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 27
+    desc: "切换上架状态（el-switch，不入库）"
+    action: click
+    target: "上架状态"
+    wait_after:
+      type: time
+      duration: 500
+
+  # ===== 不入库演示控件：评分/日期/时间 =====
+  - step: 28
+    desc: "点击商品评分（el-rate，不入库）"
+    action: click
+    target: "商品评分"
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 29
+    desc: "选择上架日期（el-date-picker date，不入库）"
+    action: el_date
+    target: "上架日期"
+    value: "2026-08-25"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 30
+    desc: "选择每日开售时间（el-time-picker，不入库）"
+    action: el_date
+    target: "每日开售时间"
+    value: "09:30:00"
+    wait_after:
+      type: time
+      duration: 800
+
+  - step: 31
+    desc: "选择预售开始时间（el-date-picker datetime，不入库）"
+    action: el_date
+    target: "预售开始时间"
+    value: "2026-08-25 00:00:00"
+    wait_after:
+      type: time
+      duration: 800
+
+  # ===== 不入库演示控件：图片上传 =====
+  - step: 32
+    desc: "上传商品主图（ImageUpload/el-upload，不入库）"
+    action: el_upload
+    target: "商品主图"
+    path: "${UPLOAD_FILE}"
+    wait_after:
+      type: time
+      duration: 3000
+
+  # ===== 提交与验证 =====
+  - step: 33
+    desc: "确认弹窗仍打开（防止弹窗意外关闭后错点其他按钮）"
+    action: wait_for
+    target: "确 定"
+    timeout_ms: 5000
+    wait_after:
+      type: time
+      duration: 500
+
+  - step: 34
+    desc: "提交表单"
+    action: click
+    target: "确 定"
+    assertion:
+      type: toast_visible
+      expected: "新增成功"
+
+  - step: 35
+    desc: "校验网络请求成功（铁律3：UI+网络双重校验）"
+    action: verify_network
+    assertion:
+      type: network_called
+      url_pattern: "/api/presale/goods"
+      method: POST
+      response_code: 200
+
+  - step: 36
+    desc: "确认列表出现新商品"
+    action: wait_for
+    target: "E2E测试预售商品-定金20元"
+    timeout_ms: 8000
+    wait_after:
+      type: time
+      duration: 2000
+    assertion:
+      type: text_contains
+      expected: "E2E测试预售商品-定金20元"
+
+teardown:
+  - action: screenshot
+    name: "presale-001-result.png"

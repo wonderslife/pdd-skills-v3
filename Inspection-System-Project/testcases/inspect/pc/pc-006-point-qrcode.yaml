@@ -1,0 +1,156 @@
+# 机房巡检系统 - 点位二维码：查看 / 下载 / 批量导出
+#
+# 用途: 验证二维码弹窗能出图、可下载单张、可批量导出 ZIP
+# 背景: 曾因 blob 响应取值错误导致「不显示图片、下载无反应」；本节为回归用例
+# 依赖: 至少 1 个点位（pc-005）
+
+test_id: "INSP-PC-006-point-qrcode"
+title: "点位二维码：图片查看、下载单张、批量导出 ZIP"
+priority: "P0"
+tags: ["点位管理", "二维码", "导出", "PC", "回归"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 点位管理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/point"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "在搜索区按点位名称过滤出目标点位"
+    action: fill
+    target: "请输入点位名称"
+    value: "${POINT_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 3
+    desc: "点击「搜索」"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${POINT_NAME}"
+        confidence: high
+
+  # ===== 单个二维码 =====
+  - step: 4
+    desc: "点击该行操作列的「二维码」，打开二维码弹窗"
+    action: click
+    target: "二维码"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/*/qrcode*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 5
+    desc: "验证弹窗内图片已渲染（img 有非空 src 且自然宽度>0，不是裂图）"
+    action: evaluate_script
+    script: |
+      const imgs = Array.from(document.querySelectorAll('.el-dialog img'));
+      const ok = imgs.some(i => i.src && i.src.indexOf('blob:') === 0 && i.naturalWidth > 0);
+      return { ok, count: imgs.length, srcs: imgs.map(i => i.src.slice(0, 20)) };
+    assertions:
+      - type: element_visible
+        target: "下载图片"
+        confidence: high
+
+  - step: 6
+    desc: "点击「下载图片」，验证触发文件下载（浏览器下载事件或 URL.createObjectURL 被调用）"
+    action: click
+    target: "下载图片"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: log_contains
+        target: "download"
+        expected: "*.png"
+        confidence: low
+
+  - step: 7
+    desc: "点击「关 闭」关闭二维码弹窗"
+    action: click
+    target: "关 闭"
+    wait_after:
+      type: time
+      duration: 800
+    assertions:
+      - type: element_hidden
+        target: "下载图片"
+        confidence: high
+
+  # ===== 批量二维码 =====
+  - step: 8
+    desc: "勾选目标点位所在行的复选框"
+    action: checkbox
+    target: "选择该行"
+    checked: true
+    assertions:
+      - type: element_visible
+        expected: "已选中"
+        confidence: low
+
+  - step: 9
+    desc: "点击顶部「批量二维码」（未勾选时应为禁用态）"
+    action: click
+    target: "批量二维码"
+    wait_after:
+      type: time
+      duration: 4000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/qrcode/batchExport*"
+        method: POST
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "导出成功"
+        confidence: medium
+
+  - step: 10
+    desc: "验证批量导出未弹「导出失败」类错误（超过 500 个点位时后端才会拒绝）"
+    action: assert_multiple
+    assertions:
+      - type: element_hidden
+        target: "导出失败"
+        confidence: medium
+
+teardown:
+  - action: screenshot
+    name: "point-qrcode-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "40-70s"
+  risk_level: "low"
+  note: "步骤 5 为关键回归断言：blob 取值错误时图片 src 为空，naturalWidth 为 0"

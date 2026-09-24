@@ -1,0 +1,203 @@
+# 机房巡检系统 - 异常项处理闭环
+#
+# 用途: 验证异常项列表查询、详情查看、标记已处理（处理说明必填）全流程
+# 依赖: 至少 1 条异常项（由 H5 用例 h5-002 产生）
+
+test_id: "INSP-PC-010-abnormal-process"
+title: "异常处理：查询异常项、查看详情、标记已处理"
+priority: "P0"
+tags: ["异常处理", "闭环", "PC"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 异常处理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/abnormal"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "「处理状态」选择「待处理」"
+    action: select_option
+    target: "请选择状态"
+    option: "待处理"
+    assertions:
+      - type: element_text
+        expected: "待处理"
+        confidence: medium
+
+  - step: 3
+    desc: "「所属机房」选择目标机房"
+    action: select_option
+    target: "请选择机房"
+    option: "${ROOM_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${ROOM_NAME}"
+        confidence: medium
+
+  - step: 4
+    desc: "点击「搜索」，验证列表的「点位名称 / 所属机房 / 巡检项」三列有值（关联字段回填）"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: text_contains
+        expected: "${POINT_NAME}"
+        confidence: high
+      - type: text_contains
+        expected: "${ABN_ITEM_NAME}"
+        confidence: medium
+
+  - step: 5
+    desc: "点击该行「详情」，核对异常说明、现场照片与处理状态"
+    action: click
+    target: "详情"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/*"
+        method: GET
+        response_code: 200
+        confidence: high
+      - type: element_visible
+        target: "异常说明"
+        confidence: high
+
+  - step: 6
+    desc: "关闭详情弹窗"
+    action: click
+    target: "关 闭"
+    wait_after:
+      type: time
+      duration: 1000
+    assertions:
+      - type: element_hidden
+        target: "异常说明"
+        confidence: low
+
+  - step: 7
+    desc: "点击该行「标记已处理」，弹出处理窗口"
+    action: click
+    target: "标记已处理"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "处理说明"
+        confidence: high
+
+  - step: 8
+    desc: "不填写处理说明直接提交，验证「处理说明不能为空」拦截"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 1000
+    assertions:
+      - type: toast_visible
+        expected: "不能为空"
+        confidence: medium
+
+  - step: 9
+    desc: "填写「处理说明」"
+    action: fill
+    target: "请填写处理措施与结果"
+    value: "${ABN_PROCESS_REMARK}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 10
+    desc: "点击「确 定」提交处理结果"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/*/process*"
+        method: PUT
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "已标记为处理完成"
+        confidence: high
+
+  - step: 11
+    desc: "「处理状态」改选「已处理」并搜索，验证该异常项状态已流转且处理时间有值"
+    action: select_option
+    target: "请选择状态"
+    option: "已处理"
+    assertions:
+      - type: element_text
+        expected: "已处理"
+        confidence: medium
+
+  - step: 12
+    desc: "点击「搜索」确认状态流转结果"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${ABN_PROCESS_REMARK}"
+        confidence: high
+
+  - step: 13
+    desc: "点击「导出」，验证异常项导出接口被调用（含点位/机房/巡检项列）"
+    action: click
+    target: "导出"
+    wait_after:
+      type: time
+      duration: 3000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/abnormal/export*"
+        method: POST
+        response_code: 200
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "abnormal-process-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "60-90s"
+  risk_level: "medium"
+  note: "步骤 4 为关联字段回填回归断言；步骤 8 为反向校验"

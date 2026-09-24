@@ -1,0 +1,199 @@
+# 机房巡检系统 - 区域管理 CRUD（含「所属机房」「父区域」下拉）
+#
+# 用途: 验证区域新增时两个关联下拉有数据、父区域可选「顶级」、区域树展示正确
+# 依赖: 已存在至少一个机房（pc-002 或手工数据）
+
+test_id: "INSP-PC-003-area-crud"
+title: "区域管理：新增（机房/父区域下拉）与修改"
+priority: "P1"
+tags: ["区域管理", "下拉联动", "PC", "E2E"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 区域管理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/area"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/area/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "点击「新增」，打开新增区域窗口"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "区域名称"
+        confidence: high
+
+  - step: 3
+    desc: "点开「所属机房」下拉，验证选项不为空（机房列表已加载）"
+    action: select_option
+    target: "请选择所属机房"
+    option: "${ROOM_NAME}"
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/room/optionselect*"
+        method: GET
+        response_code: 200
+        confidence: medium
+      - type: element_text
+        expected: "${ROOM_NAME}"
+        confidence: high
+
+  - step: 4
+    desc: "点开「父区域」下拉，验证有数据且含「顶级」选项（父区域为空时下拉不应为空）"
+    action: select_option
+    target: "请选择父区域"
+    option: "顶级"
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/area/optionselect*"
+        method: GET
+        response_code: 200
+        confidence: medium
+
+  - step: 5
+    desc: "填入「区域名称」（顶级区域）"
+    action: fill
+    target: "请输入区域名称"
+    value: "${AREA_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 6
+    desc: "填入「显示顺序」为 1"
+    action: fill
+    target: "请输入显示顺序"
+    value: "1"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 7
+    desc: "点击「确 定」提交新增"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/area"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  - step: 8
+    desc: "再次点击「新增」，创建子区域，父区域选择刚创建的顶级区域"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "区域名称"
+        confidence: medium
+
+  - step: 9
+    desc: "选择「所属机房」"
+    action: select_option
+    target: "请选择所属机房"
+    option: "${ROOM_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${ROOM_NAME}"
+        confidence: medium
+
+  - step: 10
+    desc: "「父区域」选择刚才创建的顶级区域"
+    action: select_option
+    target: "请选择父区域"
+    option: "${AREA_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${AREA_NAME}"
+        confidence: high
+
+  - step: 11
+    desc: "填入子区域名称"
+    action: fill
+    target: "请输入区域名称"
+    value: "${AREA_CHILD}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 12
+    desc: "提交子区域"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+      - type: text_contains
+        expected: "${AREA_NAME}"
+        confidence: medium
+
+  - step: 13
+    desc: "在搜索区按「区域名称」过滤，验证列表能带出「所属机房」「父区域」名称列（不是显示 ID 或空白）"
+    action: fill
+    target: "请输入区域名称"
+    value: "${AREA_CHILD}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 14
+    desc: "点击「搜索」并校验关联名称列已回填"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      # 关联字段若未回填，表格里会显示数字 ID 或空白，这里要求出现机房名
+      - type: text_contains
+        expected: "${ROOM_NAME}"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "area-crud-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "50-80s"
+  risk_level: "medium"

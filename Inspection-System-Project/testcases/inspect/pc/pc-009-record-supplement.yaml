@@ -1,0 +1,165 @@
+# 机房巡检系统 - 巡检逾期补录（PC 端补录通道）
+#
+# 用途: 验证 PC 端可为漏扫点位补录巡检记录，来源标记为「PC补录」
+# 备注: 与 H5「同周期不可重复」互补 —— H5 受限，PC 补录是运营兜底通道
+# 依赖: 点位已配置巡检项（pc-005）
+
+test_id: "INSP-PC-009-record-supplement"
+title: "巡检逾期补录：PC 端补录一条记录并校验来源标记"
+priority: "P1"
+tags: ["巡检记录", "逾期补录", "PC"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 巡检记录」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/record"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "点击顶部「逾期补录」按钮，打开补录弹窗"
+    action: click
+    target: "逾期补录"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: element_visible
+        target: "补录原因"
+        confidence: high
+
+  - step: 3
+    desc: "「巡检点位」下拉选择目标点位（选择后应自动带出该点位的巡检项）"
+    action: select_option
+    target: "请选择点位"
+    option: "${POINT_NAME}"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${TPL_ITEM_NAME_1}"
+        confidence: high
+
+  - step: 4
+    desc: "点击「巡检员」右侧的「选择」按钮，在用户选择框中选中当前登录用户"
+    action: click
+    target: "选择"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: element_visible
+        target: "确 定"
+        confidence: medium
+
+  - step: 5
+    desc: "在用户列表中勾选目标用户并确定"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "请选择巡检员"
+        confidence: low
+
+  - step: 6
+    desc: "填写「补录原因」"
+    action: fill
+    target: "如：原巡检人漏扫"
+    value: "${SUPPLEMENT_REASON}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 7
+    desc: "为补录的巡检项逐项选择「正常」判定"
+    action: click
+    target: "正常"
+    wait_after:
+      type: time
+      duration: 500
+    assertions:
+      - type: element_visible
+        target: "正常"
+        confidence: medium
+
+  - step: 8
+    desc: "填写「整体备注」"
+    action: fill
+    target: "选填"
+    value: "${SUPPLEMENT_REMARK}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 9
+    desc: "点击「确 定」提交补录"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/record/supplement*"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  - step: 10
+    desc: "回到列表，按点位搜索，验证补录记录的「数据来源」显示为「PC补录」"
+    action: fill
+    target: "请输入点位名称"
+    value: "${POINT_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 11
+    desc: "点击「搜索」并校验来源列"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "PC补录"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "record-supplement-{timestamp}.png"
+    fullPage: true
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "60-90s"
+  risk_level: "medium"

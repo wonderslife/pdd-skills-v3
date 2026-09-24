@@ -1,0 +1,35 @@
+test_id: asset-available-1
+title: 打开系统，确保能正常登录
+priority: P1
+tags:
+- recorded
+- auto-generated
+author: "Testcase Recorder v1.6 (refactored: login extracted)"
+_include: login-flow.yaml
+
+context_check:
+  login_url: ${TEST_URL}
+  home_indicator: ''
+  credentials:
+    username: ${TEST_USER}
+    password: ${TEST_PASS}
+    display_name: ${TEST_DISPLAY_NAME}
+  captcha_required: false
+  sso_enabled: false
+
+steps: []
+
+teardown:
+- action: screenshot
+  name: recorded-result-{timestamp}.png
+  fullPage: true
+- action: log
+  message: '录制流程测试完成，当前页面: {current_url}'
+metadata:
+  created_by: testcase-recorder v1.6 (refactored)
+  test_environment: staging
+  browser: chromium
+  viewport: 1920x1080
+  estimated_duration: ~30s
+  risk_level: low
+  note: 登录步骤已提取到共享模块 asset/login-flow.yaml，通过 _include 引用

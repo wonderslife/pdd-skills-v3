@@ -1,0 +1,240 @@
+# 机房巡检系统 - 点位管理 CRUD（含「从模板导入」巡检项）
+#
+# 用途: 验证点位新增时关联下拉联动、从模板导入明细、保存后明细回显
+# 依赖: 机房（pc-002）、区域（pc-003）、模板+明细（pc-004）
+
+test_id: "INSP-PC-005-point-crud"
+title: "点位管理：新增点位并从模板导入巡检项，修改时明细回显"
+priority: "P0"
+tags: ["点位管理", "模板导入", "主子表", "PC", "回归"]
+author: "testcase-modeler (机房巡检系统)"
+
+context_check:
+  login_url: "${PC_URL}/index"
+  home_indicator: "机房巡检"
+  credentials:
+    username: "${PC_USER}"
+    password: "${PC_PASS}"
+  captcha_required: false
+
+steps:
+  - step: 1
+    desc: "进入「机房巡检 > 点位管理」页面"
+    action: navigate
+    url: "${PC_URL}/inspect/point"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/list*"
+        method: GET
+        response_code: 200
+        confidence: high
+
+  - step: 2
+    desc: "点击「新增」，打开新增点位窗口"
+    action: click
+    target: "新增"
+    wait_after:
+      type: time
+      duration: 1200
+    assertions:
+      - type: element_visible
+        target: "点位名称"
+        confidence: high
+
+  - step: 3
+    desc: "「所属机房」下拉选择目标机房（验证机房选项已加载）"
+    action: select_option
+    target: "请选择机房"
+    option: "${ROOM_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${ROOM_NAME}"
+        confidence: high
+
+  - step: 4
+    desc: "「所属区域」下拉选择「${AREA_NAME}」（区域随机房联动）"
+    action: select_option
+    target: "请选择区域"
+    option: "${AREA_NAME}"
+    assertions:
+      - type: element_text
+        expected: "${AREA_NAME}"
+        confidence: medium
+
+  - step: 5
+    desc: "填入「点位名称」"
+    action: fill
+    target: "请输入点位名称"
+    value: "${POINT_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 6
+    desc: "填入「点位编码」（全局唯一）"
+    action: fill
+    target: "全局唯一"
+    value: "${POINT_CODE}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 7
+    desc: "填入「位置描述」"
+    action: fill
+    target: "机柜"
+    value: "${POINT_LOCATION}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 8
+    desc: "「巡检周期」选择「每日」"
+    action: select_option
+    target: "请选择巡检周期"
+    option: "每日"
+    assertions:
+      - type: element_text
+        expected: "每日"
+        confidence: high
+
+  # ===== 核心回归点：从模板导入巡检项 =====
+  - step: 9
+    desc: "在巡检项子表格上方的「从模板导入」下拉中选择「${TPL_NAME}」"
+    action: select_option
+    target: "从模板导入"
+    option: "${TPL_NAME}"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      # 模板下必须真的有明细，否则会提示「该模板下没有巡检项明细」
+      - type: text_contains
+        expected: "${TPL_ITEM_NAME_1}"
+        confidence: high
+
+  - step: 10
+    desc: "断言页面未出现「没有巡检项明细」类提示，且子表格已带出模板明细"
+    action: assert_multiple
+    assertions:
+      - type: element_hidden
+        target: "没有巡检项明细"
+        confidence: high
+      - type: element_visible
+        target: "${TPL_ITEM_NAME_1}"
+        confidence: high
+
+  - step: 11
+    desc: "在导入的明细行上补充「判定标准」，验证导入行可继续编辑"
+    action: fill
+    target: "18~27℃"
+    value: "${TPL_STANDARD_1}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 12
+    desc: "点击「确 定」提交，点位与其巡检项一并保存"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2500
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point"
+        method: POST
+        response_code: 200
+        response_body_contains:
+          - '"code":200'
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+  # ===== 列表展示回归点 =====
+  - step: 13
+    desc: "按点位名称过滤，验证列表的「所属机房」「所属区域」列有值（不是空白或 ID）"
+    action: fill
+    target: "请输入点位名称"
+    value: "${POINT_NAME}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 14
+    desc: "点击「搜索」，校验关联名称列与状态列正常展示"
+    action: click
+    target: "搜索"
+    wait_after:
+      type: time
+      duration: 1500
+    assertions:
+      - type: text_contains
+        expected: "${ROOM_NAME}"
+        confidence: high
+      - type: text_contains
+        expected: "启用"
+        confidence: medium
+
+  # ===== 修改回显 =====
+  - step: 15
+    desc: "点击该行「修改」，验证巡检项明细在表单中回显"
+    action: click
+    target: "修改"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point/*"
+        method: GET
+        response_code: 200
+        confidence: medium
+      - type: text_contains
+        expected: "${TPL_ITEM_NAME_1}"
+        confidence: high
+
+  - step: 16
+    desc: "修改备注后保存"
+    action: fill
+    target: "请输入备注"
+    value: "${POINT_REMARK}"
+    assertions:
+      - type: field_filled
+        expected: "字段已填写"
+
+  - step: 17
+    desc: "点击「确 定」保存修改"
+    action: click
+    target: "确 定"
+    wait_after:
+      type: time
+      duration: 2000
+    assertions:
+      - type: network_called
+        url_pattern: "*/inspect/point"
+        method: PUT
+        response_code: 200
+        confidence: high
+      - type: toast_visible
+        expected: "成功"
+        confidence: high
+
+teardown:
+  - action: screenshot
+    name: "point-crud-{timestamp}.png"
+    fullPage: true
+  - action: log
+    message: "点位 ${POINT_NAME}（${POINT_CODE}）已就绪，供二维码与 H5 扫码用例复用"
+
+metadata:
+  created_by: "testcase-modeler v2.0.1"
+  test_environment: "local"
+  viewport: "1920x1080"
+  estimated_duration: "70-100s"
+  risk_level: "medium"
+  note: "步骤 9-10 是核心回归点：模板导入不得再提示「没有巡检项明细」"

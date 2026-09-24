@@ -1,0 +1,59 @@
+/* 响应式断点工具类 */
+.hidden-xs { display: block; }
+.visible-xs-mobile { display: none; }
+
+@media (max-width: 575.98px) {
+  .hidden-xs { display: none !important; }
+  .visible-xs-mobile { display: block !important; }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .hidden-sm { display: none !important; }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .hidden-md { display: none !important; }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .hidden-lg { display: none !important; }
+}
+
+@media (min-width: 1200px) {
+  .hidden-xl { display: none !important; }
+}
+
+/* 移动端适配 */
+.mobile-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* 响应式容器 */
+.container-fluid {
+  width: 100%;
+  padding-right: calc(var(--spacing-md, 16px));
+  padding-left: calc(var(--spacing-md, 16px));
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .container { max-width: 540px; }
+}
+@media (min-width: 768px) {
+  .container { max-width: 720px; }
+}
+@media (min-width: 992px) {
+  .container { max-width: 960px; }
+}
+@media (min-width: 1200px) {
+  .container { max-width: 1140px; }
+}
+@media (min-width: 1600px) {
+  .container { max-width: 1400px; }
+}

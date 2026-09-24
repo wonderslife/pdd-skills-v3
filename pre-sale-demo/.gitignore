@@ -1,0 +1,12 @@
+
+# PDD
+.pdd/cache/
+.specs/.cache/
+*.pdd-report.md
+
+# AI Test Framework
+test-result/
+tests/.env.local
+snapshots/
+__pycache__/
+*.pyc
