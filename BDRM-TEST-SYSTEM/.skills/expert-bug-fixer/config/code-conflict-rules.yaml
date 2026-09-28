@@ -1,0 +1,512 @@
+# 代码冲突检测规则 / Code Conflict Detection Rules
+
+> **版本**: 2.0.0
+> **目标**: 在Bug修复前自动检测潜在的代码冲突，预防引入新问题
+> **触发时机**: Step 1（定位与复现）阶段，在修改代码之前执行
+
+---
+
+## 🔍 检测规则清单
+
+### 规则1: 同名方法检测（DUPLICATE_METHOD）
+
+**严重级别**: 🔴 HIGH  
+**检测目标**: JavaScript/Vue文件中的方法定义
+
+**检测逻辑**:
+```javascript
+// 搜索模式
+grep -n "^\s*(async\s+)?(\w+)\s*\(" target-file.vue | grep -E "(methodName1|methodName2)"
+
+// 示例：检测removeResolutionFile
+// 预期发现：
+Line 823:   removeResolutionFile(decisionIndex, fileIndex) {
+Line 1066:  removeResolutionFile(index) {
+```
+
+**风险评估**:
+
+| 发现数量 | 风险等级 | 处理建议 |
+|---------|---------|---------|
+| 0个 | ✅ 安全 | 无需处理 |
+| 1个 | ✅ 安全 | 正常情况 |
+| 2个 | ⚠️ 中风险 | 检查参数签名是否不同 |
+| 3个+ | 🔴 高风险 | 必须重构，重命名或合并 |
+
+**解决方案模板**:
+```markdown
+## 检测到同名方法冲突
+
+### 冲突详情
+- **方法名**: `{{methodName}}`
+- **定义位置**: 
+  - Line {{line1}}: `{{signature1}}`
+  - Line {{line2}}: `{{signature2}}`
+- **调用位置**: Line {{callSite}}
+
+### 影响分析
+JavaScript中后定义的方法会覆盖先前的同名方法。当前情况下：
+- 实际生效的是 Line {{lastDefined}} 的版本
+- Line {{earlierDefined}} 的版本被覆盖
+- 如果参数签名不同，可能导致运行时错误
+
+### 推荐方案
+✅ **方案A**: 重命名其中一个方法（推荐）
+```javascript
+// 将 Line {{line2}} 的方法改为：
+{{newMethodName}}({{params2}}) {
+  // ...
+}
+
+// 同时更新所有调用处
+@click="{{newMethodName}}({{args2}}"
+```
+
+⚠️ **方案B**: 合并两个方法（如果功能相似）
+```javascript
+// 统一接口
+{{methodName}}(param1, param2 = undefined) {
+  if (param2 !== undefined) {
+    // 场景1的逻辑
+  } else {
+    // 场景2的逻辑（兼容单参数调用）
+  }
+}
+```
+
+❌ **方案C**: 保持现状（不推荐）
+- 仅当确认不会产生问题时使用
+- 必须添加详细注释说明设计意图
+```
+
+---
+
+### 规则2: 同名变量检测（DUPLICATE_VARIABLE）
+
+**严重级别**: 🟡 MEDIUM  
+**检测目标**: data()、computed、props中的属性名
+
+**检测逻辑**:
+```javascript
+// 常见冲突场景
+data() {
+  return {
+    fileList: [],        // 定义点A
+    internalDecisions: [] // 定义点B
+  }
+},
+computed: {
+  fileList() { ... }     // ⚠️ 与data中的fileList同名！
+}
+```
+
+**Vue 2优先级**: `props > data > computed > methods`  
+如果同名，后定义的会覆盖先定义的（或导致警告）
+
+**检查项**:
+- [ ] data()中是否有重复属性名
+- [ ] computed属性是否与data/props冲突
+- [ ] props是否与data冲突
+- [ ] 组件内部变量是否与外部传入的props同名
+
+---
+
+### 规则3: 歧义调用检测（AMBIGUOUS_CALL）
+
+**严重级别**: 🔴 HIGH  
+**检测目标**: 模板中的方法/事件调用
+
+**检测场景**:
+
+#### 场景A: v-for中的作用域混淆
+
+```html
+<!-- ❌ 问题代码 -->
+<template v-for="(item, index) in list">
+  <div v-for="(subItem, scope) in item.subList">
+    <!-- 这里的index是外层还是内层的？ -->
+    <button @click="removeItem(index, scope.$index)">删除</button>
+  </div>
+</template>
+
+<!-- ✅ 明确命名 -->
+<template v-for="(item, itemIndex) in list">
+  <div v-for="(subItem, subIndex) in item.subList">
+    <button @click="removeItem(itemIndex, subIndex)">删除</button>
+  </div>
+</template>
+```
+
+#### 场景B: slot-scope变量遮蔽
+
+```html
+<!-- ❌ 可能的问题 -->
+<el-table-column label="操作">
+  <template slot-scope="scope">
+    <el-button @click="handleEdit(scope.row)">编辑</el-button>
+    <!-- 如果外部也有scope变量，会产生混淆 -->
+  </template>
+</el-table-column>
+
+<!-- ✅ 使用明确的变量名 -->
+<el-table-column label="操作">
+  <template slot-scope="{ row, $index }">
+    <el-button @click="handleEdit(row, $index)">编辑</el-button>
+  </template>
+</el-table-column>
+```
+
+---
+
+### 规则4: 生命周期钩子冲突（LIFECYCLE_HOOK_CONFLICT）
+
+**严重级别**: 🟡 MEDIUM  
+**检测目标**: Vue组件的生命周期钩子函数
+
+**常见问题**:
+
+```javascript
+// ❌ 多次定义相同钩子（后者会覆盖前者）
+created() {
+  this.fetchData();  // 这个不会执行
+},
+created() {          // 覆盖了上面的
+  this.initForm();
+},
+
+// ✅ 合并到一个钩子中
+created() {
+  this.fetchData();
+  this.initForm();
+},
+```
+
+**检测命令**:
+```bash
+# 检查是否有重复的生命周期钩子
+grep -n "^\s*(created|mounted|beforeMount|updated|beforeUpdate|destroyed|beforeDestroy)\s*\(" target-file.vue
+```
+
+---
+
+### 规则5: 事件修饰符误用检测（EVENT_MODIFIER_MISUSE）
+
+**严重级别**: 🟡 MEDIUM  
+**检测目标**: Vue模板中的事件绑定
+
+**误用模式库**:
+
+| 修饰符 | 误用场景 | 正确用法 | 风险说明 |
+|--------|---------|---------|---------|
+| `.native` | 用于非原生HTML元素（如el-button） | 仅用于自定义组件且确定需要监听原生事件 | Vue 2中el-button不需要.native |
+| `.stop` | 不必要地阻止冒泡 | 仅当父元素有同类事件处理器时使用 | 可能影响其他交互 |
+| `.prevent` | 用于非表单提交事件 | 主要用于form submit | 阻止默认行为导致意外行为 |
+| `.once` | 用于需要多次触发的事件 | 仅用于一次性操作（如初始化加载） | 导致后续操作无响应 |
+| `.self` | 误用于事件委托场景 | 仅当需要区分自身和子元素触发时使用 | 过滤掉有效的事件 |
+
+**自动检测脚本**:
+```javascript
+// 在浏览器控制台执行，检测潜在问题
+function detectEventModifierIssues() {
+  const issues = [];
+  const buttons = document.querySelectorAll('el-button, [class*="el-button"]');
+  
+  buttons.forEach(btn => {
+    // 检查是否有不必要的.native修饰符
+    if (btn.getAttribute('onclick-native') || 
+        btn.outerHTML.includes('@click.native')) {
+      issues.push({
+        element: btn,
+        type: 'UNNECESSARY_NATIVE',
+        message: 'el-button通常不需要.native修饰符',
+        risk: 'MEDIUM'
+      });
+    }
+  });
+  
+  return issues;
+}
+```
+
+---
+
+### 规则6: CSS优先级冲突检测（CSS_SPECIFICITY_CONFLICT）
+
+**严重级别**: 🟢 LOW  
+**检测目标**: 样式覆盖问题
+
+**常见场景**:
+
+```css
+/* 全局样式 */
+.delete-button {
+  color: #F56C6C;
+  pointer-events: auto;
+}
+
+/* 组件样式（可能被覆盖） */
+.el-button--danger {
+  color: #F56C6C;  /* 可能被更高优先级的样式覆盖 */
+}
+
+/* 行内样式（最高优先级，但难以维护） */
+style="pointer-events: none;"  /* ⚠️ 会覆盖CSS类中的设置 */
+```
+
+**检测要点**:
+- [ ] 是否使用了 `!important`（避免使用）
+- [ ] 行内样式是否与CSS类冲突
+- [ ] scoped样式是否被全局样式覆盖
+- [ ] 动态绑定的class是否与静态class冲突
+
+---
+
+## 🛠️ 自动化检测工具
+
+### 检测脚本（Node.js版）
+
+```javascript
+/**
+ * 代码冲突检测器 v2.0
+ * 用法: node conflict-detector.js <target-file>
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+class ConflictDetector {
+  constructor(filePath) {
+    this.filePath = filePath;
+    this.content = fs.readFileSync(filePath, 'utf-8');
+    this.lines = this.content.split('\n');
+    this.conflicts = [];
+  }
+
+  detectAll() {
+    this.detectDuplicateMethods();
+    this.detectDuplicateVariables();
+    this.detectAmbiguousCalls();
+    this.detectLifecycleHooks();
+    this.detectEventModifiers();
+    
+    return {
+      filePath: this.filePath,
+      totalConflicts: this.conflicts.length,
+      conflicts: this.conflicts,
+      summary: this.generateSummary()
+    };
+  }
+
+  detectDuplicateMethods() {
+    const methodPattern = /^\s*(?:async\s+)?(\w+)\s*\(/gm;
+    const methods = new Map();
+    
+    let match;
+    while ((match = methodPattern.exec(this.content)) !== null) {
+      const methodName = match[1];
+      const lineNum = this.content.substring(0, match.index).split('\n').length;
+      
+      if (methods.has(methodName)) {
+        methods.get(methodName).push({
+          line: lineNum,
+          signature: this.lines[lineNum - 1].trim()
+        });
+        
+        this.conflicts.push({
+          type: 'DUPLICATE_METHOD',
+          severity: 'HIGH',
+          methodName: methodName,
+          locations: methods.get(methodName),
+          suggestion: `发现${methods.get(methodName).length}个同名方法"${methodName}"，可能导致覆盖`
+        });
+      } else {
+        methods.set(methodName, [{
+          line: lineNum,
+          signature: this.lines[lineNum - 1].trim()
+        }]);
+      }
+    }
+  }
+
+  detectDuplicateVariables() {
+    // 检测data/props/computed中的同名属性
+    // （实现略）
+  }
+
+  detectAmbiguousCalls() {
+    // 检测v-for中的索引变量歧义
+    // （实现略）
+  }
+
+  detectLifecycleHooks() {
+    const lifecycleHooks = ['created', 'mounted', 'beforeMount', 'updated', 'beforeUpdate', 'destroyed', 'beforeDestroy'];
+    const hookCounts = {};
+    
+    lifecycleHooks.forEach(hook => {
+      const pattern = new RegExp(`^\\s*${hook}\\s*\\(`, 'gm');
+      const matches = this.content.match(pattern);
+      if (matches && matches.length > 1) {
+        hookCounts[hook] = matches.length;
+        
+        this.conflicts.push({
+          type: 'LIFECYCLE_HOOK_DUPLICATE',
+          severity: 'MEDIUM',
+          hookName: hook,
+          count: matches.length,
+          suggestion: `${hook}钩子定义了${matches.length}次，后者会覆盖前者`
+        });
+      }
+    });
+  }
+
+  detectEventModifiers() {
+    // 检测可能的修饰符误用
+    // （实现略）
+  }
+
+  generateSummary() {
+    const bySeverity = {
+      HIGH: this.conflicts.filter(c => c.severity === 'HIGH').length,
+      MEDIUM: this.conflicts.filter(c => c.severity === 'MEDIUM').length,
+      LOW: this.conflicts.filter(c => c.severity === 'LOW').length
+    };
+
+    return {
+      total: this.conflicts.length,
+      highRisk: bySeverity.HIGH,
+      mediumRisk: bySeverity.MEDIUM,
+      lowRisk: bySeverity.LOW,
+      recommendation: bySeverity.HIGH > 0 ? 
+        '🔴 存在高风险冲突，必须修复后再继续' :
+        bySeverity.MEDIUM > 0 ?
+        '⚠️ 存在中风险冲突，建议修复' :
+        '✅ 未检测到明显冲突'
+    };
+  }
+}
+
+// 使用示例
+if (process.argv[2]) {
+  const detector = new ConflictDetector(process.argv[2]);
+  const result = detector.detectAll();
+  console.log(JSON.stringify(result, null, 2));
+} else {
+  console.log('Usage: node conflict-detector.js <file-path>');
+}
+```
+
+---
+
+## 📋 检测报告模板
+
+每次执行检测后，生成如下格式的报告：
+
+```markdown
+## 🔍 代码冲突检测报告
+
+**文件**: `{{filePath}}`  
+**检测时间**: {{timestamp}}  
+**检测工具**: expert-bug-fixer v2.0 Conflict Detector  
+
+---
+
+### 📊 执行摘要
+
+| 严重级别 | 数量 | 状态 |
+|---------|------|------|
+| 🔴 高风险 | {{highCount}} | {{highCount > 0 ? '需立即处理' : '✅ 无'}} |
+| 🟡 中风险 | {{mediumCount}} | {{mediumCount > 0 ? '建议修复' : '✅ 无'}} |
+| 🟢 低风险 | {{lowCount}} | 可忽略 |
+
+**总体评估**: {{recommendation}}
+
+---
+
+### 🔴 高风险冲突（必须修复）
+
+{{#each highRiskConflicts}}
+#### {{@index+1}}. {{type}}
+- **位置**: Line {{location.line}}
+- **描述**: {{suggestion}}
+- **影响**: 可能导致功能异常或运行时错误
+- **修复方案**: {{solution}}
+
+{{/each}}
+
+---
+
+### 🟡 中风险冲突（建议修复）
+
+{{#each mediumRiskConflicts}}
+#### {{@index+1}}. {{type}}
+- **位置**: Line {{location.line}}
+- **描述**: {{suggestion}}
+- **影响**: 可能导致意外行为
+- **修复方案**: {{solution}}
+
+{{/each}}
+
+---
+
+### ✅ 检测通过项
+
+- [x] 无高危同名方法冲突
+- [x] 无生命周期钩子重复定义
+- [x] 无明显的变量遮蔽问题
+- [ ] 其他检查项...
+
+---
+
+### 📝 下一步操作
+
+{{#if hasHighRisk}}
+1. **停止当前修复工作**
+2. **逐个解决高风险冲突**
+3. **重新执行检测**直到通过
+4. **继续Bug修复流程**
+{{else}}
+1. **可继续Bug修复**
+2. **建议在中/低风险项不影响当前修复时可暂时忽略**
+3. **记录到技术债务清单，后续统一处理**
+{{/if}}
+
+---
+
+**报告结束**
+```
+
+---
+
+## 🎯 集成到Bug修复流程
+
+### 何时执行检测？
+
+```
+Step 1: 定位与复现
+  │
+  ├─ 1.1 提取Bug三要素
+  ├─ 1.2 定位涉及文件
+  ├─ 1.3 🔍 执行代码冲突检测 ← 新增步骤
+  │   └─ 运行conflict-detector.js
+  │   └─ 生成检测报告
+  │   └─ 如有高风险冲突 → 先解决冲突再继续
+  └─ 1.4 确认Bug类别
+
+Step 2: 五维影响分析
+  ...
+```
+
+### 如何处理检测结果？
+
+| 检测结果 | 处理方式 | 说明 |
+|---------|---------|------|
+| **无冲突** | ✅ 继续正常流程 | 理想状态 |
+| **仅低风险** | ⚠️ 记录并继续 | 可后续优化 |
+| **有中风险** | ⚠️ 评估影响后决定 | 如果与当前Bug相关则修复 |
+| **有高风险** | 🔴 必须先修复 | 预防引入新问题 |
+
+---
+
+**文档结束**
+
+*本检测规则基于真实案例提炼，将持续扩展更多检测维度。*
