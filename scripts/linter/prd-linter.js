@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RULES_PATH = path.join(__dirname, '..', '..', 'config', 'prd-rules.yaml');
 
+// 规则配置层面的告警（如正则无法解析），随结果返回，避免静默失效
+const configWarnings = [];
+
 const RULE_TYPES = {
   PRESENCE: 'presence',
   ABSENCE: 'absence',
@@ -79,6 +82,15 @@ export async function runPRDChecks(projectRoot, options = {}) {
   }
 
   if (prdFiles.length === 0) {
+    // 用户显式指定了文件却一个都没匹配上 → 必须报错，不能当成「全部通过」。
+    // 否则路径打错、文件改名、CI 里变量为空都会静默给出 100/100 ✅，
+    // 是比「检查出问题」更危险的假绿灯。
+    //
+    // 但要与「项目里本来就没有 PRD」区分开：后者是检查不适用（no-op），不是错误。
+    // 二者都给 ❌ 会让人以为项目有问题，也会让 CI 在纯后端工程上永远红。
+    const requested = options.files || [];
+    const explicitRequest = requested.length > 0;
+
     return {
       runner: 'prd-linter',
       success: true,
@@ -86,18 +98,27 @@ export async function runPRDChecks(projectRoot, options = {}) {
       errorCount: 0,
       warningCount: 0,
       issues: [],
-      message: t('noFiles'),
+      suppressions: [],
+      // 只有「显式指定却零匹配」才算没跑成；项目内无 PRD 属于不适用，不算跳过
+      skipped: explicitRequest,
+      applicable: explicitRequest,
+      message: explicitRequest
+        ? `指定的文件未匹配到任何 PRD（已跳过检查）：${requested.join(', ')}`
+        : `${t('noFiles')}（该检查不适用，非通过）`,
       duration: Date.now() - start
     };
   }
 
   const allIssues = [];
 
+  const allSuppressions = [];
+
   for (const filePath of prdFiles) {
     const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.split('\n');
-    const fileIssues = checkFile(filePath, content, lines, rules, projectRoot);
+    const { issues: fileIssues, suppressions } = checkFile(filePath, content, lines, rules, projectRoot);
     allIssues.push(...fileIssues);
+    allSuppressions.push(...suppressions);
   }
 
   return {
@@ -107,6 +128,10 @@ export async function runPRDChecks(projectRoot, options = {}) {
     errorCount: allIssues.filter(i => i.severity === 'error').length,
     warningCount: allIssues.filter(i => i.severity === 'warn').length,
     issues: allIssues.slice(0, 100),
+    // 被规则豁免白名单（exclude_patterns）挡下的命中。必须随结果返回：
+    // 豁免是「有意不报」，但它同样是「有东西被拦了」的事实，静默吞掉就是另一种假绿灯。
+    suppressions: allSuppressions,
+    configWarnings: [...new Set(configWarnings)],
     filesChecked: prdFiles.length,
     duration: Date.now() - start
   };
@@ -157,6 +182,7 @@ function getLocalizedMessage(ruleId, originalMessage) {
 
 function checkFile(filePath, content, lines, rules, projectRoot) {
   const issues = [];
+  const suppressions = [];
   const relativePath = path.relative(projectRoot, filePath);
 
   for (const [category, categoryRules] of Object.entries(rules.rules || {})) {
@@ -164,7 +190,21 @@ function checkFile(filePath, content, lines, rules, projectRoot) {
 
     for (const rule of (categoryRules.checks || [])) {
       const ruleType = determineRuleType(rule);
-      const results = applyRule(rule, ruleType, content, lines);
+      const { results, suppressions: ruleSuppressions } = applyRule(rule, ruleType, content, lines);
+
+      for (const s of ruleSuppressions) {
+        suppressions.push({
+          ruleId: rule.id,
+          ruleName: rule.name,
+          severity: rule.severity || 'info',
+          file: relativePath,
+          line: s.line,
+          context: s.context,
+          matchedText: s.matchedText,
+          excludedBy: s.excludedBy,
+          category
+        });
+      }
 
       for (const result of results) {
         if (!result.passed) {
@@ -183,7 +223,23 @@ function checkFile(filePath, content, lines, rules, projectRoot) {
     }
   }
 
-  return issues;
+  return { issues, suppressions };
+}
+
+/**
+ * 把 Python/PCRE 风格的内联标志 (如 `(?i)`) 转成 JS 能用的形式。
+ *
+ * config/prd-rules.yaml 里大量 pattern 写成 `(?i)(目标|goals?)` —— 这是 Python / PCRE 语法，
+ * JS 的 RegExp 不支持内联标志组，`new RegExp('(?i)...')` 会抛
+ * "Invalid group"。原先构造正则的 try/catch 把异常吞掉并返回「通过」，
+ * 导致这些规则**静默失效**（22/26 条规则、含 7/7 个 blocker 从未真正执行）。
+ *
+ * 这里剥掉内联标志，由调用方用 'i' flag 统一实现大小写不敏感。
+ */
+function normalizePattern(pattern) {
+  if (typeof pattern !== 'string') return pattern;
+  // (?i) / (?im) / (?is:) 等一律剥离；大小写不敏感已由 'gi' flag 保证
+  return pattern.replace(/\(\?[a-zA-Z]*\)/g, '');
 }
 
 function determineRuleType(rule) {
@@ -207,7 +263,17 @@ function determineRuleType(rule) {
   return RULE_TYPES.PRESENCE;
 }
 
+/**
+ * 执行单条规则。
+ *
+ * 返回值从「结果数组」改为 `{ results, suppressions }`：
+ * `suppressions` 记录被 exclude_patterns 挡下的命中。豁免是有意为之，
+ * 但「有东西被挡下」本身也是事实，必须能被上层统计出来 —— 否则豁免机制
+ * 就变成了又一个静默失效点（与本文件历史上 `(?i)` 吞规则、零匹配假绿灯同类）。
+ */
 function applyRule(rule, ruleType, content, lines) {
+  const suppressions = [];
+
   if (ruleType === RULE_TYPES.MAX_DEPTH) {
     let maxDepth = 0;
     let deepestLine = 0;
@@ -219,19 +285,22 @@ function applyRule(rule, ruleType, content, lines) {
       }
     }
     if (maxDepth > rule.max_depth) {
-      return [{
-        passed: false,
-        line: deepestLine,
-        context: lines[deepestLine - 1].trim()
-      }];
+      return {
+        results: [{
+          passed: false,
+          line: deepestLine,
+          context: lines[deepestLine - 1].trim()
+        }],
+        suppressions
+      };
     }
-    return [{ passed: true }];
+    return { results: [{ passed: true }], suppressions };
   }
 
-  if (!rule.pattern) return [{ passed: true }];
+  if (!rule.pattern) return { results: [{ passed: true }], suppressions };
 
   try {
-    const regex = new RegExp(rule.pattern, rule.id === 'prd-code-blocks' ? 'g' : 'gi');
+    const regex = new RegExp(normalizePattern(rule.pattern), rule.id === 'prd-code-blocks' ? 'g' : 'gi');
     const results = [];
 
     if (ruleType === RULE_TYPES.PRESENCE) {
@@ -243,6 +312,18 @@ function applyRule(rule, ruleType, content, lines) {
         results.push({ passed: true });
       }
     } else if (ruleType === RULE_TYPES.ABSENCE) {
+      // 豁免正则预先编译一次：单条 exclude 写错正则不应连累整条规则。
+      // 原先它们在匹配循环里现编现用，任何一个非法正则都会把异常抛到外层 catch，
+      // 让整条规则静默判「通过」。
+      const excludeRegexes = [];
+      for (const excl of (rule.exclude_patterns || [])) {
+        try {
+          excludeRegexes.push({ source: excl, regex: new RegExp(normalizePattern(excl), 'i') });
+        } catch (e) {
+          configWarnings.push(`规则 ${rule.id} 的 exclude_patterns「${excl}」正则无法解析，该豁免已忽略：${e.message}`);
+        }
+      }
+
       let match;
       const seen = new Set();
 
@@ -254,15 +335,21 @@ function applyRule(rule, ruleType, content, lines) {
         const matchedText = match[0].trim();
         const lineContent = lines[lineNum - 1] ? lines[lineNum - 1].trim() : matchedText;
 
-        if (rule.exclude_patterns) {
-          let excluded = false;
-          for (const excl of rule.exclude_patterns) {
-            if (new RegExp(excl, 'i').test(matchedText)) {
-              excluded = true;
-              break;
-            }
-          }
-          if (excluded) continue;
+        // 比对对象必须是整行内容，而不是命中的关键词本身。
+        //
+        // 原实现拿 `matchedText`（例如「提升」两个字）去 test `作为.*参考`，
+        // 在任何输入下都不可能命中 —— 等于整套豁免白名单从未生效，
+        // 而失败方式恰恰是「静默少报」。关键词只有 2 个字，做上下文豁免
+        // 只能在整行粒度上做。
+        const hit = excludeRegexes.find(({ regex: ex }) => ex.test(lineContent));
+        if (hit) {
+          suppressions.push({
+            line: lineNum,
+            matchedText,
+            excludedBy: hit.source,
+            context: lineContent.length > 80 ? lineContent.substring(0, 77) + '...' : lineContent
+          });
+          continue;
         }
 
         results.push({
@@ -279,9 +366,12 @@ function applyRule(rule, ruleType, content, lines) {
       }
     }
 
-    return results;
-  } catch {
-    return [{ passed: true }];
+    return { results, suppressions };
+  } catch (e) {
+    // 绝不静默「通过」：正则写错 = 规则没跑，必须让人看见，
+    // 否则整条规则会无声失效（历史上 22/26 条规则就是这样被吞掉的）
+    configWarnings.push(`规则 ${rule.id} 的正则无法解析，已跳过：${e.message}`);
+    return { results: [{ passed: true }], suppressions };
   }
 }
 

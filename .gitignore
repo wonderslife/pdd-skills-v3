@@ -95,3 +95,10 @@ BDRM-APP-Project/
 BDRM-TEST-SYSTEM/
 pre-sale-demo/
 ruoyi-project/
+
+# Linter 生成的报告产物（每次运行都会新增一份，不应进版本库）
+.pdd/cache/reports/linter-report-*.md
+
+# 熵减扫描输出的报告（含本机绝对路径，且每次运行都会重新生成）
+/entropy-report.md
+entropy-report*.md
