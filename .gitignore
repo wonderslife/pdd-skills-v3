@@ -75,7 +75,22 @@ Desktop.ini
 *.swp
 *~
 
+# ---- 回收目录与本地备份（回收式删除的中转目录，不入库）----
+_trash_*/
+.pdd/backup/
+
 # ---- MCP 和浏览器数据 ----
 .mcp_cache/
 browser-data/
 user-data/
+
+# ---- 本地项目实例 / 业务产出（不入库，2026-09-30 从线上移除）----
+# 这些是各业务线的实际项目目录与产出文档，不属于 PDD 框架本体，
+# 已用 git rm --cached 从仓库移除。本机文件保留，仅不再提交。
+# 如需恢复追踪：git add -f <路径>
+PDD需求执行流程.md
+YUQING-System-Project/
+Inspection-System-Project/
+BDRM-APP-Project/
+pre-sale-demo/
+ruoyi-project/

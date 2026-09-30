@@ -1,1 +1,0 @@
-{"name": "expert-mysql", "version": "1.0.0", "category": "expert", "description": "MySQL数据库专家，提供SQL优化、索引设计、表结构分析与性能调优。基于MySQL官方文档。当用户需要SQL优化、数据库设计、索引调优或慢查询诊断时调用。支持中文触发：SQL优化、数据库设计、索引优化、慢查询、MySQL调优。", "triggers": ["SQL优化", "数据库设计", "索引优化", "慢查询分析", "MySQL调优"]}
