@@ -34,6 +34,8 @@ node bin\pdd.js init pre-sale-demo -t generic -i generic
 node bin\pdd.js init Inspection-System-Project -t ruoyi -i generic
 node bin\pdd.js init BDRM-APP-Project -t ruoyi -i generic
 node bin\pdd.js init YUQING-System-Project -t ruoyi -i generic
+node bin\pdd.js init BDRM-TEST-SYSTEM -t ruoyi -i generic
+node bin\pdd.js init project\Converged-Publishing-Platform -t ruoyi -i generic
 
 
 cd ruoyi-project
@@ -41,6 +43,8 @@ cd pre-sale-demo
 cd Inspection-System-Project
 cd BDRM-APP-Project
 cd YUQING-System-Project
+cd BDRM-TEST-SYSTEM
+cd project\Converged-Publishing-Platform 
 ```
 
 预期：创建 docs / specs / templates / scripts / tests 等目录。
@@ -53,7 +57,7 @@ cd YUQING-System-Project
 
 ```bash
 # 复制 PRD 模板
-cp ..\templates\prd-template.prdx .\my-feature.prd
+cp E:\ZHAI\APPPROJECT\pdd-skills-v3-main\templates\prd-template.prdx .\my-feature.prd
 ```
 
 用编辑器打开 `my-feature.prd`，把占位符替换成「预售」需求（示例骨架）：
