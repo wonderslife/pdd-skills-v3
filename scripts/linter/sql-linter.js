@@ -14,6 +14,7 @@ export async function runSQLChecks(projectRoot) {
     return {
       runner: 'sql-linter',
       success: false,
+      skipped: true,
       error: 'SQLFluff配置文件不存在',
       duration: Date.now() - start
     };

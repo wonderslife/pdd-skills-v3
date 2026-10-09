@@ -219,6 +219,11 @@ complexity_metrics:
     critical: > 5
 ```
 
+> **度量口径**：上述基线是「单个函数」的绝对阈值，用于**定位具体问题**；
+> 而熵评分的「代码质量」维度按**问题密度（每 KLOC）**折算，用于**跨规模横向比较**。
+> 两者不冲突：绝对阈值决定「哪些函数该改」，密度折算决定「这个项目比另一个健康多少」。
+> 详见 `references/entropy-report-template.md` §1.3。
+
 #### 2.3.2 复杂代码示例
 
 ```typescript
@@ -424,10 +429,10 @@ improvement_metrics:
     critical: < 50%
   
   entropy_trend:
-    description: 熵值趋势
-    healthy: 持续下降
+    description: 评分趋势（评分 0-100，100 = 最有秩序）
+    healthy: 持续上升
     warning: 保持稳定
-    critical: 持续上升
+    critical: 持续下降
 ```
 
 ---
@@ -550,7 +555,7 @@ principle_metrics:
   
   effectiveness:
     description: 原则有效性
-    measurement: 遵守原则后熵值下降幅度
+    measurement: 遵守原则后评分提升幅度
   
   applicability:
     description: 原则适用性
