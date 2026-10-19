@@ -1,0 +1,1 @@
+{"name": "pdd-design-spec", "version": "1.0.0", "category": "core", "description": "生成界面设计规范(DESIGN.md)，承接 PRD 第4章「界面原型」与 spec.md 第4/6章前端约定，产出 AI 可读的设计契约。当用户需要生成界面规范、设计规范、UI规范、设计系统、DESIGN.md，或在 PRD/specs 完成后要统一视觉与交互时调用。", "triggers": ["界面规范", "设计规范", "UI规范", "设计系统", "DESIGN.md", "界面原型规范", "生成设计规范", "视觉规范", "design spec", "ui spec", "design system"]}

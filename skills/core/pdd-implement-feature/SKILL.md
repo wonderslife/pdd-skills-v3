@@ -1,17 +1,17 @@
 ---
 name: pdd-implement-feature
-description: "根据开发规格实现功能点代码的核心Skill。涉及代码生成、功能开发时触发，自动调用pdd-template-engine生成框架，再委托software-engineer补业务逻辑。触发：实现功能点、编码实现、开始编码、功能开发、代码实现、PDD实现。"
+description: "根据开发规格实现功能点代码的核心Skill。涉及代码生成、功能开发时触发，自动调用pdd-template-engine生成框架，再委托software-engineer补业务逻辑。前端实现前须读取ui/DESIGN.md界面设计规范（若存在）。触发：实现功能点、编码实现、开始编码、功能开发、代码实现、PDD实现。"
 license: MIT
 compatibility: Requires specification generation to be completed first
 metadata:
   author: neuqik@hotmail.com
-  version: "2.0"
+  version: "2.1"
   parent: pdd-main
 ---
 
 # Feature Point Implementation - 基于开发规格的功能点实现
 
-**输入**: spec.md(开发规格) | checklist.md(验收标准) | test-cases.md(测试用例,可选)
+**输入**: spec.md(开发规格) | checklist.md(验收标准) | test-cases.md(测试用例,可选) | ui/DESIGN.md(界面设计规范,前端必读)
 **输出**: 代码文件 | 验收报告
 
 ## 技能集成
@@ -20,17 +20,18 @@ metadata:
 
 ## 流程步骤
 1. **读取开发规格**：从 `dev-specs/FP-{序号}/spec.md` 读接口/数据模型/业务逻辑/测试用例
-2. **上下文注入（关键）**：生成代码前扫描项目已有代码，避免孤岛效应——扫描 models/ 的Model、api/ 的路由、schemas/ 的Schema、`config/bug-patterns.yaml` 的Bug模式、PRD命名约定；建立{后端路径→前端调用文件}映射、{状态值→使用文件}映射。确保 new代码正确import、路由不冲突、Schema字段一致、前端API路径与后端Controller一致、新增状态值各映射文件同步（防 PATTERN-C4/C3/002/R008/R011）。
-3. **读取验收标准**：checklist.md
-4. **确定实现顺序**：数据模型→数据库脚本→后端接口→前端页面
-5. **生成数据库脚本**：SQL 含审计字段 create_time/update_time/create_by/update_by/del_flag/status
-6. **生成后端代码**（委托 software-engineer）：Domain(@Data/@TableName) | Mapper(@Mapper/BaseMapper) | Service(@Service/ServiceImpl) | Controller(@RestController/@RequestMapping)
-7. **生成前端代码**（委托 software-engineer）：API(request封装) | Vue组件
-8. **实现业务逻辑**：处理流程/校验规则/状态转换/异常处理
-9. **微验证（关键）**：每完成一个功能点立即执行（约30秒）——①后端启动 `python -m uvicorn app.main:app --reload` 无报错 ②`GET /docs` 可见Swagger ③Schema创建+查询各1次确认datetime/Enum序列化 ④`npm run build` 无报错 ⑤`curl GET /{module}/options` 返回非空。失败必须立即修复，不得继续下一个功能点。
-10. **运行完整测试**：单元/接口/集成测试
-11. **更新验收状态**：更新 checklist.md
-12. **生成验收报告**：业务验收/技术验收/问题日志/结论
+2. **读取界面设计规范（前端前置，v3.3.0）**：检查项目根 `ui/DESIGN.md` 是否存在——存在则前端编码前必须通读：颜色 token、状态色板（状态→色族映射）、间距密度（4px 基准）、组件模式、Element Plus `--el-*` 变量覆盖；生成的前端必须与 DESIGN.md 对齐，状态值显示用「彩色圆点+中性文字」而非色字。不存在则输出一次提示 `未找到 ui/DESIGN.md，建议先运行 /pdd-design-spec 生成界面设计规范`（WARN，不阻塞后端实现）
+3. **上下文注入（关键）**：生成代码前扫描项目已有代码，避免孤岛效应——扫描 models/ 的Model、api/ 的路由、schemas/ 的Schema、`config/bug-patterns.yaml` 的Bug模式、PRD命名约定；建立{后端路径→前端调用文件}映射、{状态值→使用文件}映射。确保 new代码正确import、路由不冲突、Schema字段一致、前端API路径与后端Controller一致、新增状态值各映射文件同步（防 PATTERN-C4/C3/002/R008/R011）。
+4. **读取验收标准**：checklist.md
+5. **确定实现顺序**：数据模型→数据库脚本→后端接口→前端页面
+6. **生成数据库脚本**：SQL 含审计字段 create_time/update_time/create_by/update_by/del_flag/status
+7. **生成后端代码**（委托 software-engineer）：Domain(@Data/@TableName) | Mapper(@Mapper/BaseMapper) | Service(@Service/ServiceImpl) | Controller(@RestController/@RequestMapping)
+8. **生成前端代码**（委托 software-engineer，遵循 DESIGN.md）：API(request封装) | Vue组件——布局密度/间距用 DESIGN.md spacing token、状态标签用状态色板映射表、交互模式用 pattern-library 对应模式
+9. **实现业务逻辑**：处理流程/校验规则/状态转换/异常处理
+10. **微验证（关键）**：每完成一个功能点立即执行（约30秒）——①后端启动 `python -m uvicorn app.main:app --reload` 无报错 ②`GET /docs` 可见Swagger ③Schema创建+查询各1次确认datetime/Enum序列化 ④`npm run build` 无报错 ⑤`curl GET /{module}/options` 返回非空。失败必须立即修复，不得继续下一个功能点。
+11. **运行完整测试**：单元/接口/集成测试
+12. **更新验收状态**：更新 checklist.md
+13. **生成验收报告**：业务验收/技术验收/问题日志/结论
 
 ## 代码标准
 - 后端：类名PascalCase、方法camelCase、常量UPPER_SNAKE_CASE、Javadoc注释
@@ -59,8 +60,9 @@ metadata:
 6. **上下文感知生成**：生成前扫描已有 Model/Schema/路由，避免孤岛效应。
 7. **微验证即时反馈**：每功能点必须微验证，不得跳过。
 8. **Bug模式库约束**：遵守 `config/bug-patterns.yaml`，已知陷阱不重复触犯。
-- 违规：❌功能蔓延 ❌不调expert-ruoyi ❌只写正常流程 ❌命名风格不一致 ❌写完才运行发现编译错 ❌不扫已有代码 ❌跳过微验证 ❌datetime声明为str(PATTERN-001) ❌/options在/{id}后(PATTERN-002)
-- 合规：✅按spec接口列表逐一实现 ✅调expert-ruoyi ✅Service方法开头校验参数 ✅先读TransferApplyController保持风格 ✅逐个Controller方法测试 ✅生成前扫models/、schemas/ ✅每功能点微验证 ✅datetime用field_serializer ✅/options在/{id}前
+9. **设计规范对齐（v3.3.0）**：`ui/DESIGN.md` 存在时前端必须对齐其 token/状态色/密度/模式；不得凭感觉自造颜色与间距。
+- 违规：❌功能蔓延 ❌不调expert-ruoyi ❌只写正常流程 ❌命名风格不一致 ❌写完才运行发现编译错 ❌不扫已有代码 ❌跳过微验证 ❌datetime声明为str(PATTERN-001) ❌/options在/{id}后(PATTERN-002) ❌无视DESIGN.md自造样式
+- 合规：✅按spec接口列表逐一实现 ✅调expert-ruoyi ✅Service方法开头校验参数 ✅先读TransferApplyController保持风格 ✅逐个Controller方法测试 ✅生成前扫models/、schemas/ ✅每功能点微验证 ✅datetime用field_serializer ✅/options在/{id}前 ✅前端编码前先读ui/DESIGN.md
 
 ## Rationalization 陷阱
 - "规格偏离"：实现逐渐偏离规格→建立实现清单逐项打勾对照
@@ -70,6 +72,6 @@ metadata:
 
 ## Red Flags 红旗
 - **L1 输入**：INPUT-IMPL-001 spec/checklist 不存在→🔴；002 spec缺接口/数据模型→🔴；003 项目路径不可访问→🔴
-- **L2 执行**：EXEC-IMPL-001 实现规格外接口→🟡；002 框架问题未调expert硬编码→🔴；003 空指针风险→🟡；004 SQL注入→🔴；005 未扫描已有代码(Step 1.5)→🔴；006 跳过微验证(Step 8)→🔴
+- **L2 执行**：EXEC-IMPL-001 实现规格外接口→🟡；002 框架问题未调expert硬编码→🔴；003 空指针风险→🟡；004 SQL注入→🔴；005 未扫描已有代码(Step 3)→🔴；006 跳过微验证(Step 10)→🔴；007 DESIGN.md 存在但生成前端未对齐（自造颜色/间距/状态标签样式）(Step 2)→🟡
 - **L3 输出**：OUTPUT-IMPL-001 语法错误→🔴；002 规格接口未全实现→🔴；003 路径不符→🔴；004 datetime为str(PATTERN-001)→🔴；005 /options在/{id}后(PATTERN-002)→🔴
 - 处理：🔴立即停止上报 | 🟡记录警告尝试修复 | 🔵记录正常继续

@@ -1,8 +1,8 @@
-# PDD-Skills v3.2.1
+# PDD-Skills v3.3.1
 
-> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**41+ 技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
+> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**49 个技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
 >
-> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **41+ Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**
+> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **49 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**
 
 ***
 #特此声明：本项目来源于https://github.com/wonderslife/pdd-skills-v3
@@ -21,6 +21,7 @@
   - [Phase 6: 生态建设 / Ecosystem](#phase-6-生态建设--ecosystem)
   - [📊 Phase 7: PDD Visual Manager / Visual Manager](#-phase-7-pdd-visual-manager--visual-manager)
 - [技能系统 / Skill System](#技能系统--skill-system)
+- [★ 界面设计规范 / Design Spec](#-界面设计规范--design-spec-new-v330)
 - [配置中心 / Configuration Center](#配置中心--configuration-center)
 - [★ 测试用例系统 / Testcase System](#-测试用例系统--testcase-system-new-v320)
 - [API 层 / API Layer](#api-层--api-layer)
@@ -167,13 +168,18 @@ npx pdd-skills extract-features ./my-feature.prdx
 # 5️⃣ 生成开发规格 / Generate specifications
 npx pdd-skills generate-spec ./my-feature.prdx -o ./specs
 
-# 6️⃣ 基于规格生成代码骨架 / Generate code skeleton
+# 6️⃣ 生成界面设计规范 / Generate design spec（★ 新增 / NEW）
+#    对话触发："生成界面规范" → 产出 ui/DESIGN.md
+node .skills/pdd-design-spec/scripts/gen-design-scaffold.js --prd ./my-feature.prdx
+node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
+
+# 7️⃣ 基于规格生成代码骨架 / Generate code skeleton
 pdd generate -s ./specs/spec.md -o ./src --dry-run
 
-# 7️⃣ 验证实现 / Verify implementation
+# 8️⃣ 验证实现 / Verify implementation
 pdd verify -s ./specs/spec.md -c ./src --json
 
-# 8️⃣ 生成质量报告 / Generate quality report
+# 9️⃣ 生成质量报告 / Generate quality report
 pdd report -t html -o ./reports
 ```
 
@@ -248,9 +254,9 @@ pdd vm export --format csv # 导出数据 / Export data
 
 ### Phase 2: 核心能力增强 / Core Capabilities
 
-12 个核心技能 + 五大行为塑造机制。
+14 个核心技能 + 五大行为塑造机制。
 
-> **English**: 12 core skills + 5 behavior shaping mechanisms.
+> **English**: 14 core skills + 5 behavior shaping mechanisms.
 
 #### 核心技能列表 / Core Skills List
 
@@ -260,6 +266,7 @@ pdd vm export --format csv # 导出数据 / Export data
 | `pdd-ba` | 业务分析与需求建模 / Business analysis | ✅ |
 | `pdd-extract-features` | 从 PRD 提取功能点 / Extract features from PRD | ✅ |
 | `pdd-generate-spec` | 生成开发规格文档 / Generate specifications | ✅ |
+| `pdd-design-spec` ★v3.3.0 | 生成界面设计规范 DESIGN.md（PRD/specs 之后、实现之前）/ Generate UI design spec (DESIGN.md) | ✅ |
 | `pdd-implement-feature` | 基于规格实现代码 / Implement code from spec | ✅ |
 | `pdd-verify-feature` | 验证实现符合规格 / Verify implementation | ✅ |
 | `pdd-code-reviewer` | 多维度代码审查 / Multi-dimensional code review | ✅ |
@@ -267,6 +274,7 @@ pdd vm export --format csv # 导出数据 / Export data
 | `pdd-doc-gardener` | 文档清理与维护 / Document maintenance | ✅ |
 | `pdd-entropy-reduction` | 技术债务治理 / Technical debt governance | ✅ |
 | `official-doc-writer` | 党政机关公文生成 / Official document generation | ✅ |
+| `traffic-accident-assessor` | 交通事故定责辅助评估 / Traffic accident liability assessment | ✅ |
 | `pdd-vm` | PDD Visual Manager 可视化监控 / Visual monitoring | ✅ |
 
 ### Phase 3: 专家系统扩展 / Expert Systems
@@ -425,11 +433,12 @@ PluginBase (抽象基类 / Abstract Base)
 
 ```
 skills/
-├── core/                    # 11 个核心技能 / 11 Core Skills (必装 / Required)
+├── core/                    # 14 个核心技能 / 14 Core Skills (必装 / Required)
 │   ├── pdd-main/           # 主协调器 / Main coordinator
 │   ├── pdd-ba/             # 业务分析 / Business analysis
 │   ├── pdd-extract-features/   # 特征提取 / Feature extraction
 │   ├── pdd-generate-spec/      # 规格生成 / Spec generation
+│   ├── pdd-design-spec/        # ★ 界面设计规范 / Design spec (NEW v3.3.0)
 │   ├── pdd-implement-feature/  # 代码实现 / Code implementation
 │   ├── pdd-verify-feature/     # 功能验证 / Feature verification
 │   ├── pdd-code-reviewer/      # 代码审查 / Code review
@@ -437,6 +446,7 @@ skills/
 │   ├── pdd-doc-gardener/       # 文档维护 / Document maintenance
 │   ├── pdd-entropy-reduction/  # 技术债务 / Technical debt
 │   ├── official-doc-writer/    # 公文生成 / Official documents
+│   ├── traffic-accident-assessor/ # 交通事故评估 / Traffic accident assessor
 │   └── pdd-vm/                 # 可视化监控 / Visual monitoring
 │
 ├── expert/                  # 专家技能 / Expert Skills (12个)
@@ -459,6 +469,159 @@ skills/
 ├── openspec/                # OpenSpec 协作 / Collaboration (10个)
 └── software/                # 通用软件工程 / General software engineering
 ```
+
+***
+
+## ★ 界面设计规范 / Design Spec (NEW v3.3.0)
+
+> 让 AI 写出来的前端"像同一个系统"，而不是每个模块各长一套。
+> 核心产物 `ui/DESIGN.md` —— 一份 **AI 可读、可执行、可审计**的设计契约。
+
+### 为什么需要它
+
+后台系统的视觉碎片化几乎是必然的：多端（PC / 移动 / 大屏）、多角色、多模块、多人多批次开发。每个模块自己定按钮圆角、表格行高、状态色，最后用户面对的是拼装货。
+
+PRD 回答"有什么"，spec 回答"怎么调"，**DESIGN.md 回答"长什么样、什么规则"**。三者正交：
+
+| 文档 | 读者 | 回答什么 | 变更频率 |
+|------|------|---------|---------|
+| `AGENTS.md` | 编码 agent | 怎么建（技术栈/目录/命令） | 低 |
+| PRD 第4章「界面原型」 | 人 | 这个页面放哪些字段和按钮 | 高 |
+| `spec.md` 第4/6章 | 人 + 后端 | 这个功能调什么接口、字段什么类型 | 高 |
+| **`ui/DESIGN.md`** | **AI + 人** | **全系统统一的颜色/字号/间距/状态/密度** | **极低** |
+
+**取舍准则**：只对一个页面成立的约定留在 PRD；两个以上页面成立的必须上升到 DESIGN.md。
+
+### 流水线位置
+
+```
+PRD ──→ dev-specs ──→ specs/spec.md ──→ 【ui/DESIGN.md】 ──→ generate ──→ verify
+                                              ↑ 本技能            │
+                                              └── pdd-implement-feature Step 2 强制读取（v3.3.1）
+```
+
+触发时机：`specs/spec.md` 生成之后、写前端代码之前。也可在任意阶段单独触发（老系统补规范）。
+
+**消费闭环（v3.3.1）**：规范不只要被生成，更要被消费。`pdd-implement-feature` 已升级——前端编码前必须读取 `ui/DESIGN.md` 并对齐其 token/状态色板/间距密度/组件模式（铁律 9「设计规范对齐」，红旗 EXEC-IMPL-007）；若 `ui/DESIGN.md` 不存在则输出 WARN 提示先运行 `/pdd-design-spec`，不阻塞后端实现。
+
+### 两条与业界不同的设计主张
+
+**1. 状态优先于品牌。**
+
+先定业务状态机色板，再定品牌主色。顺序颠倒会导致品牌色侵占状态语义——最终"加急/置顶/驳回/失败"全都变红，红色彻底失去信息量。
+
+**2. 状态色只作圆点，不作文字。**
+
+高明度橙/绿做 12px 标签文字，对比度必然不足（实测 `#FF7D00` 在白底仅 2.57:1，`#00B42A` 仅 2.78:1，远低于 WCAG 4.5:1）。
+
+正确做法：**彩色圆点 + 中性深灰文字**（7.2:1）。颜色只需要在 14px 色块内被**识别**，不需要被**阅读**。一条规则同时解决可读性、色盲、黑白打印三个问题。
+
+```html
+<span class="status"><i class="dot dot--returned">↩</i>退回修改</span>
+```
+
+### 状态爆炸怎么办：收敛色族
+
+状态超过 9 个时，**不要新增色相**——色相距离会挤到 15° 以内，反而更难分。
+
+正确做法是收敛成 ≤8 个色族，用**明度差 ≥18 + 图标**承担细分：
+
+| 族 | 状态 | 区分手段 |
+|----|------|---------|
+| 灰 | 草稿 / 已撤回 | 明度 + 图标 |
+| 橙 | 待审核 | 色相 |
+| 深橙 | 发布失败 | 同族，明度差 22 + ⚠ |
+| 绿 | 已通过 / 已发布 | 明度差 22 + 图标（✓ / ●） |
+| 红 | 退回修改 / 退回重写 | 明度差 21 + 图标（↩ / ↻） |
+| 紫 | 定时待发 | 色相 |
+| 青 | 部分成功 | 色相 |
+| 深靛 | 审核中 | 与品牌蓝同系但明度差 24 |
+
+### 使用方式
+
+```bash
+# ① 确定性抽取：从 PRD/spec 扫描状态枚举、页面清单、渠道，自动配好合规色板
+node .skills/pdd-design-spec/scripts/gen-design-scaffold.js \
+  --prd ./my-feature.prdx --spec ./specs/spec.md --out ./ui/DESIGN.md
+
+# ② 结构化自检（7 项，退出码 0=通过 1=严重 2=有警告）
+node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
+```
+
+也可以在对话里直接触发：**"生成界面规范" / "设计规范" / "UI规范" / "DESIGN.md"**。
+
+`gen-design-scaffold.js` 解决的是 LLM 最容易出错的环节——**状态枚举漏项**。它从 PRD 的 EARS 需求、状态转换描述里正则抽取全部状态词，按语义映射到色族，再用明度差拉开同族，保证产出**天生能通过 check-design.js**。
+
+### 文档结构（12 章）
+
+| # | 章节 | 关键点 |
+|---|------|--------|
+| 1 | 视觉主题与气质 | 先定调，后续所有决策的依据 |
+| 2 | 颜色与角色 | 颜色必须绑定**功能角色**，附语义禁区 |
+| 3 | 字体规则 | 中文优先栈 + 数字必须 `tabular-nums` |
+| 4 | 组件规范 | 每个组件写全 **8 态**（含 loading / 无权限） |
+| 5 | 布局原则 | 归纳布局类型，不逐页描述 |
+| 6 | 层级与深度 | L0-L3 表面阶梯，投影只允许 L2+ |
+| 7 | **数据密度** | 行高 / 一屏行数 / 列数上限，全部可测 |
+| 8 | Do's and Don'ts | 每条必须**可机器判定** |
+| 9 | 响应式与多端 | 断点 + PC/移动/大屏差异矩阵 |
+| 10 | 内容模型映射 | 内容类型 → 字段 → 模板 → 可发渠道 |
+| 11 | 组件库映射 | Element Plus `--el-*` 变量覆盖 |
+| 12 | Agent Prompt Guide | 速查色板 + 现成 prompt + 迭代审计清单 |
+
+### 校验器覆盖
+
+`check-design.js` 不是格式检查，是**语义检查**：
+
+| 检查项 | 判定规则 |
+|--------|---------|
+| front matter | YAML 合法 + 5 个必需顶层键 |
+| 裸 hex | `components` 下必须是 `{colors.x}` 引用 |
+| 引用完整性 | 每个 token 引用都真实存在 |
+| 状态色冲突 | **色相 × 明度双重判定**：灰阶（S<20%）豁免；色相差 <25° 但明度差 ≥18 判为"同族可接受" |
+| 对比度 | 状态色若被用作文字，白底须 ≥3:1 |
+| 双编码 | 必须声明图标/形状，不能只靠颜色 |
+
+```bash
+$ node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
+通过 6 | 严重 0 | 警告 0
+结果: 通过
+```
+
+### 领域预设
+
+技能本体通用，领域差异通过 `references/presets/` 覆盖。新增领域只加一个文件，不改 SKILL.md——这是跨项目复用的关键。
+
+| 预设 | 适用 | 提供什么 |
+|------|------|---------|
+| `media.md` | 融媒体 / 内容发布 / CMS | 11 态稿件状态机、8 渠道清单、内容分级标识、栏目色彩体系、AI 标注分档 |
+
+融媒体预设的三个关键判断（都来自真实项目）：
+
+1. **驳回必须分两支**——"退回修改"（编辑手工改）与"退回重写"（系统重跑 AI 并保留原版本）。合并成一个"已驳回"，编辑每次都要点进去才知道下一步做什么。
+2. **已通过 ≠ 已发布**——前者是审核终态，后者是分发终态。合并后审核队列分不清哪些还没发出去。
+3. **必须有"部分成功"**——一条稿件发 8 个平台可能 6 成 2 败，既不是成功也不是失败。
+
+### 文件位置
+
+```
+skills/core/pdd-design-spec/
+├── SKILL.md                    # 主文件：8 条铁律 + 三层红旗 + 12 章规范
+├── _meta.json                  # 触发词
+├── evals/default-evals.json    # 10 项评估断言
+├── references/
+│   ├── design-md-template.md   # 完整模板，可整体复制
+│   ├── token-spec.md           # token 命名 + 色板推导五步法
+│   ├── density-spec.md         # 后台密度数字表
+│   ├── pattern-library.md      # 12 个可复用模式
+│   ├── audit-checklist.md      # 12 项可判定审计
+│   └── presets/media.md        # 融媒体预设
+└── scripts/
+    ├── gen-design-scaffold.js  # 从 PRD/spec 抽取并生成骨架
+    └── check-design.js         # 语义校验
+```
+
+项目内产出：`ui/DESIGN.md`（与 `specs/`、`dev-specs/` 平级）。
 
 ***
 
@@ -1409,9 +1572,16 @@ pdd-skills-v3/
 │   ├── iteration/              # 迭代优化 / Iteration
 │   └── vm/                     # ★ PDD Visual Manager (~38 文件 / files)
 │
-├── skills/                     # 技能文件 / Skill Files (41+ 个)
-│   ├── core/                   # 12 个核心技能 / Core Skills
-│   ├── expert/                 # 11 个专家技能 / Expert Skills
+├── skills/                     # 技能文件 / Skill Files (49 个)
+│   ├── core/                   # 14 个核心技能 / Core Skills
+│   │                           #   pdd-main · pdd-ba · pdd-extract-features
+│   │                           #   pdd-generate-spec · pdd-design-spec ★v3.3.0
+│   │                           #   pdd-implement-feature · pdd-verify-feature
+│   │                           #   pdd-code-reviewer · pdd-doc-change
+│   │                           #   pdd-doc-gardener · pdd-entropy-reduction
+│   │                           #   pdd-vm · official-doc-writer
+│   │                           #   traffic-accident-assessor
+│   ├── expert/                 # 14 个专家技能 / Expert Skills
 │   ├── entropy/                # 4 个熵减技能 / Entropy Skills
 │   ├── openspec/               # 10 个 OpenSpec 技能 / OpenSpec Skills
 │   └── pr/                     # 7 个 PR 技能 / PR Skills
@@ -1653,6 +1823,8 @@ python skills/core/pdd-entropy-reduction/scripts/entropy_scan.py \
 
 | 版本 / Version | 日期 / Date | 重要变更 / Major Changes |
 | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v3.3.1** | 2026-10-19 | **设计规范消费闭环 / Design Spec Consumption Loop**: `pdd-implement-feature` 升级至 v2.1 —— 流程新增 **Step 2「读取界面设计规范」**：前端编码前必须读取 `ui/DESIGN.md`（颜色 token、状态色板、4px 间距密度、组件模式），并输出第 9 条铁律「设计规范对齐」与新红旗 EXEC-IMPL-007；`ui/DESIGN.md` 缺失时输出 WARN 提示先运行 `/pdd-design-spec`（不阻塞后端实现）。同时修正 README/package.json 中的技能计数（41+ → **49**，core 14 / expert 14），补全核心技能列表。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330) |
+| **v3.3.0** | 2026-10-19 | **★ 界面设计规范 / Design Spec**: 新增 `pdd-design-spec` 核心技能，在 PRD 与 specs 之后生成 `ui/DESIGN.md` —— 一份 AI 可读、可执行、可审计的设计契约。含 **12 章规范骨架**、**8 条铁律**、**12 项可判定审计清单**、**12 个可复用模式库**（提炼自 84 份真实站点设计系统分析）。两个确定性脚本：`gen-design-scaffold.js` 从 PRD/spec 抽取状态枚举、页面清单、渠道并自动配出合规色板；`check-design.js` 做 **色相 × 明度双重判定**的语义校验。关键设计主张：**状态优先于品牌**、**状态色只作圆点不作文字**（解决高明度色做小字对比度必然不足的问题）、**状态爆炸时收敛色族而非挤色相**。内置融媒体领域预设（11 态稿件状态机 / 8 渠道 / 内容分级）。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330) |
 | **v3.2.1** | 2026-09-30 | **★ 质量保障加固 / Quality Assurance Hardening**: 修复质量门控 **4 个静默失效缺陷**（等级恒为 F、**22/26 条 PRD 规则含 7/7 个 Blocker 从未执行**、路径打错返回假绿灯、**`exclude_patterns` 豁免白名单从未生效**且无出口可查）并新增静默失效防护（豁免次数在摘要与报告中显式计数）；熵减扫描评分模型重构为**密度归一化 + sqrt 压缩**（原绝对扣分导致中大型项目代码质量恒为 0），评分口径对齐文档（0-100 高分=健康）、函数长度阈值 100→50 行、检测语言由 JS 扩展至 **JS/TS/Python/Java**，新增 **28 项基于标准库的单测**。详见 [质量保障加固](#质量保障加固--quality-assurance-hardening) |
 | **v3.2.0** | 2026-05-08 | **★ 测试用例系统发布 / Testcase System Release**: 新增 testcase-modeler（测试用例建模师）和 testcase-agent（自动化测试执行专家）两个核心 Skill，基于 Chrome DevTools MCP 实现零代码 E2E 测试自动化，支持自然语言转 YAML 用例、5条执行铁律、4级自愈策略、深度网络校验、专业 HTML 报告生成，总技能数增至 **43+** |
 | **v3.1.2** | 2026-04-10 | **技能生态大扩展 / Skill Ecosystem Expansion**: 新增 7 个专家技能 / 7 new expert skills, 新增 4 个熵减技能 / 4 entropy skills, PR技能扩展至7个 / PR skills expanded to 7, 核心技能增至12个 / Core skills increased to 12, 总计41+技能 / Total 41+ skills |

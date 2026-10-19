@@ -102,3 +102,8 @@ ruoyi-project/
 # 熵减扫描输出的报告（含本机绝对路径，且每次运行都会重新生成）
 /entropy-report.md
 entropy-report*.md
+project/Converged-Publishing-Platform/
+project/BDRM-TEST-SYSTEM/
+
+# ---- WorkBuddy 本地工作区数据（不入库）----
+.workbuddy/
