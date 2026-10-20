@@ -5,7 +5,7 @@
 > **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **49 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**
 
 ***
-#特此声明：本项目来源于https://github.com/wonderslife/pdd-skills-v3
+
 ## 目录 / Table of Contents
 
 - [什么是 PDD-Skills？ / What is PDD-Skills?](#什么是-pdd-skills--what-is-pdd-skills)
