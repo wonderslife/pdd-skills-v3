@@ -1,8 +1,6 @@
 ---
 name: expert-entropy-auditor
-description: 熵增审计技能，发现设计意图与代码实现之间的裂痕。当用户需要技术债务审计或AI残渣检测时自动触发。支持中文触发：审计技术债务、PRD一致性、AI残渣检测。
-  
-  核心职责：识别分散在代码库中的"AI残渣"，建议归集到共享的实用程序包中。
+description: "熵增审计技能，发现设计意图与代码实现之间的裂痕，识别代码库中的 AI 残渣。当用户需要技术债务审计、PRD 一致性检查时触发。触发词：审计技术债务、PRD一致性、AI残渣检测、熵增审计。"
 license: MIT
 compatibility: 需要 PRD 文档和代码库
 metadata:

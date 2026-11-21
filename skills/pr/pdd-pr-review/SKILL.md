@@ -1,7 +1,6 @@
 ---
 name: pdd-pr-review
-description: |
-  汇总审查结果，给出建议操作。当用户需要查看 PR 审查状态、获取合并建议、查看审查报告时调用此Skill。支持 GitHub 模式和本地模式。即使用户只说"查看PR状态"、"审查结果"或"PR怎么样"，也应触发此Skill。
+description: "汇总 PR 审查结果并给出建议操作，支持 GitHub 模式与本地模式。当用户查看审查状态、获取合并建议、查看审查报告时触发。触发词：查看PR状态、审查结果、PR怎么样、查看审查报告。"
 license: MIT
 compatibility: 需要 OpenSpec Change ID 或 PR 编号
 metadata:

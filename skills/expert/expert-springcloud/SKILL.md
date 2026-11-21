@@ -1,6 +1,15 @@
 ---
 name: expert-springcloud
-description: "Spring Cloud microservice architecture expert. Invoke when projects involve service registry, config center, gateway routing, circuit breaker, or distributed tracing. 支持中文触发：微服务、网关配置、服务注册。"
+description: "Spring Cloud 微服务架构专家。当项目涉及服务注册与发现、配置中心、网关路由、熔断降级、链路追踪等微服务组件时自动触发。支持中文触发：微服务、网关配置、服务注册、熔断器、链路追踪。"
+license: MIT
+compatibility: Spring Cloud / Spring Cloud Alibaba 微服务项目
+metadata:
+  author: "neuqik@hotmail.com"
+  version: "1.0"
+  triggers:
+    - "/springcloud" | "/微服务"
+    - "微服务" | "网关" | "服务注册" | "Nacos" | "Gateway"
+    - "熔断" | "Sentinel" | "链路追踪" | "Feign" | "OpenFeign"
 ---
 
 # Spring Cloud 微服务专家 / Spring Cloud Microservice Expert
@@ -108,13 +117,6 @@ Provides expert-level guidance for Spring Cloud / Spring Cloud Alibaba microserv
 - [ ] 配置变更必须先在 dev 环境验证
 - [ ] 网关路由变更必须配合限流规则
 - [ ] 分布式事务方法必须标注 `@GlobalTransactional`
-
-### 🇺🇸 Must Follow
-- [ ] Service-to-service calls must use OpenFeign; hardcoded RestTemplate URLs are forbidden
-- [ ] All Feign clients must have Fallback configured
-- [ ] Config changes must be verified in dev environment first
-- [ ] Gateway route changes must include rate limiting rules
-- [ ] Distributed transaction methods must be annotated with `@GlobalTransactional`
 
 ---
 

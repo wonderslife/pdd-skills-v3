@@ -133,6 +133,25 @@ def _create_incognito_server_params() -> StdioServerParameters:
     viewport_h = os.environ.get("BROWSER_VIEWPORT_HEIGHT") or os.environ.get("BROWSER_HEIGHT", "768")
     npx_args.append(f"--chromeArg=--window-size={viewport_w},{viewport_h}")
 
+    # 优先使用本地构建的 chrome-devtools-mcp（避免 npx 联网拉包卡死/超时）
+    # 环境变量 PDD_MCP_PATH 可覆盖；未指定时探测常见本地路径
+    local_mcp = os.environ.get("PDD_MCP_PATH") or ""
+    if not local_mcp:
+        for cand in (
+            r"D:\APPPROJECTS\chrome-devtools-mcp-main\chrome-devtools-mcp-main\build\src\bin\chrome-devtools-mcp.js",
+        ):
+            if os.path.exists(cand):
+                local_mcp = cand
+                break
+    if local_mcp and os.path.exists(local_mcp):
+        print(f"[MCP] 使用本地构建: {local_mcp}")
+        return StdioServerParameters(
+            name="Chrome DevTools MCP (Local)",
+            command="node",
+            args=[local_mcp] + npx_args,
+            env=None,
+        )
+
     return StdioServerParameters(
         name="Chrome DevTools MCP (Isolated)",
         command="npx",
@@ -144,6 +163,10 @@ def _create_incognito_server_params() -> StdioServerParameters:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 os.environ.setdefault("PROJECT_ROOT", PROJECT_ROOT)
+
+# 将项目根加入 sys.path，保证 `from tests.framework.xxx import ...` 包导入可用
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 SERVER_PARAMS = _create_incognito_server_params()
 
@@ -1807,7 +1830,14 @@ def _build_fill_args(action, step, parser, cache) -> Dict:
     args = {}
     value = resolve_env_vars(step.get("value", ""))
     args["value"] = value
+    # 精确匹配所有元素（_exact_match_uid 内部对相同匹配长度优先选可交互元素，
+    # 因此 label(StaticText) 不会赢过其对应的 textbox/spinbutton）
+    # 注意：不要用 prefer_role 限定单一角色——弹窗里 textbox(标题) 与 spinbutton(金额) 并存，
+    # 限定 spinbutton 会导致 textbox 目标（如商品标题）匹配失败后模糊落到任意 spinbutton（如分页"页"）
     uid = _resolve_uid(step, parser, cache)
+    if not uid and step.get("value"):
+        # 兜底：按可输入角色再试
+        uid = _resolve_uid(step, parser, cache, prefer_role="textbox") or _resolve_uid(step, parser, cache, prefer_role="spinbutton")
     if uid:
         args["uid"] = uid
     return args
@@ -1828,17 +1858,14 @@ def _build_select_option_args(action, step, parser, cache) -> Dict:
     option = resolve_env_vars(step.get("option", ""))
     args["value"] = option
 
-    uid = _resolve_uid(step, parser, cache, prefer_role="textbox")
+    # 修复 Bug G: 移除"找不到就取第一个控件"的危险 fallback（曾把品牌"华为"填进商品标题框）
+    # 定位顺序: combobox 精确匹配 → 无角色精确匹配（依赖 find_uid 语义评分）
+    uid = _resolve_uid(step, parser, cache, prefer_role="combobox")
     if not uid:
-        for role in ("combobox", "select", "textbox"):
-            candidates = parser.find_all_by_role(role)
-            if candidates:
-                uid = candidates[0].uid
-                log(f"[Fallback] Using first {role}: {uid}", 2)
-                break
-
+        uid = _resolve_uid(step, parser, cache)
     if uid:
         args["uid"] = uid
+    # 未定位到: 不返回 uid，由 execute 的"未定位到目标元素"兜底（Bug A 修复），禁止乱填
     return args
 
 def _build_upload_args(action, step, parser, cache) -> Dict:
@@ -1887,7 +1914,8 @@ def _build_screenshot_args(action, step, parser, cache) -> Dict:
     return args
 
 def _build_wait_for_args(action, step, parser, cache) -> Dict:
-    text = resolve_env_vars(step.get("text", ""))
+    # 修复 Bug E: YAML 用 target 定位时也要传给 wait_for（text 兜底，避免空文本立即匹配）
+    text = resolve_env_vars(step.get("text", step.get("target", "")))
     texts = step.get("texts", [text])
     timeout = step.get("timeout", 10000)
     return {"text": [resolve_env_vars(t) for t in texts], "timeout": timeout if timeout else 0}
@@ -2397,6 +2425,16 @@ class ActionExecutor:
 
         await self._dismiss_password_dialog()
 
+        # 每步执行前强制刷新页面快照，避免使用陈旧 uid
+        # （弹窗打开/DOM 变化后，上一步快照的 uid 可能已失效或指向错误元素）
+        try:
+            await self._take_snapshot()
+            # uid 缓存只对当次快照有效，页面变化后必须清空，否则会复用失效的 uid
+            if getattr(self, 'cache', None) is not None:
+                self.cache.clear()
+        except Exception as e:
+            log(f"  ⚠️ 快照刷新异常（继续）: {e}", 3)
+
         if not getattr(self, '_auto_save_disabled', False):
             try:
                 url_result = await self.session.call_tool("evaluate_script", {
@@ -2426,6 +2464,9 @@ class ActionExecutor:
 
         if action_type in ("el_date", "el_date_picker"):
             return await self._execute_el_date(step, step_num, desc, start_time)
+
+        if action_type == "verify_network":
+            return await self._execute_verify_network(step, step_num, desc, start_time)
 
         mcp_entry = ActionRegistry.get(action_type)
 
@@ -2498,6 +2539,23 @@ class ActionExecutor:
             if ActionRegistry.needs_uid(action_type) and "uid" in mcp_args:
                 mcp_args["includeSnapshot"] = False
 
+            # ===== 修复 Bug A: uid 定位失败时优雅失败，不调 MCP（避免 -32602 Required at uid）=====
+            if ActionRegistry.needs_uid(action_type) and "uid" not in mcp_args:
+                elapsed_ms = int((time.time() - start_time) * 1000)
+                target_txt = step.get("target", step.get("option", step.get("desc", "")))
+                err_msg = f"未定位到目标元素: target='{target_txt}'（快照中无匹配，请检查页面结构或 target 文案）"
+                log(f"  ❌ {err_msg}", 1)
+                last_result = StepResult(
+                    step_num=step_num, desc=desc, action=action_type,
+                    status=StepStatus.FAILED, mcp_tool="(locate)",
+                    error=err_msg, retry_count=attempt,
+                    duration_ms=elapsed_ms,
+                    snapshot_before=self.last_snapshot_text,
+                    snapshot_after=self.last_snapshot_text,
+                    snapshot_path=self.last_snapshot_path,
+                )
+                continue
+
             log(f"  🔧 MCP工具: {mcp_tool_name}", 2)
             log(f"  📝 参数: {_safe_json_dumps(mcp_args, ensure_ascii=False, indent=2)}", 2)
 
@@ -2505,8 +2563,10 @@ class ActionExecutor:
             if action_type in ("select_option", "select", "choose") and "uid" in mcp_args:
                 uid = mcp_args.get("uid")
                 elem = self.parser.elements.get(uid)
-                if elem and elem.is_readonly:
-                    log(f"  🔍 检测到readonly选择器({uid})，使用JS操作Vue组件", 2)
+                # 修复 Bug G: el-select 的 combobox 统一走 JS picker（不再仅限 is_readonly），
+                # 避免 fill 文本进 combobox 或误填到其他输入框
+                if elem and (elem.is_readonly or elem.role == "combobox"):
+                    log(f"  🔍 检测到选择器({uid}, role={elem.role})，使用JS操作Vue组件", 2)
                     readonly_picker_result = await self._execute_readonly_picker_select(
                         step, step_num, uid, mcp_args.get("value", ""))
 
@@ -2535,6 +2595,44 @@ class ActionExecutor:
 
                 has_error = self._check_result_has_error(content_str)
                 status = StepStatus.FAILED if has_error else StepStatus.SUCCESS
+
+                # ===== 修复 Bug C: 隐藏 input 组件（el-checkbox/el-switch/el-rate 等）点击降级 =====
+                # Element Plus 的 checkbox/switch 实际 input 是 0x0+opacity:0，MCP 判"不可交互"，
+                # 降级为 DOM 原生 click（点外层容器/label 同样触发切换）
+                if has_error and action_type in ("click", "tap") and "did not become interactive" in (content_str or ""):
+                    target_txt = step.get("target", "")
+                    if target_txt:
+                        log(f"  🔧 [降级] 元素不可交互，尝试 DOM 原生点击 target='{target_txt}'", 1)
+                        js_t = json.dumps(target_txt)
+                        js = f"""() => {{
+                          const t = {js_t};
+                          // 策略1: el-form-item 的 label 匹配 → 点内部可点组件（switch/checkbox/radio/rate/slider）
+                          const items = [...document.querySelectorAll('.el-form-item')];
+                          const item = items.find(i => (i.querySelector('.el-form-item__label')?.innerText || '').trim() === t);
+                          if (item) {{
+                            const el = item.querySelector('.el-switch, .el-checkbox, .el-radio, .el-rate, .el-slider, button');
+                            if (el) {{ el.click(); return 'clicked-form-item: ' + el.className.slice(0, 40); }}
+                          }}
+                          // 策略2: 控件自身文本匹配（checkbox 文本/radio 文本）
+                          const c = [...document.querySelectorAll('.el-checkbox, .el-switch, .el-radio')].find(el => el.innerText && el.innerText.includes(t));
+                          if (c) {{ c.click(); return 'clicked-widget: ' + c.className.slice(0, 40); }}
+                          // 策略3: 任意叶子文本元素
+                          const leaf = [...document.querySelectorAll('span, label, div')].find(el => el.children.length === 0 && el.innerText && el.innerText.trim() === t);
+                          if (leaf) {{ leaf.click(); return 'clicked-leaf: ' + leaf.tagName; }}
+                          return 'not found: ' + t;
+                        }}"""
+                        try:
+                            js_result = await self.session.call_tool("evaluate_script", {"function": js})
+                            js_content = self._extract_result_content(js_result)
+                            log(f"  🔧 [降级] DOM 点击结果: {js_content[:80]}", 1)
+                            if js_content and "clicked" in js_content.lower():
+                                has_error = False
+                                status = StepStatus.SUCCESS
+                                content_str = f"[dom-fallback] {js_content}"
+                                icon, status_text = "✅", "成功(降级)"
+                                log(f"  ✅ 降级成功 ({elapsed_ms}ms)", 1)
+                        except Exception as e:
+                            log(f"  ⚠️ 降级点击异常: {e}", 2)
 
                 icon = "✅" if not has_error else "❌"
                 status_text = "成功" if not has_error else "失败"
@@ -2584,7 +2682,30 @@ class ActionExecutor:
                         await self._take_snapshot()
 
                     for assertion in assertions:
-                        ar = self._run_assertion(assertion)
+                        # 修复: toast_visible 断言改实时 DOM 抓取（toast 仅 3s 生命期，快照等待会错过窗口）
+                        if assertion.get("type") == "toast_visible":
+                            expected_t = resolve_env_vars(str(assertion.get("expected", "")))
+                            # 修复: toast 渲染存在延迟，单次抓取偶发竞态（点击后立即查时 toast 未出现）。
+                            # 改为轮询抓取：2.5s 内每 250ms 查一次 .el-message，任一时刻命中即 PASS。
+                            live_toast = ""
+                            poll_deadline = time.time() + 2.5
+                            try:
+                                while time.time() < poll_deadline:
+                                    js_res = await self.session.call_tool("evaluate_script", {
+                                        "function": "() => [...document.querySelectorAll('.el-message')].map(m => m.innerText).join(' | ')"
+                                    })
+                                    live_toast = self._extract_result_content(js_res) or ""
+                                    if expected_t in live_toast:
+                                        break
+                                    await asyncio.sleep(0.25)
+                                ar = {"passed": expected_t in live_toast, "type": "toast_visible",
+                                      "expected": expected_t, "detail": f"LiveToast: '{live_toast[:80]}'",
+                                      "confidence": "high"}
+                            except Exception as _e:
+                                ar = {"passed": False, "type": "toast_visible", "expected": expected_t,
+                                      "detail": f"live-check-error: {_e}", "confidence": "high"}
+                        else:
+                            ar = self._run_assertion(assertion)
                         assertion_results.append(ar)
                         icon = "✅" if ar["passed"] else "❌"
                         expected = resolve_env_vars(str(assertion.get("expected", "")))
@@ -2593,14 +2714,16 @@ class ActionExecutor:
 
                     critical_fail = any(
                         not a["passed"] and a.get("confidence") == "high"
-                        and a["type"] in ("text_contains", "url_contains", "element_visible")
+                        and a["type"] in ("text_contains", "url_contains", "element_visible", "toast_visible")
                         for a in assertion_results
                     )
                     if critical_fail:
                         status = StepStatus.FAILED_ASSERT
                         log("  ⛔ 关键断言失败!", 1)
                     elif any(not a["passed"] for a in assertion_results):
-                        log("  ⚠️ 非关键断言失败，继续执行", 1)
+                        # 修复 Bug F: 断言失败如实标记，不再被吞为 SUCCESS
+                        status = StepStatus.FAILED_ASSERT
+                        log("  ⚠️ 断言失败（步骤标记 FAILED_ASSERT，流程继续）", 1)
 
                 # ===== LLM 执行后反思 =====
                 thinking_post = ""
@@ -2708,14 +2831,15 @@ class ActionExecutor:
 
         if wait_type == "time":
             duration = wait_cfg.get("duration", 1000) / 1000.0
-            duration = min(duration, 1.0)
+            # 修复: 放开 1s 硬截断（wait_after 2000ms+ 需真实生效，列表刷新/异步渲染常见 >1s）
+            duration = min(duration, 10.0)
             if duration > 0.2:
                 log(f"  ⏳ 等待 {duration:.1f}s...", 2)
             await asyncio.sleep(duration)
 
         elif wait_type == "navigation":
             timeout = wait_cfg.get("timeout", 5000) / 1000.0
-            timeout = min(timeout, 1.0)
+            timeout = min(timeout, 10.0)
             log(f"  ⏳ 智能等待导航 ({timeout:.1f}s)...", 2)
             await asyncio.sleep(timeout)
 
@@ -2783,7 +2907,8 @@ class ActionExecutor:
         在断言验证前等待新元素出现，避免时序竞争。
         """
         start_time = time.time()
-        max_wait = 3.0
+        # 修复: navigate 类动作（SPA 首次加载/路由按需编译可能 30-60s）等待更久，click 等 DOM 变更保持 3s
+        max_wait = 60.0 if action_type in ("navigate", "new_page", "open_url") else 3.0
         stable_count = 0
         min_stable = 2
 
@@ -2792,6 +2917,10 @@ class ActionExecutor:
         last_text_len = len(self.last_snapshot_text or "")
 
         while time.time() - start_time < max_wait:
+            # 检测全局加载遮罩（RuoYi 等框架的"正在加载系统资源"），出现则视为页面未就绪继续等
+            snap_text = self.last_snapshot_text or ""
+            if "正在加载系统资源" in snap_text or "加载中" in snap_text:
+                log(f"  ⏳ 检测到全局加载遮罩，继续等待页面就绪", 3)
             await asyncio.sleep(0.3)
             await self._take_snapshot()
 
@@ -2978,9 +3107,19 @@ class ActionExecutor:
         try:
             result = await self.session.call_tool(
                 "evaluate_script", {"function": js_code})
-            log(f"  [Picker] JS结果: {result}", 1)
+            content = self._extract_result_content(result)
+            log(f"  [Picker] JS结果: {content[:120]}", 1)
+            # 修复 Bug G: JS 明确返回 ok:false 时不再假成功，返回 None 走 MCP fill 兜底
+            try:
+                js_payload = self._parse_json_from_mcp_response(content)
+                if isinstance(js_payload, dict) and js_payload.get("ok") is False:
+                    log(f"  ⚠️ [Picker] 选项未找到，走 MCP fill 兜底", 1)
+                    return None
+            except Exception:
+                pass
         except Exception as e:
             log(f"  [Picker] JS失败: {e}", 1)
+            return None
 
         await asyncio.sleep(0.8)
         return [{"type": "text", "text": f"picker selected '{option_value}' via DOM click"}]
@@ -3325,26 +3464,14 @@ class ActionExecutor:
                 log(f"  📎 ⏳ 等待 {wait_duration}ms 让页面处理文件...", 2)
                 await asyncio.sleep(wait_duration / 1000.0)
 
-            sub_step_4 = "[4/3] 关闭文件选择窗口"
-            log(f"  📎 {sub_step_4}: 尝试关闭OS级文件对话框", 2)
-            try:
-                import ctypes
-                VK_ESCAPE = 0x1B
-                user32 = ctypes.windll.user32
-                result = user32.keybd_event(VK_ESCAPE, 0, 0, 0)
-                user32.keybd_event(VK_ESCAPE, 0, 2, 0)
-                await asyncio.sleep(0.5)
-                log(f"  📎 {sub_step_4}: Win32 keybd_event Escape 发送成功", 3)
-                sub_steps.append(f"{sub_step_4}: ✅(Win32)")
-            except Exception as win_err:
-                log(f"  📎 {sub_step_4} Win32失败({win_err})，尝试MCP press_key...", 3)
-                try:
-                    await self.session.call_tool("press_key", {"key": "Escape"})
-                    await asyncio.sleep(0.3)
-                    sub_steps.append(f"{sub_step_4}: ✅(MCP)")
-                except Exception as mcp_err:
-                    log(f"  📎 ⚠️ {sub_step_4} 所有方式均失败(可忽略)", 3)
-                    sub_steps.append(f"{sub_step_4}: ⚠️")
+            # 修复: 不再发送 Escape 关闭"OS级文件对话框"。
+            # 原因: chrome-devtools-mcp 的 upload_file 走 CDP DOM.setFileInputFiles 注入文件，
+            #       根本不打开 OS 文件对话框；而 Escape 会被 Element Plus el-dialog 捕获
+            #       (close-on-press-escape 默认 true)，导致上传后整个新增弹窗被误关，
+            #       后续"确 定"等步骤全部错位（曾把提交点成"搜索"按钮）。
+            sub_step_4 = "[4/3] 跳过关闭文件对话框(Escape 会误关 el-dialog)"
+            log(f"  📎 {sub_step_4}", 2)
+            sub_steps.append(f"{sub_step_4}: ✅(skip, CDP注入无OS对话框)")
 
             url_after = getattr(self, 'last_snapshot_url', '') or ''
             total_elapsed = (time.time() - step_start_time) * 1000
@@ -3455,7 +3582,9 @@ class ActionExecutor:
             sub_step_1 = "[1/3] 点击日期输入框"
             log(f"  📅 {sub_step_1}: target='{target}'", 2)
 
-            click_uid = _resolve_uid(step, self.parser, self.cache, require_interactive=True)
+            click_uid = _resolve_uid(step, self.parser, self.cache, prefer_role="combobox")
+            if not click_uid:
+                click_uid = _resolve_uid(step, self.parser, self.cache)
             if not click_uid:
                 elapsed = int((time.time() - start_time) * 1000)
                 return StepResult(
@@ -3631,6 +3760,131 @@ class ActionExecutor:
             log(f"    [NearestButton] 最近button: uid={best_match} 距离anchor={best_distance}", 3)
         return best_match
 
+    async def _execute_verify_network(self, step: Dict, step_num: int,
+                                      desc: str, start_time: float) -> StepResult:
+        """verify_network 动作：校验浏览器网络请求（铁律3 UI+网络双重校验）
+
+        通过 chrome-devtools-mcp 的 list_network_requests 检查当前页面导航内的
+        网络请求，匹配 YAML 断言中的 url_pattern / method / response_code。
+
+        YAML 用法:
+          - step: 33
+            desc: "校验新增接口"
+            action: verify_network
+            assertion:
+              type: network_called
+              url_pattern: "/api/presale/goods"
+              method: POST
+              response_code: 200
+        """
+        action_type = "verify_network"
+        elapsed = int((time.time() - start_time) * 1000)
+        # 兼容 assertion 在步骤内或步骤顶层
+        assertion = step.get("assertion") or {}
+        url_pattern = resolve_env_vars(str(assertion.get("url_pattern") or step.get("url_pattern") or ""))
+        method = resolve_env_vars(str(assertion.get("method") or step.get("method") or ""))
+        code = assertion.get("response_code") or step.get("response_code") or assertion.get("status_code")
+
+        log(f"  🌐 [verify_network] 匹配 url~'{url_pattern}' method={method or '*'}"
+            f" status={code or '*'}", 2)
+
+        import json as _json
+
+        try:
+            js_res = await self.session.call_tool("list_network_requests", {
+                "resourceTypes": ["fetch", "xhr"],
+            })
+            raw = self._extract_result_content(js_res) or ""
+            requests = []
+            # 优先尝试 JSON 数组
+            try:
+                data = _json.loads(raw)
+                if isinstance(data, list):
+                    requests = data
+            except _json.JSONDecodeError:
+                requests = []
+            # 回退: chrome-devtools-mcp 返回 Markdown 行: "reqid=N METHOD URL [STATUS]"
+            if not requests:
+                import re as _re
+                for line in raw.splitlines():
+                    m = _re.match(r"reqid=\d+\s+(\S+)\s+(\S+)\s+\[(\d+)\]", line.strip())
+                    if m:
+                        requests.append({
+                            "method": m.group(1), "url": m.group(2),
+                            "status": int(m.group(3)),
+                        })
+        except Exception as e:
+            log(f"  🌐 [verify_network] list_network_requests 调用失败: {e}", 1)
+            return StepResult(
+                step_num=step_num, desc=desc, action=action_type,
+                status=StepStatus.FAILED, mcp_tool="list_network_requests",
+                error=f"list_network_requests error: {e}",
+                output="",
+                duration_ms=elapsed,
+            )
+
+        from urllib.parse import urlparse
+
+        def _norm(path_or_pattern: str) -> str:
+            """去掉常见代理前缀（/dev-api、/prod-api、/api），便于前后端路径对齐"""
+            p = path_or_pattern
+            for prefix in ("/dev-api", "/prod-api", "/api"):
+                if p.startswith(prefix):
+                    p = p[len(prefix):]
+                    break
+            return p
+
+        matched = []
+        for req in requests:
+            if not isinstance(req, dict):
+                continue
+            url = req.get("url", "") or ""
+            try:
+                path = urlparse(url).path or url
+            except Exception:
+                path = url
+            path_norm = _norm(path)
+            pattern_norm = _norm(url_pattern)
+            if url_pattern and pattern_norm not in path_norm:
+                continue
+            if method:
+                req_method = str(req.get("method", "")).upper()
+                if req_method and req_method != method.upper():
+                    continue
+            if code is not None:
+                req_status = req.get("status")
+                if req_status is None:
+                    req_status = req.get("statusCode")
+                if req_status is not None and int(req_status) != int(code):
+                    continue
+            matched.append({
+                "url": url, "method": req.get("method", ""),
+                "status": req.get("status", req.get("statusCode", "")),
+            })
+
+        if matched:
+            detail = " | ".join(
+                f"{m['method']} {m['url'][:80]} -> {m['status']}" for m in matched[:5])
+            log(f"  🌐 [verify_network] ✅ 匹配到 {len(matched)} 个请求: {detail}", 1)
+            return StepResult(
+                step_num=step_num, desc=desc, action=action_type,
+                status=StepStatus.SUCCESS, mcp_tool="list_network_requests",
+                output=f"Network matched {len(matched)}: {detail}",
+                duration_ms=elapsed,
+            )
+
+        available = [f"{r.get('method', '?')} {str(r.get('url', ''))[:80]}"
+                     for r in requests[:8] if isinstance(r, dict)]
+        log(f"  🌐 [verify_network] ❌ 未匹配到请求 (url_pattern='{url_pattern}')", 1)
+        log(f"     最近请求: {available}", 3)
+        return StepResult(
+            step_num=step_num, desc=desc, action=action_type,
+            status=StepStatus.FAILED, mcp_tool="list_network_requests",
+            error=f"No network request matched url_pattern='{url_pattern}'",
+            output=f"Recent requests: {available}",
+            duration_ms=elapsed,
+        )
+
     async def _execute_assert_multiple(self, step: Dict, step_num: int,
                                        desc: str, start_time: float) -> StepResult:
         action_type = "assert_multiple"
@@ -3661,7 +3915,7 @@ class ActionExecutor:
         all_pass = all(a["passed"] for a in assertion_results)
         critical_fail = any(
             not a["passed"] and a.get("confidence") == "high"
-            and a["type"] in ("text_contains", "url_contains", "element_visible")
+            and a["type"] in ("text_contains", "url_contains", "element_visible", "toast_visible")
             for a in assertion_results
         )
 
@@ -3669,8 +3923,9 @@ class ActionExecutor:
             status = StepStatus.FAILED_ASSERT
             log("  ⛔ 关键断言失败!", 1)
         elif not all_pass:
-            status = StepStatus.SUCCESS
-            log("  ⚠️ 非关键断言失败，标记成功(continue_on_error)", 1)
+            # 修复 Bug F: 断言失败如实标记，不再被吞为 SUCCESS
+            status = StepStatus.FAILED_ASSERT
+            log("  ⚠️ 断言失败（步骤标记 FAILED_ASSERT）", 1)
         else:
             status = StepStatus.SUCCESS
             log("  ✅ 所有断言通过", 1)
@@ -3903,6 +4158,96 @@ class ActionExecutor:
 # 报告生成器 v2.0
 # ============================================================
 
+def _md_to_html(md: str) -> str:
+    """轻量 Markdown → HTML 转换（支持标题/表格/粗体/代码块/图片/列表，无第三方依赖）"""
+    import html as _html
+    lines = md.split("\n")
+    out = []
+    in_code = False
+    code_buf = []
+    in_table = False
+    table_rows = []
+
+    def flush_table():
+        nonlocal in_table, table_rows
+        if not table_rows:
+            return
+        html_rows = []
+        for ri, row in enumerate(table_rows):
+            cells = [c.strip() for c in row.strip().strip("|").split("|")]
+            tag = "th" if ri == 0 else "td"
+            # 去掉 md 加粗标记
+            clean = lambda s: s.replace("**", "").replace("`", "")
+            html_rows.append("<tr>" + "".join(f"<{tag}>{_html.escape(clean(c))}</{tag}>" for c in cells) + "</tr>")
+        out.append("<table border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse'>" + "".join(html_rows) + "</table>")
+        table_rows = []
+        in_table = False
+
+    for line in lines:
+        # 代码块
+        if line.strip().startswith("```"):
+            if in_code:
+                out.append("<pre style='background:#f6f8fa;padding:10px;border-radius:4px;overflow-x:auto'>" + _html.escape("\n".join(code_buf)) + "</pre>")
+                code_buf = []
+                in_code = False
+            else:
+                flush_table()
+                in_code = True
+            continue
+        if in_code:
+            code_buf.append(line)
+            continue
+
+        # 表格分隔行（|---|）
+        if re.match(r"^\|[\s:\-|]+\|$", line.strip()):
+            continue
+        if line.strip().startswith("|") and line.strip().endswith("|"):
+            flush_table() if in_table and False else None
+            # 新表格
+            if not in_table:
+                in_table = True
+                table_rows = []
+            if "|" in line:
+                table_rows.append(line)
+            continue
+        else:
+            flush_table()
+
+        s = line.strip()
+        if not s:
+            continue
+        if s == "---":
+            out.append("<hr>")
+        elif s.startswith("### "):
+            out.append(f"<h3>{_html.escape(s[4:].replace('**',''))}</h3>")
+        elif s.startswith("## "):
+            out.append(f"<h2>{_html.escape(s[3:].replace('**',''))}</h2>")
+        elif s.startswith("# "):
+            out.append(f"<h1>{_html.escape(s[2:].replace('**',''))}</h1>")
+        elif s.startswith("- "):
+            # 图片或列表项
+            img_m = re.match(r"^- !\[(.*?)\]\((.*?)\)$", s)
+            if img_m:
+                out.append(f"<p><img src='{_html.escape(img_m.group(2))}' alt='{_html.escape(img_m.group(1))}' style='max-width:100%'></p>")
+            else:
+                out.append(f"<li>{_html.escape(s[2:].replace('**',''))}</li>")
+        else:
+            text = _html.escape(s)
+            # 加粗转换: **xxx** → <b>xxx</b>（先转义再替换，避免脚本注入）
+            text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+            out.append(f"<p>{text}</p>")
+
+    flush_table()
+    if in_code and code_buf:
+        out.append("<pre>" + _html.escape("\n".join(code_buf)) + "</pre>")
+
+    return ("<!DOCTYPE html><html><head><meta charset='utf-8'><title>测试报告</title>"
+            "<style>body{font-family:'Microsoft YaHei',sans-serif;margin:24px;line-height:1.6;color:#333}"
+            "table{width:100%;margin:8px 0}h1{color:#409EFF}h2{border-bottom:2px solid #eee;padding-bottom:4px}"
+            "h3{margin-top:20px}li{margin:2px 0}</style></head><body>"
+            + "".join(out) + "</body></html>")
+
+
 class ReportGenerator:
 
     @staticmethod
@@ -4027,6 +4372,17 @@ class ReportGenerator:
                             df.write("\n")
                     
                     df.write("```\n\n")
+
+        # ===== 修复: 同时输出 HTML 报告（testcase-agent 技能规范要求 HTML）=====
+        try:
+            html_path = os.path.join(output_dir, f"report-{timestamp}.html")
+            with open(report_path, "r", encoding="utf-8") as _rf:
+                _md_text = _rf.read()
+            with open(html_path, "w", encoding="utf-8") as _hf:
+                _hf.write(_md_to_html(_md_text))
+            log(f"📊 HTML 报告: {html_path}", 1)
+        except Exception as _e:
+            log(f"  ⚠️ HTML 报告生成失败: {_e}", 2)
 
         return report_path
 
@@ -4286,7 +4642,25 @@ async def run_all(targets: List[Dict], env_overrides: Dict[str, str] = None,
 
     results = []
     run_ts = time.strftime("%Y%m%d-%H%M%S")
-    this_result_dir = os.path.join(RESULT_BASE_DIR, f"run-{run_ts}")
+
+    # 结果目录跟随用例所在项目：从 YAML 路径向上找含 testcases 的目录作为项目根
+    # 例: ruoyi-project/testcases/frontend/xx.yaml → ruoyi-project/test-result/
+    # 例: testcases/tc2-zccz/xx.yaml             → 框架根 test-result/
+    result_base = RESULT_BASE_DIR
+    if targets:
+        yaml_path = targets[0].get("path", "")
+        if yaml_path:
+            probe = os.path.dirname(os.path.abspath(yaml_path))
+            while True:
+                if os.path.basename(probe) == "testcases" or os.path.isdir(os.path.join(probe, "testcases")):
+                    result_base = os.path.join(os.path.dirname(probe), "test-result")
+                    break
+                parent = os.path.dirname(probe)
+                if parent == probe:
+                    break
+                probe = parent
+    this_result_dir = os.path.join(result_base, f"run-{run_ts}")
+    os.makedirs(this_result_dir, exist_ok=True)
 
     log(f"\n{'#'*60}", 1)
     log(f"# AI Test Framework v2.0", 1)

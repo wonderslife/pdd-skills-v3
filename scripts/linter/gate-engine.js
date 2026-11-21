@@ -60,7 +60,7 @@ function parseSimpleYaml(raw) {
       continue;
     }
 
-    const kvMatch = trimmed.match(/^([a-z_]+):\s*(.+)$/);
+    const kvMatch = trimmed.match(/^([A-Za-z_]+):\s*(.+)$/);
     if (kvMatch) {
       const key = kvMatch[1];
       let val = kvMatch[2].trim().replace(/^["']|["']$/g, '');
@@ -72,6 +72,8 @@ function parseSimpleYaml(raw) {
       } else if (currentSection === 'score_weights') {
         config.score_weights[key] = isNaN(Number(val)) ? val : Number(val);
       } else if (currentSection === 'grade_thresholds') {
+        // 注意：等级键是大写字母（A/B/C/D/F），正则必须允许大写，
+        // 否则 grade_thresholds 解析为空 → 所有得分都判 F 级
         config.grade_thresholds[key] = Number(val);
       } else if (currentItem && currentSection === 'gate_levels') {
         currentItem[key] = isNaN(Number(val)) ? val : Number(val);
@@ -140,9 +142,25 @@ export class GateEngine {
     this.fixSuggestions = GATE_CONFIG.blocker_fix_suggestions;
     this.weights = GATE_CONFIG.score_weights;
     this.grades = GATE_CONFIG.grade_thresholds;
+    this.skippedRunners = [];
   }
 
   evaluate(linterResults) {
+    // 记录「压根没跑」的检查项，供 determineGate 判定为不通过
+    //
+    // ⚠️ 不能用 success === false 作为判据：各 runner 的 success 语义是
+    //    「检查是否通过（无 error）」，而不是「是否执行成功」。例如 sql-linter
+    //    的 fallback 真跑了并报出 9 个 error 时 success 同样是 false —— 若据此
+    //    判为「跳过」，就会把一次成功的检查说成「门禁未真正执行」，反而掩盖了
+    //    真实结果。只有显式的 skipped 标记、或带 error 的启动失败才算没跑。
+    this.skippedRunners = (linterResults || [])
+      .filter(r => r && (r.skipped === true || (!!r.error && !(r.issueCount > 0))))
+      .map(r => {
+        const name = r.runner || '未知检查项';
+        const why = r.error || r.message;
+        return why ? `${name}：${why}` : name;
+      });
+
     const allIssues = [];
     for (const result of linterResults) {
       if (result.issues) {
@@ -205,6 +223,19 @@ export class GateEngine {
         message: this.formatBlockerMessage(classified.blocker)
       };
     }
+    if (this.skippedRunners.length > 0) {
+      // 有检查项根本没跑（文件没匹配到 / 规则正则失效）→ 不能算通过，
+      // 否则「路径打错」会和「代码干净」得到同一个绿灯。
+      return {
+        passed: false,
+        gate: GATE_LEVELS.CRITICAL,
+        action: GATE_ACTIONS.critical,
+        message: chalk.red(
+          `❌ 门禁未真正执行：以下检查被跳过，结果不具判定力\n` +
+          this.skippedRunners.map(s => `   - ${s}`).join('\n')
+        )
+      };
+    }
     if (classified.critical.length > 0) {
       return {
         passed: !this.strict,
@@ -226,8 +257,8 @@ export class GateEngine {
       gate: score >= 80 ? GATE_LEVELS.INFO : GATE_LEVELS.WARNING,
       action: GATE_ACTIONS.info,
       message: score >= 80
-        ? chalk.green('✅ PRD质量评分通过，可以进入开发阶段')
-        : chalk.yellow(`⚠️ PRD质量评分 ${score}/100，建议改进后再开发`)
+        ? chalk.green('✅ 质量评分通过，可以进入开发阶段')
+        : chalk.yellow(`⚠️ 质量评分 ${score}/100，建议改进后再开发`)
     };
   }
 
@@ -270,14 +301,23 @@ export class GateEngine {
     return lines.join('\n');
   }
 
-  generateScorecard(gateResult) {
+  generateScorecard(gateResult, label = '质量') {
     const { score, classified, totalIssues } = gateResult;
     const g = this.grades;
     const grade = score >= g.A ? 'A' : score >= g.B ? 'B' : score >= g.C ? 'C' : score >= g.D ? 'D' : 'F';
     const gradeColor = score >= 80 ? chalk.green : score >= 60 ? chalk.yellow : chalk.red;
 
+    // 非严格模式下 Critical 不阻断，但仍是「必须处理」的问题。
+    // 直接印 ✅ 通过门禁 会与评分卡里的 20/100 等级 F 自相矛盾。
+    const critCount = classified.critical.length;
+    const status = !gateResult.passed
+      ? chalk.red('❌ 未通过门禁')
+      : critCount > 0
+        ? chalk.yellow(`⚠️ 未阻断（非严格模式），但存在 ${critCount} 个 Critical 需处理`)
+        : chalk.green('✅ 通过门禁');
+
     const lines = [
-      chalk.bold('\n━━━ PRD质量评分卡 ━━━\n'),
+      chalk.bold(`\n━━━ ${label}评分卡 ━━━\n`),
       `  ${gradeColor.bold(`评分: ${score}/100  等级: ${grade}`)}`,
       '',
       `  🚫 Blocker:  ${classified.blocker.length}`,
@@ -286,7 +326,7 @@ export class GateEngine {
       `  🔵 Info:     ${classified.info.length}`,
       `  📊 总问题数: ${totalIssues}`,
       '',
-      `  ${gateResult.passed ? chalk.green('✅ 通过门禁') : chalk.red('❌ 未通过门禁')}`,
+      `  ${status}`,
       ''
     ];
 

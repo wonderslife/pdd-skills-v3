@@ -1,6 +1,6 @@
 ---
 name: openspec-continue-change
-description: Continue working on an OpenSpec change by creating the next artifact. Use when the user wants to progress their change, create the next artifact, or continue their workflow.
+description: OpenSpec继续变更专家，在当前变更中创建下一个工件以推进进度。当用户需要推进变更、创建下一个工件或继续工作流时调用此Skill。支持中文触发：继续变更、continue change、推进变更、下一步、继续工作流。
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:

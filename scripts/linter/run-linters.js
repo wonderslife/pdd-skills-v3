@@ -48,6 +48,16 @@ export default async function runLinters(options = {}) {
 
   const incremental = options.incremental || false;
   const outputFormat = options.output || 'text';
+
+  // JSON 模式下 stdout 必须是纯 JSON，否则 `pdd linter -o json | jq` 会因前置的
+  // 横幅/日志行解析失败（CI 里会当成工具报错）。诊断信息一律改走 stderr。
+  const jsonMode = outputFormat === 'json';
+  const diag = (msg, isLog = false) => {
+    if (jsonMode) console.error(msg);
+    else if (isLog) log('info', msg);
+    else console.log(msg);
+  };
+
   
   // Handle file parameter - can be string or array, convert to array for linterOptions
   let fileOptions = null;
@@ -59,14 +69,14 @@ export default async function runLinters(options = {}) {
     includeAll: options.includeAll || false
   };
 
-  console.log(chalk.blue.bold('\n🔍 PDD Linter - 代码与文档质量检查\n'));
+  if (!jsonMode) console.log(chalk.blue.bold('\n🔍 PDD Linter - 代码与文档质量检查\n'));
 
   const projectRoot = await findProjectRoot(process.cwd());
-  log('info', `项目根目录: ${projectRoot}`);
+  diag(`项目根目录: ${projectRoot}`, true);
   const config = await loadConfig(projectRoot);
 
   if (!config.linter.enabled) {
-    console.log(chalk.yellow('⚠️  Linter未启用，请检查 .pdd/config.yaml'));
+    diag(chalk.yellow('⚠️  Linter未启用，请检查 .pdd/config.yaml'));
     return;
   }
 
@@ -75,12 +85,14 @@ export default async function runLinters(options = {}) {
   for (const type of types) {
     const linterDef = LINTER_REGISTRY[type];
     if (!linterDef) {
-      log('warn', `未知Linter类型: ${type}, 跳过`);
+      diag(chalk.yellow(`未知Linter类型: ${type}, 跳过`));
       continue;
     }
 
-    console.log(chalk.cyan(`\n━━━ ${linterDef.name} ━━━`));
-    console.log(chalk.gray(`  ${linterDef.description}\n`));
+    if (!jsonMode) {
+      console.log(chalk.cyan(`\n━━━ ${linterDef.name} ━━━`));
+      console.log(chalk.gray(`  ${linterDef.description}\n`));
+    }
 
     for (const runner of linterDef.runners) {
       try {
@@ -100,7 +112,7 @@ export default async function runLinters(options = {}) {
     }
   }
 
-  await generateSummary(results, startTime, outputFormat);
+  await generateSummary(results, startTime, outputFormat, types);
 
   return results;
 }
@@ -128,37 +140,73 @@ async function executeLinter(runner, projectRoot, config, incremental, linterOpt
   }
 }
 
+/**
+ * 判断异常是否意味着「命令压根没能执行」（工具未安装 / 找不到可执行文件 / 找不到 jar），
+ * 而不是「命令跑了并报告了问题」。
+ *
+ * 二者都会让 success=false，但语义完全不同：前者是检查缺失（应标记 skipped，
+ * 让门控判为「未真正执行」），后者是检查结果（应如实计入评分）。若不区分，
+ * 要么把成功的检查说成没跑，要么把没跑说成通过。
+ */
+function couldNotStart(e) {
+  const status = e && e.status;
+  // 126/127 = shell 找不到或无法执行命令；9009 = Windows cmd 的「不是内部或外部命令」
+  if (status === 126 || status === 127 || status === 9009) return true;
+
+  const text = [e && e.message, e && e.stderr, e && e.stdout].filter(Boolean).join('\n');
+  return /ENOENT|not recognized as an internal|command not found|Unable to access jarfile|No such file or directory/i.test(text);
+}
+
+function skippedResult(runner, e, startTime, hint) {
+  const detail = String((e && (e.stderr || e.message)) || '').trim().split('\n')[0].slice(0, 120);
+  return {
+    runner,
+    success: false,
+    skipped: true,
+    error: `${hint}${detail ? '：' + detail : ''}`,
+    issueCount: 0,
+    errorCount: 0,
+    warningCount: 0,
+    issues: [],
+    duration: Date.now() - startTime
+  };
+}
+
 function runCheckstyle(projectRoot, incremental) {
   const configPath = path.join(CONFIG_ROOT, 'checkstyle.xml');
   if (!fs.existsSync(configPath)) {
-    return { runner: 'checkstyle', success: false, error: '配置文件不存在', duration: 0 };
+    return { runner: 'checkstyle', success: false, skipped: true, error: '配置文件不存在', duration: 0 };
   }
 
   let cmd = 'java -jar checkstyle-' + getVersion('checkstyle') + '-all.jar -c "' + configPath + '"';
   if (incremental) cmd += ' -r "$(git diff --name-only --diff-filter=ACMR | grep .java$)"';
 
+  const start = Date.now();
   try {
     const output = execSync(cmd, { cwd: projectRoot, encoding: 'utf-8', timeout: 60000 });
-    return parseLinterOutput('checkstyle', output, Date.now());
+    return parseLinterOutput('checkstyle', output, start);
   } catch (e) {
-    return parseLinterOutput('checkstyle', e.stdout || e.stderr || '', Date.now(), e.status !== 0);
+    if (couldNotStart(e)) return skippedResult('checkstyle', e, start, '检查工具未就绪（需自带 checkstyle jar 且 java 可用）');
+    return parseLinterOutput('checkstyle', e.stdout || e.stderr || '', start, e.status !== 0);
   }
 }
 
 function runPMD(projectRoot, incremental) {
   const configPath = path.join(CONFIG_ROOT, 'pmd.xml');
   if (!fs.existsSync(configPath)) {
-    return { runner: 'pmd', success: false, error: '配置文件不存在', duration: 0 };
+    return { runner: 'pmd', success: false, skipped: true, error: '配置文件不存在', duration: 0 };
   }
 
+  const start = Date.now();
   try {
     const output = execSync(
       `run.sh pmd -d . -rulesets "${configPath}" -f json -language java`,
       { cwd: projectRoot, encoding: 'utf-8', timeout: 120000 }
     );
-    return parseLinterOutput('pmd', output, Date.now());
+    return parseLinterOutput('pmd', output, start);
   } catch (e) {
-    return parseLinterOutput('pmd', e.stdout || '', Date.now(), e.status !== 0);
+    if (couldNotStart(e)) return skippedResult('pmd', e, start, '检查工具未就绪（需 pmd 的 run.sh 在 PATH 中）');
+    return parseLinterOutput('pmd', e.stdout || '', start, e.status !== 0);
   }
 }
 
@@ -168,11 +216,13 @@ function runESLint(projectRoot, incremental) {
   let cmd = `npx eslint --config "${configPath}" "**/*.{js,jsx,vue,ts,tsx}"`;
   if (incremental) cmd += ' $(git diff --name-only --diff-filter=ACMR | grep -E "\\.(js|jsx|vue|ts|tsx)$")';
 
+  const start = Date.now();
   try {
     const output = execSync(cmd, { cwd: projectRoot, encoding: 'utf-8', timeout: 60000 });
-    return parseLinterOutput('eslint', output, Date.now());
+    return parseLinterOutput('eslint', output, start);
   } catch (e) {
-    return parseLinterOutput('eslint', e.stdout || '', Date.now(), e.status !== 0);
+    if (couldNotStart(e)) return skippedResult('eslint', e, start, '检查工具未就绪（需可用的 npx/eslint）');
+    return parseLinterOutput('eslint', e.stdout || '', start, e.status !== 0);
   }
 }
 
@@ -182,11 +232,13 @@ function runRuff(projectRoot, incremental) {
   let cmd = `ruff check --config "${configPath}" .`;
   if (incremental) cmd += ' $(git diff --name-only --diff-filter=ACMR | grep "\\.py$")';
 
+  const start = Date.now();
   try {
     const output = execSync(cmd, { cwd: projectRoot, encoding: 'utf-8', timeout: 60000 });
-    return parseLinterOutput('ruff', output, Date.now());
+    return parseLinterOutput('ruff', output, start);
   } catch (e) {
-    return parseLinterOutput('ruff', e.stdout || '', Date.now(), e.status !== 0);
+    if (couldNotStart(e)) return skippedResult('ruff', e, start, '检查工具未就绪（需 ruff 在 PATH 中）');
+    return parseLinterOutput('ruff', e.stdout || '', start, e.status !== 0);
   }
 }
 
@@ -270,7 +322,17 @@ function printResult(result, format) {
   }
 }
 
-async function generateSummary(results, startTime, format) {
+/**
+ * 评分卡标题所用的检查对象名。原先无论检查什么都固定印「PRD质量评分卡」，
+ * 跑 `-t sql` / `-t code` 时会误导阅读者。
+ */
+function scorecardLabel(types = []) {
+  const LABELS = { prd: 'PRD 质量', sql: 'SQL 质量', activiti: 'BPMN 质量', code: '代码质量' };
+  if (types.length === 1) return LABELS[types[0]] || '质量';
+  return '综合质量';
+}
+
+async function generateSummary(results, startTime, format, types = []) {
   const totalDuration = Date.now() - startTime;
   const totalErrors = results.reduce((s, r) => s + (r.errorCount || 0), 0);
   const totalWarnings = results.reduce((s, r) => s + (r.warningCount || 0), 0);
@@ -288,8 +350,39 @@ async function generateSummary(results, startTime, format) {
   console.log(allPassed ? chalk.green('  ✅ 所有检查通过') : chalk.red(`  ❌ 发现 ${totalErrors} 个错误`));
   console.log(chalk.gray(`  ⏱ 总耗时: ${totalDuration}ms`));
 
+  // 「不适用」与「通过」不是一回事：项目里根本没有可检查对象时要点明，
+  // 否则 100/100 ✅ 很容易被读成「检查过且干净」。
+  const notApplicable = results.filter(r => r.applicable === false);
+  if (notApplicable.length > 0) {
+    console.log(chalk.gray(`  ℹ 不适用: ${notApplicable.map(r => r.runner).join(', ')}（无可检查对象，未计入判定）`));
+  }
+
+  // 未执行的检查项单独列出：存在 Blocker 时门控只报 Blocker，
+  // 若不在此处点明，「有检查没跑」这件事会被完全掩盖。
+  const notExecuted = results.filter(r => r.skipped === true);
+  if (notExecuted.length > 0) {
+    console.log(chalk.yellow(`  ⚠️ 未执行: ${notExecuted.map(r => `${r.runner}${r.error ? `（${r.error}）` : ''}`).join('；')}`));
+  }
+
+  // 「被豁免」同样是「有命中被拦下」，必须显式计数。
+  // 若只把它当成没发生过，豁免白名单就会变成静默少报的出口 ——
+  // 与「路径打错得 100/100 ✅」属于同一类假绿灯。
+  const totalSuppressed = results.reduce((s, r) => s + ((r.suppressions && r.suppressions.length) || 0), 0);
+  if (totalSuppressed > 0) {
+    const byRunner = results
+      .filter(r => r.suppressions && r.suppressions.length > 0)
+      .map(r => `${r.runner} ${r.suppressions.length} 处`);
+    console.log(chalk.gray(`  ℹ 已豁免: ${byRunner.join('，')}（命中规则豁免白名单，未计入问题，明细见报告）`));
+  }
+
+  // 规则配置本身有问题时（正则写错等）单独提示，否则「规则没跑」会被读成「规则通过」
+  const configWarnings = [...new Set(results.flatMap(r => r.configWarnings || []))];
+  if (configWarnings.length > 0) {
+    console.log(chalk.yellow(`  ⚠️ 规则配置告警: ${configWarnings.length} 条（规则未完整执行，见报告）`));
+  }
+
   if (gateResult) {
-    console.log(gateEngine.generateScorecard(gateResult));
+    console.log(gateEngine.generateScorecard(gateResult, scorecardLabel(types)));
     console.log(gateResult.message);
   }
 
@@ -327,6 +420,28 @@ async function generateMarkdownReport(reportPath, results, errors, warnings, dur
     } else {
       lines.push('- No issues');
     }
+    lines.push('');
+  }
+
+  // 豁免明细与配置告警落到报告里备查。
+  // 只打印在终端的话，归档的报告会显示「0 问题」，读报告的人无从知道
+  // 有几处命中是被白名单主动拦下的。
+  const suppressions = results.flatMap(r => (r.suppressions || []).map(s => ({ ...s, runner: r.runner })));
+  if (suppressions.length > 0) {
+    lines.push('## 已豁免命中 / Suppressed by exclude_patterns', '');
+    lines.push(`共 ${suppressions.length} 处命中被规则豁免白名单挡下，未计入问题数：`, '');
+    for (const s of suppressions) {
+      lines.push(`- ${s.ruleId}  (${s.file}:${s.line})  命中「${s.matchedText}」，被 /${s.excludedBy}/ 豁免`);
+      if (s.context) lines.push(`  > ${s.context}`);
+    }
+    lines.push('');
+  }
+
+  const configWarnings = [...new Set(results.flatMap(r => r.configWarnings || []))];
+  if (configWarnings.length > 0) {
+    lines.push('## 规则配置告警 / Rule Config Warnings', '');
+    lines.push('以下规则因自身配置问题未能完整执行，其「通过」结论不可信：', '');
+    for (const w of configWarnings) lines.push(`- ${w}`);
     lines.push('');
   }
 

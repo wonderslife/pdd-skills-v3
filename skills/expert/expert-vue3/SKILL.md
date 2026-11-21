@@ -1,6 +1,15 @@
 ---
 name: expert-vue3
-description: "Vue 3 frontend development expert. Invoke when projects involve Vue 3 Composition API, Pinia, Vue Router 4, or Element Plus. 支持中文触发：Vue组件、页面开发、前端问题、组件封装。"
+description: "Vue 3 前端开发专家。当项目涉及 Vue 3 Composition API、Pinia 状态管理、Vue Router 4、Element Plus 组件库时自动触发。支持中文触发：Vue组件、页面开发、前端问题、组件封装、表单校验。"
+license: MIT
+compatibility: Vue 3 + Element Plus / Ant Design Vue 前端项目
+metadata:
+  author: "neuqik@hotmail.com"
+  version: "1.0"
+  triggers:
+    - "/vue3" | "/前端"
+    - "Vue组件" | "页面开发" | "前端问题" | "组件封装"
+    - "Element Plus" | "Pinia" | "Composition API" | "表单校验"
 ---
 
 # Vue 3 前端开发专家 / Vue 3 Frontend Development Expert
@@ -79,21 +88,6 @@ onMounted(() => { loadData(); });
 - 通用组件放在 `src/components/`
 - 组件名使用 PascalCase，文件名使用 kebab-case
 - 复杂表单抽离为独立组件，通过 Props/Emits 通信
-
-### 🇺🇸
-
-#### 2.1 Composition API Standards
-- Use `<script setup>` syntax sugar uniformly
-- Reactive data: `ref()` for primitives, `reactive()` for objects/arrays
-- Component method exposure via `defineExpose()`
-- Props typing with `defineProps<T>()`
-- Emits typing with `defineEmits<T>()`
-
-#### 2.2 Pinia State Management Standards
-- Store files in `src/stores/` directory
-- Naming convention: `use{Module}Store` (e.g., `useUserStore`)
-- Prefer Setup Store syntax (more flexible)
-- Persistence via `pinia-plugin-persistedstate`
 
 ---
 

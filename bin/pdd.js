@@ -253,7 +253,11 @@ program
   .action(async (options) => {
     const { DashboardServer } = await import('../lib/vm/dashboard/server.js');
     const { PDDDataProvider } = await import('../lib/vm/data-provider.js');
-    const dataProvider = new PDDDataProvider(process.cwd());
+    // 开启自动刷新：状态文件变化（pdd-stage 推进阶段）后 dashboard 自动同步，无需重启
+    const dataProvider = new PDDDataProvider(process.cwd(), {
+      autoRefresh: true,
+      refreshInterval: parseInt(options.refresh, 10) * 1000
+    });
     const server = new DashboardServer(dataProvider);
     await server.start(parseInt(options.port, 10), {
       open: !options.noBrowser && !options.noOpen,

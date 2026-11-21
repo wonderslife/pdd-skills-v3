@@ -1,15 +1,6 @@
 ---
 name: expert-ruoyi-permission
-description: |
-  若依(RuoYi)框架权限配置专家，专注于权限问题的诊断和解决。当用户遇到以下问题时自动触发：
-  - 权限校验失败、Access Denied错误
-  - 按钮/菜单不显示
-  - @PreAuthorize权限标识不匹配
-  - v-hasPermi权限值错误
-  - sys_menu或sys_role_menu配置问题
-  - 若依框架的权限系统相关问题
-  - 开发新功能时的权限配置指导
-  使用此skill可以帮助用户快速定位权限问题根源，提供标准化的权限配置方案。
+description: "若依(RuoYi)框架权限配置专家，诊断权限校验失败、按钮/菜单不显示、@PreAuthorize 标识不匹配等问题。触发词：权限校验失败、Access Denied、按钮不显示、菜单不显示、权限配置、hasPermi。"
 ---
 
 # 若依框架权限配置专家

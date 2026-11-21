@@ -1,6 +1,6 @@
 ---
 name: openspec-new-change
-description: Start a new OpenSpec change using the experimental artifact workflow. Use when the user wants to create a new feature, fix, or modification with a structured step-by-step approach.
+description: OpenSpec新建变更专家，使用结构化的工件驱动流程创建新变更。当用户需要创建新功能、修复Bug或发起修改时调用此Skill。支持中文触发：新建变更、new change、创建变更、发起新变更、openspec new。
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:

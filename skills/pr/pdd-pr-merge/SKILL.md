@@ -1,7 +1,6 @@
 ---
 name: pdd-pr-merge
-description: |
-  合并 PR 并触发归档流程。当用户需要合并已审查通过的 PR、完成功能点交付、完成交付时调用此Skill。支持 GitHub 模式和本地模式。即使用户只说"合并PR"、"完成交付"、"merge"、"合并"，也应触发此Skill。
+description: "合并 PR 并触发归档流程，支持 GitHub 模式与本地模式。当用户合并已审查通过的 PR、完成功能点交付时触发。触发词：合并PR、完成交付、merge、合并。"
 license: MIT
 compatibility: 需要 OpenSpec Change ID 或 PR 编号
 metadata:

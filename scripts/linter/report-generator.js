@@ -188,7 +188,7 @@ export class ReportGenerator {
       lines.push('');
     }
 
-    lines.push('---', '', `_${t('generatedBy'))}_`);
+    lines.push('---', '', `_${t('generatedBy')}_`);
 
     const reportPath = path.join(this.reportDir, `linter-${timestamp}.md`);
     await fs.writeFile(reportPath, lines.join('\n'), 'utf-8');
