@@ -1,0 +1,11 @@
+{
+  "name": "android-toolchain",
+  "version": "1.0.0",
+  "description": "Android 工具链插件：Gradle 体检、构建变体感知、ADB 桥接",
+  "main": "index.js",
+  "hooks": ["pre-verify", "post-generate"],
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["android", "gradle", "kotlin"],
+  "pdd": ">=3.4.0"
+}

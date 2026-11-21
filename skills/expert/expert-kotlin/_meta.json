@@ -1,0 +1,1 @@
+{"name": "expert-kotlin", "version": "1.0.0", "category": "expert", "description": "Kotlin 语言专家，精通协程、Flow、空安全、委托与 DSL。当用户涉及 Kotlin 语法特性、协程并发、StateFlow/SharedFlow 选型或空指针治理时调用。支持中文触发：Kotlin、协程、coroutine、suspend、Flow、StateFlow、空安全。", "triggers": ["/kotlin", "Kotlin", "协程", "coroutine", "Flow", "suspend", "StateFlow"], "stack": ["kotlin"]}

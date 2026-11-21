@@ -29,8 +29,16 @@ const LINTER_REGISTRY = {
     name: 'Activiti Linter',
     description: 'BPMN流程文件规范检查',
     runners: ['activiti']
+  },
+  android: {
+    name: 'Android Linter',
+    description: 'Kotlin/Android 质量检查 (detekt/ktlint/AndroidLint)',
+    runners: ['detekt', 'ktlint', 'android-lint']
   }
 };
+
+/** Android runners 仅在检测到 Android/mixed 工程时执行（向后兼容：老工程行为不变） */
+const ANDROID_RUNNERS = new Set(['detekt', 'ktlint', 'android-lint']);
 
 export default async function runLinters(options = {}) {
   const startTime = Date.now();
@@ -82,11 +90,35 @@ export default async function runLinters(options = {}) {
 
   const results = [];
 
+  // Android 工程探测：仅当包含 Android runner 时才探测（避免普通工程额外 IO）
+  let projectType = null;
+  const needsAndroidDetect = types.some(t => t === 'android') ||
+    types.some(t => LINTER_REGISTRY[t]?.runners?.some(r => ANDROID_RUNNERS.has(r)));
+
   for (const type of types) {
     const linterDef = LINTER_REGISTRY[type];
     if (!linterDef) {
       diag(chalk.yellow(`未知Linter类型: ${type}, 跳过`));
       continue;
+    }
+
+    // 未检测到 Android 工程时跳过 Android runners（不注册、不执行）
+    if (needsAndroidDetect) {
+      if (linterDef.runners.some(r => ANDROID_RUNNERS.has(r))) {
+        if (projectType === null) {
+          try {
+            const { detectProjectType } = await import('../../lib/project-type/detector.js');
+            projectType = await detectProjectType(projectRoot);
+          } catch { projectType = { type: 'unknown' }; }
+        }
+        if (!/^(android-|mixed)/.test(projectType.type)) {
+          if (!jsonMode) {
+            console.log(chalk.cyan(`\n━━━ ${linterDef.name} ━━━`));
+            console.log(chalk.gray(`  非Android工程(${projectType.type})，跳过\n`));
+          }
+          continue;
+        }
+      }
     }
 
     if (!jsonMode) {
@@ -135,6 +167,12 @@ async function executeLinter(runner, projectRoot, config, incremental, linterOpt
       return runSQLLinter(projectRoot);
     case 'activiti':
       return runActivitiLinter(projectRoot);
+    case 'detekt':
+      return runDetekt(projectRoot, incremental);
+    case 'ktlint':
+      return runKtLint(projectRoot, incremental);
+    case 'android-lint':
+      return runAndroidLint(projectRoot);
     default:
       throw new Error(`未知linter runner: ${runner}`);
   }
@@ -240,6 +278,127 @@ function runRuff(projectRoot, incremental) {
     if (couldNotStart(e)) return skippedResult('ruff', e, start, '检查工具未就绪（需 ruff 在 PATH 中）');
     return parseLinterOutput('ruff', e.stdout || '', start, e.status !== 0);
   }
+}
+
+/** detekt：优先项目/配置目录的 detekt-cli jar，其次 PATH 中的 detekt */
+function runDetekt(projectRoot, incremental) {
+  const jarCandidates = [
+    path.join(projectRoot, 'detekt-cli-all.jar'),
+    path.join(CONFIG_ROOT, 'detekt-cli.jar')
+  ];
+  const jar = jarCandidates.find(p => fs.existsSync(p));
+
+  let cmd = jar
+    ? `java -jar "${jar}" --input . --report json:.pdd/cache/detekt-report.json`
+    : 'detekt --input . --report json:.pdd/cache/detekt-report.json';
+  if (incremental) cmd += ' --excludes "**/build/**"';
+
+  const start = Date.now();
+  try {
+    execSync(cmd, { cwd: projectRoot, encoding: 'utf-8', timeout: 120000, stdio: 'pipe' });
+    return parseDetektJson(projectRoot, start);
+  } catch (e) {
+    if (couldNotStart(e)) return skippedResult('detekt', e, start, '检查工具未就绪（需 detekt-cli jar 或 detekt 在 PATH 中）');
+    // detekt 发现问题也会非零退出，报告文件仍可能生成
+    if (fs.existsSync(path.join(projectRoot, '.pdd/cache/detekt-report.json'))) {
+      return parseDetektJson(projectRoot, start, e.status !== 0);
+    }
+    return parseLinterOutput('detekt', e.stdout || e.stderr || '', start, e.status !== 0);
+  }
+}
+
+function parseDetektJson(projectRoot, startTime, hasErrors = false) {
+  const start = Date.now();
+  let issues = [];
+  try {
+    const report = JSON.parse(fs.readFileSync(path.join(projectRoot, '.pdd/cache/detekt-report.json'), 'utf-8'));
+    issues = (report.findings || []).map(f => ({
+      severity: /High|Major/.test(f.severity || '') ? 'error' : 'warning',
+      message: `${f.file || ''}:${f.location?.line || 0} [${f.rule || ''}] ${f.message || ''}`
+    }));
+  } catch {
+    return { runner: 'detekt', success: !hasErrors, issueCount: 0, errorCount: 0, warningCount: 0, issues: [], duration: Date.now() - startTime };
+  }
+  const usedStart = startTime || start;
+  return {
+    runner: 'detekt',
+    success: !hasErrors && issues.filter(i => i.severity === 'error').length === 0,
+    issueCount: issues.length,
+    errorCount: issues.filter(i => i.severity === 'error').length,
+    warningCount: issues.filter(i => i.severity === 'warning').length,
+    issues: issues.slice(0, 50),
+    duration: Date.now() - usedStart
+  };
+}
+
+/** ktlint：PATH 中的 ktlint，plain 报告按行解析 */
+function runKtLint(projectRoot, incremental) {
+  let cmd = 'ktlint --reporter=plain';
+  if (incremental) cmd += ' $(git diff --name-only --diff-filter=ACMR | grep "\\.kt[s]?$")';
+
+  const start = Date.now();
+  try {
+    const output = execSync(cmd, { cwd: projectRoot, encoding: 'utf-8', timeout: 120000, stdio: 'pipe' });
+    return parseKtLintPlain('ktlint', output, start);
+  } catch (e) {
+    if (couldNotStart(e)) return skippedResult('ktlint', e, start, '检查工具未就绪（需 ktlint 在 PATH 中）');
+    return parseKtLintPlain('ktlint', e.stdout || '', start, e.status !== 0);
+  }
+}
+
+function parseKtLintPlain(runner, rawOutput, startTime, hasErrors = false) {
+  const issues = [];
+  for (const line of String(rawOutput).split('\n')) {
+    const m = line.match(/^(.+\.kt):\s*(\d+):(\d+)\s+(.*)$/);
+    if (m) issues.push({ severity: 'error', message: `${m[1]}:${m[2]}:${m[3]} ${m[4]}` });
+  }
+  return {
+    runner,
+    success: !hasErrors && issues.length === 0,
+    issueCount: issues.length,
+    errorCount: issues.length,
+    warningCount: 0,
+    issues: issues.slice(0, 50),
+    duration: Date.now() - startTime
+  };
+}
+
+/** Android Lint：项目含 gradlew 时执行 ./gradlew lint，解析 stdout 中的 Error/Warning 行 */
+function runAndroidLint(projectRoot) {
+  const gradlew = path.join(projectRoot, 'gradlew');
+  if (!fs.existsSync(gradlew)) {
+    return {
+      runner: 'android-lint', success: false, skipped: true,
+      error: '检查工具未就绪（项目根目录缺少 gradlew）',
+      issueCount: 0, errorCount: 0, warningCount: 0, issues: [], duration: 0
+    };
+  }
+
+  const start = Date.now();
+  try {
+    const output = execSync('./gradlew -q lint', { cwd: projectRoot, encoding: 'utf-8', timeout: 600000, stdio: 'pipe' });
+    return parseAndroidLint(output, start);
+  } catch (e) {
+    if (couldNotStart(e)) return skippedResult('android-lint', e, start, '检查工具未就绪（需 JDK 17+ 与 Android SDK）');
+    return parseAndroidLint(e.stdout || e.stderr || '', start, e.status !== 0);
+  }
+}
+
+function parseAndroidLint(rawOutput, startTime, hasErrors = false) {
+  const issues = [];
+  for (const line of String(rawOutput).split('\n')) {
+    if (/\bError\b/.test(line)) issues.push({ severity: 'error', message: line.trim() });
+    else if (/\bWarning\b/.test(line)) issues.push({ severity: 'warning', message: line.trim() });
+  }
+  return {
+    runner: 'android-lint',
+    success: !hasErrors && issues.filter(i => i.severity === 'error').length === 0,
+    issueCount: issues.length,
+    errorCount: issues.filter(i => i.severity === 'error').length,
+    warningCount: issues.filter(i => i.severity === 'warning').length,
+    issues: issues.slice(0, 50),
+    duration: Date.now() - startTime
+  };
 }
 
 async function runPRDLinter(projectRoot, linterOptions) {

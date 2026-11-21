@@ -30,6 +30,19 @@ program
     console.log(chalk.blue('\n>> Initializing PDD project...\n'));
     await initProject(path, options);
     console.log(chalk.green('\n[OK] Project initialized!'));
+
+    // 工程类型探测提示（Android/mixed 工程给出下一步指引，普通工程静默）
+    try {
+      const { detectProjectType } = await import('../lib/project-type/detector.js');
+      const detected = await detectProjectType(path);
+      if (/^android-/.test(detected.type)) {
+        console.log(chalk.cyan(`🤖 检测到 Android 工程 (${detected.type})，模块: ${detected.modules.map(m => m.name).join(', ') || 'app'}`));
+        console.log(chalk.gray('   可用: pdd scan（路由清单）| pdd verify（生命周期审查+detekt/ktlint）| pdd contract（Kotlin 契约产物）'));
+      } else if (detected.type === 'mixed') {
+        console.log(chalk.cyan(`🤖 检测到混合工程（Java 后端 + Android 客户端）`));
+        console.log(chalk.gray(`   Android 目录: ${detected.androidDir} | pdd contract 将同时产出 TS 与 Kotlin 契约产物`));
+      }
+    } catch { /* 探测失败不影响 init */ }
   });
 
 program
@@ -53,7 +66,7 @@ program
 program
   .command('linter')
   .description('运行代码质量门禁检查')
-  .option('-t, --type <type>', 'linter类型: java/js/python/sql/prd/skill/all', 'all')
+  .option('-t, --type <type>', 'linter类型: java/js/python/sql/prd/skill/android/all', 'all')
   .option('-f, --file <path>', '指定文件或目录')
   .option('--incremental', '增量检查模式')
   .option('-o, --output <format>', '输出格式: text/json/html', 'text')
@@ -455,17 +468,68 @@ program
   .command('contract')
   .description('契约自动发现 - AST级前后端契约分析 / Contract Discovery - AST-level analysis')
   .option('-d, --dir <path>', '项目目录', '.')
-  .option('--backend-dir <path>', '后端源码目录', 'src/main/java')
+  .option('--backend-dir <path>', '后端源码目录（默认由工程类型探测器给出）', null)
   .option('--frontend-api-dir <path>', '前端API目录', 'src/api')
   .option('-o, --output <path>', '输出报告路径')
   .option('--json', 'JSON格式输出')
   .action(async (options) => {
     const { ContractDiscovery } = await import('../lib/contract-discovery/index.js');
+    const { detectProjectType } = await import('../lib/project-type/detector.js');
+
+    // 工程类型探测：Java/Vue 工程保持 'src/main/java' 语义不变；
+    // mixed 工程由探测器给出实际后端目录；Android 工程附加 Kotlin 契约产物。
+    let backendDir = options.backendDir;
+    let androidInfo = null;
+    try {
+      const detected = await detectProjectType(options.dir);
+      if (!options.backendDir && detected.type !== 'unknown') {
+        backendDir = detected.javaBackendDir || 'src/main/java';
+      }
+      if (/^(android-|mixed)/.test(detected.type) && detected.androidDir) {
+        androidInfo = detected;
+      }
+    } catch { /* 探测失败不影响既有契约分析 */ }
+
     const discovery = new ContractDiscovery(options.dir, {
-      backendDir: options.backendDir,
+      backendDir: backendDir || 'src/main/java',
       frontendApiDir: options.frontendApiDir
     });
     const result = await discovery.analyze();
+
+    // Android/mixed 工程：附加生成 Kotlin DTO + Retrofit 接口（§7.2 契约桥接）
+    if (androidInfo && result.endpoints?.length > 0) {
+      try {
+        const { generate } = await import('../lib/android/contract-bridge/index.js');
+        const pathMod = await import('path');
+        const fsMod = (await import('fs-extra')).default;
+        const androidRoot = pathMod.resolve(options.dir, pathMod.relative(options.dir, androidInfo.androidDir) || '.');
+        // 序列化库配置读取（缺省 moshi）
+        let serializer = 'moshi';
+        try {
+          const { loadConfig } = await import('../lib/utils/logger.js');
+          const cfg = await loadConfig(pathMod.resolve(options.dir));
+          serializer = cfg?.android?.serializer || 'moshi';
+        } catch { /* 用默认值 */ }
+        const generated = generate(result.endpoints, {
+          serializer,
+          namespace: `com.pdd.${pathMod.basename(androidRoot).replace(/[^a-z0-9]/gi, '').toLowerCase()}`
+        });
+        for (const file of generated.files) {
+          const outPath = pathMod.join(androidRoot, file.path);
+          await fsMod.ensureDir(pathMod.dirname(outPath));
+          await fsMod.writeFile(outPath, file.content, 'utf-8');
+        }
+        if (!options.json) {
+          const relRoot = pathMod.relative(pathMod.resolve(options.dir), androidRoot);
+          console.log(chalk.green(`\n🤖 Android 契约产物: ${generated.summary.dtos} DTO / ${generated.summary.endpoints} 端点 → ${relRoot}/`));
+          for (const file of generated.files) {
+            console.log(chalk.gray(`   ${pathMod.join(relRoot, file.path)}`));
+          }
+        }
+      } catch (e) {
+        if (!options.json) console.log(chalk.yellow(`⚠ Android 契约产物生成失败: ${e.message}`));
+      }
+    }
 
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));

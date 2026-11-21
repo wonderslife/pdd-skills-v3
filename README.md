@@ -1,8 +1,8 @@
-# PDD-Skills v3.3.1
+# PDD-Skills v3.4.0
 
-> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**49 个技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**
+> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**53 个技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**；新增 **Kotlin 原生 Android 全链路支持（v3.4.0-dev）**
 >
-> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **49 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**
+> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **53 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**; new **Kotlin Native Android full-chain support (v3.4.0-dev)**
 
 ***
 
@@ -24,6 +24,7 @@
 - [★ 界面设计规范 / Design Spec](#-界面设计规范--design-spec-new-v330)
 - [配置中心 / Configuration Center](#配置中心--configuration-center)
 - [★ 测试用例系统 / Testcase System](#-测试用例系统--testcase-system-new-v320)
+- [★ Kotlin 原生 Android 支持 / Android Support](#-kotlin-原生-android-support--android-support-new-v340-dev)
 - [API 层 / API Layer](#api-层--api-layer)
 - [MCP 协议集成 / MCP Protocol Integration](#mcp-协议集成--mcp-protocol-integration)
 - [SDK 使用指南 / SDK Guide](#sdk-使用指南--sdk-guide)
@@ -60,16 +61,16 @@
 
 ### 为什么选择 PDD-Skills？ / Why PDD-Skills?
 
-| 特性 / Feature | 传统开发 / Traditional | TDD | **PDD-Skills** |
-| ----- | ---- | ---- | -------------------------- |
-| 驱动文档 / Driver Doc | 无/弱 / None/Weak | 测试用例 / Test Cases | **PRD 需求文档 / PRD Docs** |
-| AI 原生 / AI Native | ❌ | ❌ | ✅ **深度集成 / Deep Integration** |
-| 双语支持 / Bilingual | ❌ | ❌ | ✅ **🇨🇳🇺🇸 中英双语 / CN/EN** |
-| 行为塑造 / Behavior Shaping | ❌ | ❌ | ✅ **Iron Law + Red Flags** |
-| 质量门禁 / Quality Gates | 弱 / Weak | 强 / Strong | ✅ **5维评分 + Linter / 5D Scoring** |
-| 可视化监控 / Visualization | ❌ | ❌ | ✅ **PDD Visual Manager** |
-| 插件扩展 / Plugins | 有限 / Limited | 有限 / Limited | ✅ **沙箱隔离插件系统 / Sandbox Plugins** |
-| 多协议 / Multi-Protocol | 单一 / Single | 无 / None | ✅ **REST + MCP + gRPC** |
+| 特性 / Feature            | 传统开发 / Traditional | TDD               | **PDD-Skills**                   |
+| ----------------------- | ------------------ | ----------------- | -------------------------------- |
+| 驱动文档 / Driver Doc       | 无/弱 / None/Weak    | 测试用例 / Test Cases | **PRD 需求文档 / PRD Docs**          |
+| AI 原生 / AI Native       | ❌                  | ❌                 | ✅ **深度集成 / Deep Integration**    |
+| 双语支持 / Bilingual        | ❌                  | ❌                 | ✅ **🇨🇳🇺🇸 中英双语 / CN/EN**      |
+| 行为塑造 / Behavior Shaping | ❌                  | ❌                 | ✅ **Iron Law + Red Flags**       |
+| 质量门禁 / Quality Gates    | 弱 / Weak           | 强 / Strong        | ✅ **5维评分 + Linter / 5D Scoring** |
+| 可视化监控 / Visualization   | ❌                  | ❌                 | ✅ **PDD Visual Manager**         |
+| 插件扩展 / Plugins          | 有限 / Limited       | 有限 / Limited      | ✅ **沙箱隔离插件系统 / Sandbox Plugins** |
+| 多协议 / Multi-Protocol    | 单一 / Single        | 无 / None          | ✅ **REST + MCP + gRPC**          |
 
 ***
 
@@ -112,19 +113,19 @@
 
 ### 📊 关键数据 / Key Metrics
 
-| 指标 / Metric | 数值 / Value |
-| -------------- | ------------------------------------------------------- |
-| **版本 / Version** | **v3.2.1** |
-| **核心技能 / Core Skills** | 12 个（全双语 / Full Bilingual 🇨🇳🇺🇸） |
-| **专家技能 / Expert Skills** | **14 个**（安全/性能/MySQL/若依/若依权限/Activiti/Vue3/微服务/Bug修复/测试用例建模/测试执行/架构/工程/系统） |
-| **熵减技能 / Entropy Skills** | 4 个（审计 + 架构约束 + 代码质量 + 自动重构）；扫描器支持 **JS/TS/Python/Java**，评分按 **KLOC 密度归一化** |
-| **OpenSpec技能 / OpenSpec Skills** | 10 个（变更管理全生命周期 / Full Lifecycle） |
-| **PR技能 / PR Skills** | 7 个（模板引擎 + 多轮审查 + PR创建/审查/合并/批量/任务管理） |
-| **Bug模式库 / Bug Patterns** | 14 个（7通用 + 7若依专用），集中式管理 `config/bug-patterns.yaml` |
-| **PRD规则 / PRD Rules** | 30 条（6大类 / 6 Categories），集中式管理 `config/prd-rules.yaml`，其中 7 条为阻断规则 |
-| **质量门控 / Quality Gates** | 4级（Blocker/Critical/Warning/Info）+ 0-100评分 + **静默失效防护**（跳过≠通过，豁免必计数） |
-| **协议支持 / Protocols** | RESTful + MCP + gRPC + SSE |
-| **SDK 语言 / SDK Languages** | JavaScript + Python |
+| 指标 / Metric                      | 数值 / Value                                                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **版本 / Version**                 | **v3.2.1**                                                                                                      |
+| **核心技能 / Core Skills**           | 12 个（全双语 / Full Bilingual 🇨🇳🇺🇸）                                                                             |
+| **专家技能 / Expert Skills**         | **18 个**（安全/性能/MySQL/若依/若依权限/Activiti/Vue3/微服务/Bug修复/测试用例建模/测试执行/架构/工程/系统/**Kotlin/Android/Jetpack/Android测试**） |
+| **熵减技能 / Entropy Skills**        | 4 个（审计 + 架构约束 + 代码质量 + 自动重构）；扫描器支持 **JS/TS/Python/Java**，评分按 **KLOC 密度归一化**                                     |
+| **OpenSpec技能 / OpenSpec Skills** | 10 个（变更管理全生命周期 / Full Lifecycle）                                                                                |
+| **PR技能 / PR Skills**             | 7 个（模板引擎 + 多轮审查 + PR创建/审查/合并/批量/任务管理）                                                                           |
+| **Bug模式库 / Bug Patterns**        | 14 个（7通用 + 7若依专用），集中式管理 `config/bug-patterns.yaml`                                                              |
+| **PRD规则 / PRD Rules**            | 30 条（6大类 / 6 Categories），集中式管理 `config/prd-rules.yaml`，其中 7 条为阻断规则                                              |
+| **质量门控 / Quality Gates**         | 4级（Blocker/Critical/Warning/Info）+ 0-100评分 + **静默失效防护**（跳过≠通过，豁免必计数）                                            |
+| **协议支持 / Protocols**             | RESTful + MCP + gRPC + SSE                                                                                      |
+| **SDK 语言 / SDK Languages**       | JavaScript + Python                                                                                             |
 
 ***
 
@@ -244,13 +245,13 @@ pdd vm export --format csv # 导出数据 / Export data
 
 > **English**: Provides project scaffolding, quality gates, and toolchain infrastructure.
 
-| 组件 / Component | 说明 / Description |
-| ------------- | ---------------------------------------------------------------------------------------------- |
-| **npx 安装机制 / npx Install** | `npx pdd-skills init` 一键初始化 / One-click initialization |
-| **Linter 体系 / Linter System** | Java(Checkstyle+PMD) / JS(ESLint) / Python(Ruff) / SQL(SQLFluff) / Activiti(BPMN) / Skill(Custom) |
-| **Hook 系统 / Hook System** | 7 种事件钩子 / 7 event hooks for custom logic injection |
-| **Evals 框架 / Evals Framework** | 结构/内容/质量/CSO 四种测试类型 / 4 test types |
-| **Token 分析器 / Token Analyzer** | 中英文混合 Token 计数与效率评级 / Bilingual token counting |
+| 组件 / Component                 | 说明 / Description                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| **npx 安装机制 / npx Install**     | `npx pdd-skills init` 一键初始化 / One-click initialization                                            |
+| **Linter 体系 / Linter System**  | Java(Checkstyle+PMD) / JS(ESLint) / Python(Ruff) / SQL(SQLFluff) / Activiti(BPMN) / Skill(Custom) |
+| **Hook 系统 / Hook System**      | 7 种事件钩子 / 7 event hooks for custom logic injection                                                |
+| **Evals 框架 / Evals Framework** | 结构/内容/质量/CSO 四种测试类型 / 4 test types                                                                |
+| **Token 分析器 / Token Analyzer** | 中英文混合 Token 计数与效率评级 / Bilingual token counting                                                    |
 
 ### Phase 2: 核心能力增强 / Core Capabilities
 
@@ -260,57 +261,61 @@ pdd vm export --format csv # 导出数据 / Export data
 
 #### 核心技能列表 / Core Skills List
 
-| 技能名称 / Skill Name | 用途 / Purpose | 双语 / Bilingual |
-| ----------------------- | ------------------------ | -- |
-| `pdd-main` | 主入口，协调全部子技能 / Main coordinator | ✅ |
-| `pdd-ba` | 业务分析与需求建模 / Business analysis | ✅ |
-| `pdd-extract-features` | 从 PRD 提取功能点 / Extract features from PRD | ✅ |
-| `pdd-generate-spec` | 生成开发规格文档 / Generate specifications | ✅ |
-| `pdd-design-spec` ★v3.3.0 | 生成界面设计规范 DESIGN.md（PRD/specs 之后、实现之前）/ Generate UI design spec (DESIGN.md) | ✅ |
-| `pdd-implement-feature` | 基于规格实现代码 / Implement code from spec | ✅ |
-| `pdd-verify-feature` | 验证实现符合规格 / Verify implementation | ✅ |
-| `pdd-code-reviewer` | 多维度代码审查 / Multi-dimensional code review | ✅ |
-| `pdd-doc-change` | 变更文档管理 / Document change management | ✅ |
-| `pdd-doc-gardener` | 文档清理与维护 / Document maintenance | ✅ |
-| `pdd-entropy-reduction` | 技术债务治理 / Technical debt governance | ✅ |
-| `official-doc-writer` | 党政机关公文生成 / Official document generation | ✅ |
-| `traffic-accident-assessor` | 交通事故定责辅助评估 / Traffic accident liability assessment | ✅ |
-| `pdd-vm` | PDD Visual Manager 可视化监控 / Visual monitoring | ✅ |
+| 技能名称 / Skill Name           | 用途 / Purpose                                                               | 双语 / Bilingual |
+| --------------------------- | -------------------------------------------------------------------------- | -------------- |
+| `pdd-main`                  | 主入口，协调全部子技能 / Main coordinator                                             | ✅              |
+| `pdd-ba`                    | 业务分析与需求建模 / Business analysis                                              | ✅              |
+| `pdd-extract-features`      | 从 PRD 提取功能点 / Extract features from PRD                                    | ✅              |
+| `pdd-generate-spec`         | 生成开发规格文档 / Generate specifications                                         | ✅              |
+| `pdd-design-spec` ★v3.3.0   | 生成界面设计规范 DESIGN.md（PRD/specs 之后、实现之前）/ Generate UI design spec (DESIGN.md) | ✅              |
+| `pdd-implement-feature`     | 基于规格实现代码 / Implement code from spec                                        | ✅              |
+| `pdd-verify-feature`        | 验证实现符合规格 / Verify implementation                                           | ✅              |
+| `pdd-code-reviewer`         | 多维度代码审查 / Multi-dimensional code review                                    | ✅              |
+| `pdd-doc-change`            | 变更文档管理 / Document change management                                        | ✅              |
+| `pdd-doc-gardener`          | 文档清理与维护 / Document maintenance                                             | ✅              |
+| `pdd-entropy-reduction`     | 技术债务治理 / Technical debt governance                                         | ✅              |
+| `official-doc-writer`       | 党政机关公文生成 / Official document generation                                    | ✅              |
+| `traffic-accident-assessor` | 交通事故定责辅助评估 / Traffic accident liability assessment                         | ✅              |
+| `pdd-vm`                    | PDD Visual Manager 可视化监控 / Visual monitoring                               | ✅              |
 
 ### Phase 3: 专家系统扩展 / Expert Systems
 
-| 专家技能 / Expert Skill | 能力范围 / Scope | 特色 / Features |
-| --------------------------- | --------------------------------------- | ---------------------------------------- |
-| **expert-security** | SQL注入/XSS/CSRF/命令注入/路径遍历/SSRF | OWASP Top 10 2021 完整覆盖 |
-| **expert-performance** | CPU/内存/I/O/网络/锁竞争诊断 | HikariCP/Redis多级缓存/G1 GC调优 |
-| **expert-mysql** | SQL优化/索引设计/表结构分析/慢查询诊断 | MySQL官方文档参考，执行计划分析 |
-| **expert-ruoyi** | 若依框架全流程开发/代码生成/权限配置 | 7个若依Bug模式(PATTERN-R001~R007) |
-| **expert-ruoyi-permission** | 若依框架权限配置/权限校验失败诊断 | 四端一致原则 + @PreAuthorize + v-hasPermi |
-| **expert-activiti** | Activiti 7工作流引擎/BPMN 2.0/流程部署 | 流程设计规范 + BPMN校验规则 |
-| **expert-vue3** | Vue3 组件开发/状态管理/性能优化 | Vue3 生态最佳实践 |
-| **expert-springcloud** | 微服务架构/服务治理/配置中心/网关路由 | Spring Cloud Alibaba 全栈解决方案 |
-| **expert-bug-fixer** | Bug 根因分析/修复方案生成/回归测试建议 | 智能诊断 + 修复策略推荐 |
-| **testcase-modeler** | **测试用例建模/自然语言转YAML/零代码测试** | **6条建模规则+智能意图提取+断言自动注入** |
-| **testcase-agent** | **E2E测试执行/Chrome DevTools MCP/自愈引擎** | **5条铁律+4级元素定位+深度网络校验** |
-| **software-architect** | 架构模式设计/技术选型/性能权衡 | 生产级架构设计，60+ 界面组件模式 |
-| **software-engineer** | 代码实现/重构优化/设计模式应用 | 生产级代码，清洁架构 |
-| **system-architect** | 系统架构设计/模块化设计/安全最佳实践 | PEP8/ESLint 标准，项目初始化 |
+| 专家技能 / Expert Skill         | 能力范围 / Scope                                      | 特色 / Features                              |
+| --------------------------- | ------------------------------------------------- | ------------------------------------------ |
+| **expert-security**         | SQL注入/XSS/CSRF/命令注入/路径遍历/SSRF                     | OWASP Top 10 2021 完整覆盖                     |
+| **expert-performance**      | CPU/内存/I/O/网络/锁竞争诊断                               | HikariCP/Redis多级缓存/G1 GC调优                 |
+| **expert-mysql**            | SQL优化/索引设计/表结构分析/慢查询诊断                            | MySQL官方文档参考，执行计划分析                         |
+| **expert-ruoyi**            | 若依框架全流程开发/代码生成/权限配置                               | 7个若依Bug模式(PATTERN-R001\~R007)              |
+| **expert-ruoyi-permission** | 若依框架权限配置/权限校验失败诊断                                 | 四端一致原则 + @PreAuthorize + v-hasPermi        |
+| **expert-activiti**         | Activiti 7工作流引擎/BPMN 2.0/流程部署                     | 流程设计规范 + BPMN校验规则                          |
+| **expert-vue3**             | Vue3 组件开发/状态管理/性能优化                               | Vue3 生态最佳实践                                |
+| **expert-springcloud**      | 微服务架构/服务治理/配置中心/网关路由                              | Spring Cloud Alibaba 全栈解决方案                |
+| **expert-bug-fixer**        | Bug 根因分析/修复方案生成/回归测试建议                            | 智能诊断 + 修复策略推荐                              |
+| **testcase-modeler**        | **测试用例建模/自然语言转YAML/零代码测试**                        | **6条建模规则+智能意图提取+断言自动注入**                   |
+| **testcase-agent**          | **E2E测试执行/Chrome DevTools MCP/自愈引擎**              | **5条铁律+4级元素定位+深度网络校验**                     |
+| **software-architect**      | 架构模式设计/技术选型/性能权衡                                  | 生产级架构设计，60+ 界面组件模式                         |
+| **software-engineer**       | 代码实现/重构优化/设计模式应用                                  | 生产级代码，清洁架构                                 |
+| **system-architect**        | 系统架构设计/模块化设计/安全最佳实践                               | PEP8/ESLint 标准，项目初始化                       |
+| **expert-kotlin** ★         | Kotlin 语法/协程结构化并发/Flow选型/空安全                      | 6条协程审查清单 + Flow决策树 (NEW v3.4.0-dev)        |
+| **expert-android** ★        | 四大组件生命周期/运行时权限/Manifest审查/组件化                     | 路由清单 `pdd scan` + 组件化拆分路径 (NEW v3.4.0-dev) |
+| **expert-jetpack** ★        | ViewModel/Room/Navigation/WorkManager/Compose重组性能 | UDF架构模板 + 副作用API选型 (NEW v3.4.0-dev)        |
+| **expert-android-test** ★   | JUnit5+Turbine/Compose UI Test/ADB自动化/Monkey      | adb.\* YAML用例DSL，与Web用例同构 (NEW v3.4.0-dev) |
 
 ### Phase 4: 平台化建设 / Platformization
 
 #### RESTful API 层 / RESTful API Layer
 
-| 方法 / Method | 端点 / Endpoint | 说明 / Description |
-| -------- | ------------------ | ------- |
-| GET | `/api/v1/status` | 服务状态 / Service status |
-| GET | `/api/v1/docs` | API 文档 / API docs |
-| GET | `/api/v1/health` | 健康检查 / Health check |
-| GET/POST | `/api/v1/spec/*` | 规格 CRUD / Spec CRUD |
-| POST | `/api/v1/generate` | 代码生成 / Code generation |
-| POST | `/api/v1/verify` | 功能验证 / Feature verification |
-| POST | `/api/v1/report` | 报告生成 / Report generation |
-| GET/POST | `/api/v1/config/*` | 配置管理 / Configuration |
-| GET | `/api/v1/skills` | 技能列表 / Skills list |
+| 方法 / Method | 端点 / Endpoint      | 说明 / Description            |
+| ----------- | ------------------ | --------------------------- |
+| GET         | `/api/v1/status`   | 服务状态 / Service status       |
+| GET         | `/api/v1/docs`     | API 文档 / API docs           |
+| GET         | `/api/v1/health`   | 健康检查 / Health check         |
+| GET/POST    | `/api/v1/spec/*`   | 规格 CRUD / Spec CRUD         |
+| POST        | `/api/v1/generate` | 代码生成 / Code generation      |
+| POST        | `/api/v1/verify`   | 功能验证 / Feature verification |
+| POST        | `/api/v1/report`   | 报告生成 / Report generation    |
+| GET/POST    | `/api/v1/config/*` | 配置管理 / Configuration        |
+| GET         | `/api/v1/skills`   | 技能列表 / Skills list          |
 
 ### Phase 5: 智能化升级 / Intelligence Upgrade
 
@@ -322,33 +327,33 @@ pdd vm export --format csv # 导出数据 / Export data
           → MISS → L3 Global Cache (LFU, 磁盘 / Disk JSON)
 ```
 
-| 级别 / Level | 策略 / Strategy | 存储 / Storage | TTL | 容量 / Capacity |
-| ---------- | --- | -- | ----- | ----- |
-| L1 Session | LRU | 内存 / Memory | 5min | 100条 |
-| L2 Project | LRU | 内存 / Memory | 30min | 500条 |
-| L3 Global | LFU | 磁盘 / Disk | 2h | 2000条 |
+| 级别 / Level | 策略 / Strategy | 存储 / Storage | TTL   | 容量 / Capacity |
+| ---------- | ------------- | ------------ | ----- | ------------- |
+| L1 Session | LRU           | 内存 / Memory  | 5min  | 100条          |
+| L2 Project | LRU           | 内存 / Memory  | 30min | 500条          |
+| L3 Global  | LFU           | 磁盘 / Disk    | 2h    | 2000条         |
 
 #### Token 预算管理 / Token Budget Management
 
-| 阶段 / Phase | 占比 / Ratio | 说明 / Description |
-| -------------- | --- | ------ |
-| analysis | 15% | 需求分析阶段 / Requirements analysis |
-| design | 20% | 规格设计阶段 / Specification design |
-| implementation | 35% | 代码实现阶段 / Implementation |
-| review | 20% | 代码审查阶段 / Code review |
-| verify | 10% | 验证确认阶段 / Verification |
+| 阶段 / Phase     | 占比 / Ratio | 说明 / Description               |
+| -------------- | ---------- | ------------------------------ |
+| analysis       | 15%        | 需求分析阶段 / Requirements analysis |
+| design         | 20%        | 规格设计阶段 / Specification design  |
+| implementation | 35%        | 代码实现阶段 / Implementation        |
+| review         | 20%        | 代码审查阶段 / Code review           |
+| verify         | 10%        | 验证确认阶段 / Verification          |
 
 阈值策略 / Threshold: **80% 警告 / Warning** / **95% 阻断 / Block**
 
 #### 代码质量评分 — 五维引擎 / Quality Scoring — Five Dimensions
 
-| 维度 / Dimension | 权重 / Weight | 规则数 / Rules | 评级 / Rating |
-| -------- | --- | --- | ----------------------------------------------- |
-| **可读性 / Readability** | 20% | 7 | 命名规范/函数长度/行长度/圈复杂度/注释覆盖率 |
-| **可维护性 / Maintainability** | 20% | 6 | 重复代码/模块内聚/耦合度/单一职责/死代码 |
-| **健壮性 / Robustness** | 25% | 6 | Null检查/错误处理/边界验证/异步错误/类型检查 |
-| **性能 / Performance** | 15% | 6 | 循环效率/内存分配/I/O操作/字符串拼接/异步模式 |
-| **安全性 / Security** | 20% | 6 | SQL注入/XSS风险/硬编码密钥/输入验证/依赖安全 |
+| 维度 / Dimension             | 权重 / Weight | 规则数 / Rules | 评级 / Rating                 |
+| -------------------------- | ----------- | ----------- | --------------------------- |
+| **可读性 / Readability**      | 20%         | 7           | 命名规范/函数长度/行长度/圈复杂度/注释覆盖率    |
+| **可维护性 / Maintainability** | 20%         | 6           | 重复代码/模块内聚/耦合度/单一职责/死代码      |
+| **健壮性 / Robustness**       | 25%         | 6           | Null检查/错误处理/边界验证/异步错误/类型检查  |
+| **性能 / Performance**       | 15%         | 6           | 循环效率/内存分配/I/O操作/字符串拼接/异步模式  |
+| **安全性 / Security**         | 20%         | 6           | SQL注入/XSS风险/硬编码密钥/输入验证/依赖安全 |
 
 **评级 / Grades**: S≥90 / A≥80 / B≥70 / C≥60 / D≥50 / F<50
 
@@ -408,22 +413,22 @@ PluginBase (抽象基类 / Abstract Base)
 
 #### Web Dashboard — 4 大视图面板 / 4 View Panels
 
-| 视图 / View | 名称 / Name | 主要内容 / Content |
-| -------- | -------- | ------------------- |
-| Pipeline | 流水线视图 / Pipeline View | 各阶段状态和进度 / Stage status & progress |
-| Kanban | 看板视图 / Kanban View | 功能点开发状态 / Feature development status |
-| Quality | 质量视图 / Quality View | 代码质量指标 / Code quality metrics |
-| System | 系统视图 / System View | 系统运行状态 / System runtime status |
+| 视图 / View | 名称 / Name             | 主要内容 / Content                       |
+| --------- | --------------------- | ------------------------------------ |
+| Pipeline  | 流水线视图 / Pipeline View | 各阶段状态和进度 / Stage status & progress   |
+| Kanban    | 看板视图 / Kanban View    | 功能点开发状态 / Feature development status |
+| Quality   | 质量视图 / Quality View   | 代码质量指标 / Code quality metrics        |
+| System    | 系统视图 / System View    | 系统运行状态 / System runtime status       |
 
 #### Terminal TUI — 快捷键 / Shortcuts
 
-| 按键 / Key | 功能 / Function | 适用场景 / Scenario |
-| -------------- | ------------ | ---------- |
-| `Tab` | 切换到下一个屏幕 / Next screen | 所有屏幕 / All screens |
-| `q` 或 `Ctrl+C` | 退出 TUI / Quit | 所有屏幕 / All screens |
-| `r` 或 `F5` | 强制刷新 / Refresh | 所有屏幕 / All screens |
-| `1` - `4` | 直接跳转到指定屏幕 / Jump to screen | 所有屏幕 / All screens |
-| `/` | 打开搜索框 / Search | 支持搜索的屏幕 / Searchable screens |
+| 按键 / Key       | 功能 / Function              | 适用场景 / Scenario              |
+| -------------- | -------------------------- | ---------------------------- |
+| `Tab`          | 切换到下一个屏幕 / Next screen     | 所有屏幕 / All screens           |
+| `q` 或 `Ctrl+C` | 退出 TUI / Quit              | 所有屏幕 / All screens           |
+| `r` 或 `F5`     | 强制刷新 / Refresh             | 所有屏幕 / All screens           |
+| `1` - `4`      | 直接跳转到指定屏幕 / Jump to screen | 所有屏幕 / All screens           |
+| `/`            | 打开搜索框 / Search             | 支持搜索的屏幕 / Searchable screens |
 
 ***
 
@@ -449,7 +454,7 @@ skills/
 │   ├── traffic-accident-assessor/ # 交通事故评估 / Traffic accident assessor
 │   └── pdd-vm/                 # 可视化监控 / Visual monitoring
 │
-├── expert/                  # 专家技能 / Expert Skills (12个)
+├── expert/                  # 专家技能 / Expert Skills (18个)
 │   ├── expert-security/    # 安全审计 / Security audit
 │   ├── expert-performance/ # 性能优化 / Performance
 │   ├── expert-mysql/       # MySQL数据库 / MySQL
@@ -459,6 +464,10 @@ skills/
 │   ├── expert-vue3/        # Vue3前端 / Vue3 frontend
 │   ├── expert-springcloud/ # SpringCloud微服务 / Microservices
 │   ├── expert-bug-fixer/   # Bug修复 / Bug fixing
+│   ├── expert-kotlin/      # ★ Kotlin语言/协程/Flow (NEW v3.4.0-dev)
+│   ├── expert-android/     # ★ Android平台/生命周期/组件化 (NEW v3.4.0-dev)
+│   ├── expert-jetpack/     # ★ Jetpack/Compose (NEW v3.4.0-dev)
+│   ├── expert-android-test/ # ★ Android测试/ADB (NEW v3.4.0-dev)
 │   ├── testcase-modeler/   # ★ 测试用例建模 / Testcase modeling (NEW)
 │   ├── testcase-agent/      # ★ 测试执行引擎 / Test execution engine (NEW)
 │   ├── software-architect/ # 软件架构 / Software architecture
@@ -483,11 +492,11 @@ skills/
 
 PRD 回答"有什么"，spec 回答"怎么调"，**DESIGN.md 回答"长什么样、什么规则"**。三者正交：
 
-| 文档 | 读者 | 回答什么 | 变更频率 |
-|------|------|---------|---------|
-| `AGENTS.md` | 编码 agent | 怎么建（技术栈/目录/命令） | 低 |
-| PRD 第4章「界面原型」 | 人 | 这个页面放哪些字段和按钮 | 高 |
-| `spec.md` 第4/6章 | 人 + 后端 | 这个功能调什么接口、字段什么类型 | 高 |
+| 文档                 | 读者         | 回答什么                     | 变更频率   |
+| ------------------ | ---------- | ------------------------ | ------ |
+| `AGENTS.md`        | 编码 agent   | 怎么建（技术栈/目录/命令）           | 低      |
+| PRD 第4章「界面原型」      | 人          | 这个页面放哪些字段和按钮             | 高      |
+| `spec.md` 第4/6章    | 人 + 后端     | 这个功能调什么接口、字段什么类型         | 高      |
 | **`ui/DESIGN.md`** | **AI + 人** | **全系统统一的颜色/字号/间距/状态/密度** | **极低** |
 
 **取舍准则**：只对一个页面成立的约定留在 PRD；两个以上页面成立的必须上升到 DESIGN.md。
@@ -526,16 +535,16 @@ PRD ──→ dev-specs ──→ specs/spec.md ──→ 【ui/DESIGN.md】 ─
 
 正确做法是收敛成 ≤8 个色族，用**明度差 ≥18 + 图标**承担细分：
 
-| 族 | 状态 | 区分手段 |
-|----|------|---------|
-| 灰 | 草稿 / 已撤回 | 明度 + 图标 |
-| 橙 | 待审核 | 色相 |
-| 深橙 | 发布失败 | 同族，明度差 22 + ⚠ |
-| 绿 | 已通过 / 已发布 | 明度差 22 + 图标（✓ / ●） |
-| 红 | 退回修改 / 退回重写 | 明度差 21 + 图标（↩ / ↻） |
-| 紫 | 定时待发 | 色相 |
-| 青 | 部分成功 | 色相 |
-| 深靛 | 审核中 | 与品牌蓝同系但明度差 24 |
+| 族  | 状态          | 区分手段               |
+| -- | ----------- | ------------------ |
+| 灰  | 草稿 / 已撤回    | 明度 + 图标            |
+| 橙  | 待审核         | 色相                 |
+| 深橙 | 发布失败        | 同族，明度差 22 + ⚠      |
+| 绿  | 已通过 / 已发布   | 明度差 22 + 图标（✓ / ●） |
+| 红  | 退回修改 / 退回重写 | 明度差 21 + 图标（↩ / ↻） |
+| 紫  | 定时待发        | 色相                 |
+| 青  | 部分成功        | 色相                 |
+| 深靛 | 审核中         | 与品牌蓝同系但明度差 24      |
 
 ### 使用方式
 
@@ -554,33 +563,33 @@ node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
 
 ### 文档结构（12 章）
 
-| # | 章节 | 关键点 |
-|---|------|--------|
-| 1 | 视觉主题与气质 | 先定调，后续所有决策的依据 |
-| 2 | 颜色与角色 | 颜色必须绑定**功能角色**，附语义禁区 |
-| 3 | 字体规则 | 中文优先栈 + 数字必须 `tabular-nums` |
-| 4 | 组件规范 | 每个组件写全 **8 态**（含 loading / 无权限） |
-| 5 | 布局原则 | 归纳布局类型，不逐页描述 |
-| 6 | 层级与深度 | L0-L3 表面阶梯，投影只允许 L2+ |
-| 7 | **数据密度** | 行高 / 一屏行数 / 列数上限，全部可测 |
-| 8 | Do's and Don'ts | 每条必须**可机器判定** |
-| 9 | 响应式与多端 | 断点 + PC/移动/大屏差异矩阵 |
-| 10 | 内容模型映射 | 内容类型 → 字段 → 模板 → 可发渠道 |
-| 11 | 组件库映射 | Element Plus `--el-*` 变量覆盖 |
-| 12 | Agent Prompt Guide | 速查色板 + 现成 prompt + 迭代审计清单 |
+| #  | 章节                 | 关键点                             |
+| -- | ------------------ | ------------------------------- |
+| 1  | 视觉主题与气质            | 先定调，后续所有决策的依据                   |
+| 2  | 颜色与角色              | 颜色必须绑定**功能角色**，附语义禁区            |
+| 3  | 字体规则               | 中文优先栈 + 数字必须 `tabular-nums`     |
+| 4  | 组件规范               | 每个组件写全 **8 态**（含 loading / 无权限） |
+| 5  | 布局原则               | 归纳布局类型，不逐页描述                    |
+| 6  | 层级与深度              | L0-L3 表面阶梯，投影只允许 L2+            |
+| 7  | **数据密度**           | 行高 / 一屏行数 / 列数上限，全部可测           |
+| 8  | Do's and Don'ts    | 每条必须**可机器判定**                   |
+| 9  | 响应式与多端             | 断点 + PC/移动/大屏差异矩阵               |
+| 10 | 内容模型映射             | 内容类型 → 字段 → 模板 → 可发渠道           |
+| 11 | 组件库映射              | Element Plus `--el-*` 变量覆盖      |
+| 12 | Agent Prompt Guide | 速查色板 + 现成 prompt + 迭代审计清单       |
 
 ### 校验器覆盖
 
 `check-design.js` 不是格式检查，是**语义检查**：
 
-| 检查项 | 判定规则 |
-|--------|---------|
-| front matter | YAML 合法 + 5 个必需顶层键 |
-| 裸 hex | `components` 下必须是 `{colors.x}` 引用 |
-| 引用完整性 | 每个 token 引用都真实存在 |
-| 状态色冲突 | **色相 × 明度双重判定**：灰阶（S<20%）豁免；色相差 <25° 但明度差 ≥18 判为"同族可接受" |
-| 对比度 | 状态色若被用作文字，白底须 ≥3:1 |
-| 双编码 | 必须声明图标/形状，不能只靠颜色 |
+| 检查项          | 判定规则                                                    |
+| ------------ | ------------------------------------------------------- |
+| front matter | YAML 合法 + 5 个必需顶层键                                      |
+| 裸 hex        | `components` 下必须是 `{colors.x}` 引用                       |
+| 引用完整性        | 每个 token 引用都真实存在                                        |
+| 状态色冲突        | **色相 × 明度双重判定**：灰阶（S<20%）豁免；色相差 <25° 但明度差 ≥18 判为"同族可接受" |
+| 对比度          | 状态色若被用作文字，白底须 ≥3:1                                      |
+| 双编码          | 必须声明图标/形状，不能只靠颜色                                        |
 
 ```bash
 $ node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
@@ -592,8 +601,8 @@ $ node .skills/pdd-design-spec/scripts/check-design.js ./ui/DESIGN.md
 
 技能本体通用，领域差异通过 `references/presets/` 覆盖。新增领域只加一个文件，不改 SKILL.md——这是跨项目复用的关键。
 
-| 预设 | 适用 | 提供什么 |
-|------|------|---------|
+| 预设         | 适用               | 提供什么                                   |
+| ---------- | ---------------- | -------------------------------------- |
 | `media.md` | 融媒体 / 内容发布 / CMS | 11 态稿件状态机、8 渠道清单、内容分级标识、栏目色彩体系、AI 标注分档 |
 
 融媒体预设的三个关键判断（都来自真实项目）：
@@ -633,13 +642,13 @@ skills/core/pdd-design-spec/
 
 ### 配置文件一览 / Configuration Files
 
-| 配置文件 / Config File | 用途 / Purpose | 消费方 / Consumers |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `config/bug-patterns.yaml` | Bug模式库（14个模式 / 14 patterns） | pdd-code-reviewer, pdd-verify-feature, pdd-implement-feature, pdd-template-engine, expert-ruoyi |
-| `config/prd-rules.yaml` | PRD检测规则（30条 / 30 rules，其中 7 条为阻塞规则 / 7 blocking） | pdd-linter, run-linters.js |
-| `config/gate-config.yaml` | 质量门控配置（4级 / 4 levels + `grade_thresholds` A~D 分档） | gate-engine.js |
-| **`config/test-actions.yaml`** | **测试动作库（30+ 动作 / 30+ actions）** | **testcase-modeler, testcase-agent** |
-| **`config/cdp-test-config.yaml`** | **全局测试配置（环境变量/超时/报告）** | **testcase-agent** |
+| 配置文件 / Config File                | 用途 / Purpose                                       | 消费方 / Consumers                                                                                 |
+| --------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `config/bug-patterns.yaml`        | Bug模式库（14个模式 / 14 patterns）                        | pdd-code-reviewer, pdd-verify-feature, pdd-implement-feature, pdd-template-engine, expert-ruoyi |
+| `config/prd-rules.yaml`           | PRD检测规则（30条 / 30 rules，其中 7 条为阻塞规则 / 7 blocking）   | pdd-linter, run-linters.js                                                                      |
+| `config/gate-config.yaml`         | 质量门控配置（4级 / 4 levels + `grade_thresholds` A\~D 分档） | gate-engine.js                                                                                  |
+| **`config/test-actions.yaml`**    | **测试动作库（30+ 动作 / 30+ actions）**                    | **testcase-modeler, testcase-agent**                                                            |
+| **`config/cdp-test-config.yaml`** | **全局测试配置（环境变量/超时/报告）**                             | **testcase-agent**                                                                              |
 
 ### Bug模式库架构 / Bug Pattern Library
 
@@ -671,26 +680,27 @@ cd D:/APPPROJECTS/RuoYi-Vue-Plus-v6.0.0
 node "D:/APPPROJECTS/pdd-skills-v3-main/pdd-skills-v3-main/bin/pdd.js" linter -t prd -f ./my-feature.prd
 ```
 
-| 参数 / Option | 取值 / Values | 说明 / Notes |
-| ------------- | ------------- | ------------ |
-| `-t, --type` | `code` / `prd` / `sql` / `activiti` / `all` | 可逗号组合；不传默认 `all` |
-| `-f, --file` | 文件路径 | **传文件，不是目录**。传目录会被过滤掉，判为「未真正执行」 |
-| `-o, --output` | `text` / `json` | `json` 输出 `summary.gateResult`，便于程序判定；`html` 未实现（等同 text） |
-| `--incremental` | — | 仅检查 `git diff` 变更的文件 |
+| 参数 / Option     | 取值 / Values                                 | 说明 / Notes                                                |
+| --------------- | ------------------------------------------- | --------------------------------------------------------- |
+| `-t, --type`    | `code` / `prd` / `sql` / `activiti` / `all` | 可逗号组合；不传默认 `all`                                          |
+| `-f, --file`    | 文件路径                                        | **传文件，不是目录**。传目录会被过滤掉，判为「未真正执行」                           |
+| `-o, --output`  | `text` / `json`                             | `json` 输出 `summary.gateResult`，便于程序判定；`html` 未实现（等同 text） |
+| `--incremental` | —                                           | 仅检查 `git diff` 变更的文件                                      |
 
 **当前环境实测可用的检查项**（其余因缺依赖未执行，会被明确报为「未真正执行」）：
 
-| 类型 / Type | 状态 / Status | 依赖 / Requires |
-| ----------- | ------------- | --------------- |
-| `prd` | ✅ 可用 | 无（内置规则引擎，30 条规则） |
-| `sql` | ✅ 可用 | 无（无 sqlfluff 时自动降级为内置检查） |
-| `code` | ❌ 未执行 | 需自带 checkstyle jar、pmd 的 `run.sh`、eslint、ruff |
-| `activiti` | ❌ 未执行 | 需 `xml2js`（`package.json` 尚未声明该依赖） |
+| 类型 / Type  | 状态 / Status | 依赖 / Requires                                 |
+| ---------- | ----------- | --------------------------------------------- |
+| `prd`      | ✅ 可用        | 无（内置规则引擎，30 条规则）                              |
+| `sql`      | ✅ 可用        | 无（无 sqlfluff 时自动降级为内置检查）                      |
+| `code`     | ❌ 未执行       | 需自带 checkstyle jar、pmd 的 `run.sh`、eslint、ruff |
+| `activiti` | ❌ 未执行       | 需 `xml2js`（`package.json` 尚未声明该依赖）            |
 
 > **三个使用上的坑 / Three Gotchas**
+>
 > 1. **报告路径不可指定**：固定落在 `<项目根>/.pdd/cache/reports/linter-report-<时间戳>.md`，与 `entropy_scan.py --output` 不同。
 > 2. **退出码恒为 0**：`gateResult.action.exitCode` 虽被算出但从未 `process.exit()`，因此 **不能靠退出码接 CI**，需解析 `-o json` 的 `summary.gateResult.passed`。
-> 3. **不传 `-f` 时，派生产物会被当成 PRD 一起检查**：文件发现规则 `isLikelyPRD()` 只看**文件名关键词**（`prd` / `spec` / `feature` / `需求` / `规格` / `功能` …），因此 `specs/spec.md`、`specs/features/feature-matrix.md` 这类**由 PRD 生成的产物**也会被当作 PRD 送检，并因不含「版本号 / 不在范围 / 权限矩阵」等章节而触发 Blocker。实测某项目 `-t prd` 不带 `-f` 时：`filesChecked=2`、**13 errors / 15 warnings**、`评分 0/100` 🚫 **BLOCKER 阻断** —— 而被检查的两份文件没有一份是 PRD。**结论：查 PRD 时始终显式带 `-f` 指向真正的 PRD 文件。**
+> 3. **不传** **`-f`** **时，派生产物会被当成 PRD 一起检查**：文件发现规则 `isLikelyPRD()` 只看**文件名关键词**（`prd` / `spec` / `feature` / `需求` / `规格` / `功能` …），因此 `specs/spec.md`、`specs/features/feature-matrix.md` 这类**由 PRD 生成的产物**也会被当作 PRD 送检，并因不含「版本号 / 不在范围 / 权限矩阵」等章节而触发 Blocker。实测某项目 `-t prd` 不带 `-f` 时：`filesChecked=2`、**13 errors / 15 warnings**、`评分 0/100` 🚫 **BLOCKER 阻断** —— 而被检查的两份文件没有一份是 PRD。**结论：查 PRD 时始终显式带** **`-f`** **指向真正的 PRD 文件。**
 
 ### 质量门控流程 / Quality Gate Process
 
@@ -716,7 +726,7 @@ PRD文档 / PRD Doc → prd-linter (30条规则 / 30 rules) → gate-engine (4�
 
 门控体系有一条硬性要求：**「检查没跑」与「检查通过」绝不能给出同一个绿灯**。凡是「规则未执行」「文件未匹配」这类情况，一律按**不通过**处理，而不是当作无问题放行。
 
-同一条要求也适用于**「问题被规则主动豁免」**：豁免是设计内的行为，但它必须留下计数，否则「少报」会伪装成「干净」。
+同一条要求也适用于\*\*「问题被规则主动豁免」\*\*：豁免是设计内的行为，但它必须留下计数，否则「少报」会伪装成「干净」。
 
 ```javascript
 // scripts/linter/prd-linter.js
@@ -760,7 +770,7 @@ if (hit) {
 
 > 该防护由 2026-09-30 的缺陷修复引入，详见 [质量保障加固 / Quality Assurance Hardening](#质量保障加固--quality-assurance-hardening)。
 
----
+***
 
 ## ★ 测试用例系统 / Testcase System (NEW v3.2.0)
 
@@ -800,16 +810,16 @@ if (hit) {
 
 ### 📊 核心特性 / Core Features
 
-| 特性 / Feature | 说明 / Description | 受益者 / Beneficiary |
-| --------------- | ------------------- | -------------------- |
-| **零代码门槛 / Zero-Code** | 自然语言 → YAML 用例，无需编程 | 实习生、业务人员 |
-| **智能建模 / Smart Modeling** | 6条 Iron Rules + 意图自动提取 + 断言注入 | 所有测试人员 |
-| **可靠执行 / Reliable Execution** | 5条铁律 + 每步截图 + 深度网络校验 | QA工程师 |
-| **自愈引擎 / Self-Healing** | 4级元素定位降级策略（成功率 >65%） | 自动化测试 |
-| **安全处理 / Security First** | 密码等敏感信息使用环境变量，禁止硬编码 | 安全合规 |
-| **专业报告 / Professional Reports** | HTML报告含截图/时间线/诊断建议 | 项目经理、管理层 |
+| 特性 / Feature                    | 说明 / Description              | 受益者 / Beneficiary |
+| ------------------------------- | ----------------------------- | ----------------- |
+| **零代码门槛 / Zero-Code**           | 自然语言 → YAML 用例，无需编程           | 实习生、业务人员          |
+| **智能建模 / Smart Modeling**       | 6条 Iron Rules + 意图自动提取 + 断言注入 | 所有测试人员            |
+| **可靠执行 / Reliable Execution**   | 5条铁律 + 每步截图 + 深度网络校验          | QA工程师             |
+| **自愈引擎 / Self-Healing**         | 4级元素定位降级策略（成功率 >65%）          | 自动化测试             |
+| **安全处理 / Security First**       | 密码等敏感信息使用环境变量，禁止硬编码           | 安全合规              |
+| **专业报告 / Professional Reports** | HTML报告含截图/时间线/诊断建议            | 项目经理、管理层          |
 
----
+***
 
 ### 🚀 快速开始 / Quick Start
 
@@ -934,22 +944,22 @@ steps:
 📄 完整报告: test-results/reports/TR-1778232000000.html
 ```
 
----
+***
 
 ### 📚 YAML 用例规范 / YAML Test Case Specification
 
 #### 必填字段 / Required Fields
 
-| 字段 / Field | 类型 / Type | 说明 / Description |
-| ------------- | ----------- | ------------------- |
-| `test_id` | string | 唯一标识符（格式：`MODULE-NNN-name`） |
-| `title` | string | 测试用例标题 |
-| `priority` | string | 优先级（P0/P1/P2/P3） |
-| `tags` | array | 标签数组（用于分类和筛选） |
-| `context_check` | object | 前置状态检查配置 |
-| `steps` | array | 测试步骤列表 |
+| 字段 / Field      | 类型 / Type | 说明 / Description            |
+| --------------- | --------- | --------------------------- |
+| `test_id`       | string    | 唯一标识符（格式：`MODULE-NNN-name`） |
+| `title`         | string    | 测试用例标题                      |
+| `priority`      | string    | 优先级（P0/P1/P2/P3）            |
+| `tags`          | array     | 标签数组（用于分类和筛选）               |
+| `context_check` | object    | 前置状态检查配置                    |
+| `steps`         | array     | 测试步骤列表                      |
 
-#### context_check 配置 / Context Check Configuration
+#### context\_check 配置 / Context Check Configuration
 
 ```yaml
 context_check:
@@ -991,30 +1001,30 @@ context_check:
 
 #### 支持的动作类型 / Supported Action Types
 
-| 动作 / Action | 说明 / Description | MCP 工具 / MCP Tool |
-| ------------- | ------------------ | -------------------- |
-| `navigate` | 打开页面 / Navigate to URL | `navigate_page` |
-| `fill` | 填写输入框 / Fill input field | `fill` / `fill_form` |
-| `click` | 点击元素 / Click element | `click` |
-| `select` | 选择下拉选项 / Select dropdown | `select_option` |
-| `wait` | 等待条件 / Wait for condition | `wait_for` |
-| `screenshot` | 截图 / Take screenshot | `take_screenshot` |
-| `assert_multiple` | 多重断言 / Multiple assertions | （内置逻辑） |
-| `evaluate` | 执行 JavaScript / Execute JS | `evaluate_script` |
+| 动作 / Action       | 说明 / Description           | MCP 工具 / MCP Tool    |
+| ----------------- | -------------------------- | -------------------- |
+| `navigate`        | 打开页面 / Navigate to URL     | `navigate_page`      |
+| `fill`            | 填写输入框 / Fill input field   | `fill` / `fill_form` |
+| `click`           | 点击元素 / Click element       | `click`              |
+| `select`          | 选择下拉选项 / Select dropdown   | `select_option`      |
+| `wait`            | 等待条件 / Wait for condition  | `wait_for`           |
+| `screenshot`      | 截图 / Take screenshot       | `take_screenshot`    |
+| `assert_multiple` | 多重断言 / Multiple assertions | （内置逻辑）               |
+| `evaluate`        | 执行 JavaScript / Execute JS | `evaluate_script`    |
 
 #### 支持的断言类型 / Supported Assertion Types
 
-| 断言 / Assertion | 说明 / Description | 适用场景 / Use Case |
-| ---------------- | ------------------ | ------------------- |
-| `text_contains` | 页面包含文本 | 验证页面内容 |
-| `element_visible` | 元素可见 | 验证UI元素存在 |
-| `field_filled` | 字段已填写 | 验证表单输入完成 |
-| `value_equals` | 值匹配 | 验证具体值 |
-| `url_contains` | URL包含特征 | 验证页面跳转 |
-| `network_called` | API调用检查 | 深度验证后端请求 |
-| `element_count_greater_than` | 元素数量验证 | 验证列表数据量 |
+| 断言 / Assertion               | 说明 / Description | 适用场景 / Use Case |
+| ---------------------------- | ---------------- | --------------- |
+| `text_contains`              | 页面包含文本           | 验证页面内容          |
+| `element_visible`            | 元素可见             | 验证UI元素存在        |
+| `field_filled`               | 字段已填写            | 验证表单输入完成        |
+| `value_equals`               | 值匹配              | 验证具体值           |
+| `url_contains`               | URL包含特征          | 验证页面跳转          |
+| `network_called`             | API调用检查          | 深度验证后端请求        |
+| `element_count_greater_than` | 元素数量验证           | 验证列表数据量         |
 
----
+***
 
 ### ⚙️ 配置文件详解 / Configuration Files Details
 
@@ -1085,30 +1095,30 @@ env_mapping:
   BASE_URL: "${BASE_URL}"            # 基础URL
 ```
 
----
+***
 
 ### 🛡️ 质量保障机制 / Quality Assurance Mechanisms
 
 #### Testcase Modeler - 6条建模规则 / 6 Modeling Rules
 
-| 规则 / Rule | 名称 / Name | 说明 / Description |
-| ------------ | ----------- | ------------------- |
-| 规则 1 | 结构完整性 | 必填字段完整性检查 |
-| 规则 2 | 语义化定位 | 使用人类可读的目标描述，而非CSS/XPath |
-| 规则 3 | 断言注入 | 每个步骤必须配对至少1个断言 |
-| 规则 4 | 深度网络校验 | 关键步骤需验证底层API调用 |
-| 规则 5 | 安全处理 | 敏感信息使用环境变量引用 |
-| 规则 6 | 可读性优先 | YAML结构清晰，注释完整 |
+| 规则 / Rule | 名称 / Name | 说明 / Description        |
+| --------- | --------- | ----------------------- |
+| 规则 1      | 结构完整性     | 必填字段完整性检查               |
+| 规则 2      | 语义化定位     | 使用人类可读的目标描述，而非CSS/XPath |
+| 规则 3      | 断言注入      | 每个步骤必须配对至少1个断言          |
+| 规则 4      | 深度网络校验    | 关键步骤需验证底层API调用          |
+| 规则 5      | 安全处理      | 敏感信息使用环境变量引用            |
+| 规则 6      | 可读性优先     | YAML结构清晰，注释完整           |
 
 #### Testcase Agent - 5条执行铁律 / 5 Execution Iron Laws
 
-| 铁律 / Law | 名称 / Name | 强制要求 / Mandatory Requirement |
-| ---------- | ----------- | -------------------------------- |
-| 铁律 1 | **状态感知优先** | 执行前必须检测当前登录状态 |
-| 铁律 2 | **每步留痕** | 每个步骤必须截图记录 |
-| 铁律 3 | **深度网络校验** | 监控并验证关键API调用 |
-| 铁律 4 | **自愈而非放弃** | 元素失效时启动4级降级策略 |
-| 铁律 5 | **报告完整性** | 生成包含截图/时间线/诊断的专业报告 |
+| 铁律 / Law | 名称 / Name  | 强制要求 / Mandatory Requirement |
+| -------- | ---------- | ---------------------------- |
+| 铁律 1     | **状态感知优先** | 执行前必须检测当前登录状态                |
+| 铁律 2     | **每步留痕**   | 每个步骤必须截图记录                   |
+| 铁律 3     | **深度网络校验** | 监控并验证关键API调用                 |
+| 铁律 4     | **自愈而非放弃** | 元素失效时启动4级降级策略                |
+| 铁律 5     | **报告完整性**  | 生成包含截图/时间线/诊断的专业报告           |
 
 #### 4级元素定位自愈策略 / 4-Level Element Location Self-Healing
 
@@ -1124,7 +1134,7 @@ Level 4: AI 辅助        (~500ms-2s, 命中率~55%, 兜底)
 整体自愈成功率目标: >65%
 ```
 
----
+***
 
 ### 📖 使用场景与最佳实践 / Use Cases & Best Practices
 
@@ -1171,26 +1181,26 @@ Level 4: AI 辅助        (~500ms-2s, 命中率~55%, 兜底)
 
 - [ ] **始终使用环境变量**存储敏感信息（用户名/密码/token）
 - [ ] **为每个步骤添加断言**，确保可追溯性
-- [ ] **使用语义化的 target 描述**（如"登录按钮"而非"uid=15_4"）
+- [ ] **使用语义化的 target 描述**（如"登录按钮"而非"uid=15\_4"）
 - [ ] **合理设置等待策略**：优先使用 `navigation` 或 `element` 而非固定时间
-- [ ] **利用 uid_cache_key** 优化重复元素的定位性能
+- [ ] **利用 uid\_cache\_key** 优化重复元素的定位性能
 - [ ] **定期更新 test-actions.yaml** 以支持新的业务操作
 - [ ] **查看HTML报告**获取详细的执行诊断信息
 
----
+***
 
 ### 🔧 故障排查 / Troubleshooting
 
-| 问题 / Problem | 可能原因 / Possible Cause | 解决方案 / Solution |
-| --------------- | ------------------------ | ------------------ |
-| 环境变量未识别 | 未设置或名称不匹配 | 检查 `$env:TEST_USER` 是否正确设置 |
-| 元素找不到 | 页面未加载完成或选择器变化 | 增加 `wait_after` 时间或启用自愈机制 |
-| 登录失败 | Session过期或验证码拦截 | 检查 `context_check` 配置，考虑设置 `captcha_required: true` |
-| 断言失败 | UI变更或异步加载延迟 | 调整 `confidence` 级别或增加等待时间 |
-| 报告生成失败 | 目录权限不足 | 检查 `test-results/` 目录写入权限 |
-| 网络校验失败 | API端点变更或CORS限制 | 更新 `network_called` 的 `url_pattern` 或暂时降低置信度 |
+| 问题 / Problem | 可能原因 / Possible Cause | 解决方案 / Solution                                     |
+| ------------ | --------------------- | --------------------------------------------------- |
+| 环境变量未识别      | 未设置或名称不匹配             | 检查 `$env:TEST_USER` 是否正确设置                          |
+| 元素找不到        | 页面未加载完成或选择器变化         | 增加 `wait_after` 时间或启用自愈机制                           |
+| 登录失败         | Session过期或验证码拦截       | 检查 `context_check` 配置，考虑设置 `captcha_required: true` |
+| 断言失败         | UI变更或异步加载延迟           | 调整 `confidence` 级别或增加等待时间                           |
+| 报告生成失败       | 目录权限不足                | 检查 `test-results/` 目录写入权限                           |
+| 网络校验失败       | API端点变更或CORS限制        | 更新 `network_called` 的 `url_pattern` 或暂时降低置信度        |
 
----
+***
 
 ### 📁 项目结构 / Project Structure
 
@@ -1222,37 +1232,91 @@ pdd-skills-v3/
     └── reports/                #    HTML测试报告
 ```
 
----
+***
 
 ### 🎓 学习资源 / Learning Resources
 
-| 资源 / Resource | 路径 / Path | 说明 / Description |
-| --------------- | ----------- | ------------------- |
-| **Modeler 完整文档** | `skills/expert/testcase-modeler/SKILL.md` | 6条建模规则 + 触发词 + 示例 |
-| **Agent 完整文档** | `skills/expert/testcase-agent/SKILL.md` | 5条铁律 + 自愈策略 + 执行流程 |
-| **铁律详细实现** | `skills/expert/testcase-agent/references/iron-rules-detail.md` | 每条铁律的实现细节和代码示例 |
-| **自愈策略详解** | `skills/expert/testcase-agent/references/self-healing-strategy.md` | 4级降级的完整算法和案例 |
-| **断言类型参考** | `skills/expert/testcase-agent/references/assertion-types.md` | 所有断言类型的参数和使用场景 |
-| **设计文档** | `docs/superpowers/specs/2026-05-08-pdd-test-skill-design.md` | 完整的系统设计和架构决策 |
-| **开发计划** | `.trae/documents/pdd-test-skill-development-plan.md` | 三阶段实施计划和任务分解 |
+| 资源 / Resource    | 路径 / Path                                                          | 说明 / Description   |
+| ---------------- | ------------------------------------------------------------------ | ------------------ |
+| **Modeler 完整文档** | `skills/expert/testcase-modeler/SKILL.md`                          | 6条建模规则 + 触发词 + 示例  |
+| **Agent 完整文档**   | `skills/expert/testcase-agent/SKILL.md`                            | 5条铁律 + 自愈策略 + 执行流程 |
+| **铁律详细实现**       | `skills/expert/testcase-agent/references/iron-rules-detail.md`     | 每条铁律的实现细节和代码示例     |
+| **自愈策略详解**       | `skills/expert/testcase-agent/references/self-healing-strategy.md` | 4级降级的完整算法和案例       |
+| **断言类型参考**       | `skills/expert/testcase-agent/references/assertion-types.md`       | 所有断言类型的参数和使用场景     |
+| **设计文档**         | `docs/superpowers/specs/2026-05-08-pdd-test-skill-design.md`       | 完整的系统设计和架构决策       |
+| **开发计划**         | `.trae/documents/pdd-test-skill-development-plan.md`               | 三阶段实施计划和任务分解       |
 
----
+***
 
 ### 🔄 版本路线图 / Version Roadmap
 
-| 版本 / Version | 计划日期 / Planned Date | 主要特性 / Key Features |
-| -------------- | ---------------------- | ----------------------- |
-| **v3.2.0** | 2026-05-08 | ✅ testcase-modeler + testcase-agent 基础版 |
-| **v3.2.1** (当前) | 2026-09-30 | ✅ **质量保障加固 / Quality Assurance Hardening** — 质量门控静默失效修复 + 熵减评分模型重构（详见 [质量保障加固](#质量保障加固--quality-assurance-hardening)） |
-| **v3.2.2** | 计划中 | 🔄 批量执行 + 并行测试 + CI/CD 集成（原 v3.2.1 计划，因版本号复用顺延） |
-| **v3.3.0** | 2026-06-01 | 📋 数据驱动测试（CSV/Excel参数化） |
-| **v3.4.0** | 2026-06-15 | 🌐 跨浏览器测试（Firefox/Safari/Edge） |
-| **v3.5.0** | 2026-07-01 | 🤖 AI辅助用例生成（GPT/Claude集成） |
-| **v4.0.0** | 2026-08-01 | 🎯 完整测试平台（管理后台 + 历史分析 + 趋势图表） |
+| 版本 / Version    | 计划日期 / Planned Date | 主要特性 / Key Features                                                                                                   |
+| --------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **v3.2.0**      | 2026-05-08          | ✅ testcase-modeler + testcase-agent 基础版                                                                               |
+| **v3.2.1** (当前) | 2026-09-30          | ✅ **质量保障加固 / Quality Assurance Hardening** — 质量门控静默失效修复 + 熵减评分模型重构（详见 [质量保障加固](#质量保障加固--quality-assurance-hardening)） |
+| **v3.2.2**      | 计划中                 | 🔄 批量执行 + 并行测试 + CI/CD 集成（原 v3.2.1 计划，因版本号复用顺延）                                                                       |
+| **v3.3.0**      | 2026-06-01          | 📋 数据驱动测试（CSV/Excel参数化）                                                                                               |
+| **v3.4.0**      | 2026-06-15          | 🌐 跨浏览器测试（Firefox/Safari/Edge）                                                                                        |
+| **v3.5.0**      | 2026-07-01          | 🤖 AI辅助用例生成（GPT/Claude集成）                                                                                             |
+| **v4.0.0**      | 2026-08-01          | 🎯 完整测试平台（管理后台 + 历史分析 + 趋势图表）                                                                                         |
 
----
+***
 
+## ★ Kotlin 原生 Android Support / Android Support (NEW v3.4.0-dev)
 
+> 为 Kotlin 原生 Android 开发场景提供全链路适配：语法特性、生命周期集成、组件化、Gradle 构建体系。
+> Java/RuoYi 既有链路 **零行为变化**（未检测到 Android 工程时所有新能力静默）。
+> 完整设计：[docs/plans/04-kotlin-android-capability-enhancement.md](docs/plans/04-kotlin-android-capability-enhancement.md)
+
+### 能力矩阵 / Capability Matrix
+
+| 模块                 | 位置                                | 能力                                                                                                       |
+| ------------------ | --------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **工程类型探测器**        | `lib/project-type/detector.js`    | 识别 spring-boot/ruoyi/vue3/android-kotlin/android-compose/mixed，信号文件判定（AndroidManifest + settings.gradle） |
+| **Kotlin 解析器**     | `lib/android/kotlin-parser/`      | 轻量容错解析：函数/类/挂起函数/Composable/圈复杂度                                                                         |
+| **Gradle 体检**      | `lib/android/gradle-inspector/`   | 模块/依赖/版本目录/AGP 解析 + KAPT→KSP 迁移、版本冲突、变体配置诊断评分                                                            |
+| **生命周期审查**         | `lib/android/lifecycle-analyzer/` | 路由扫描（对齐 controller-scanner 契约）+ 5 类反模式审查（GlobalScope/裸launch/泄漏/重组风险/裸collect）                           |
+| **契约桥接**           | `lib/android/contract-bridge/`    | OpenAPI/契约端点 → Kotlin data class + Retrofit suspend 接口（Moshi/kotlinx.serialization/Gson）                 |
+| **Android Linter** | `scripts/linter/`                 | detekt + ktlint + Android Lint 注册，仅 Android 工程激活                                                         |
+| **工具链插件**          | `lib/plugin/android-toolchain/`   | pre-verify 钩子自动 Gradle 体检，报告落 `.pdd/cache/reports/`                                                      |
+| **ADB 测试框架**       | `tests/framework/`                | adb\_executor / ui\_selector / android\_run —— adb.\* YAML 用例，与 Web 用例同构                                 |
+
+### 快速开始 / Quick Start
+
+```bash
+cd MyAndroidApp          # Compose/Kotlin 工程
+pdd init .               # 自动识别 android-kotlin/android-compose
+pdd scan                 # 路由清单（Activity/Fragment/Composable Destination）
+pdd contract -d .        # 生成 Kotlin DTO + Retrofit 接口（mixed 工程同时产出 TS）
+pdd verify               # assembleDebug + 生命周期审查 + detekt/ktlint
+python tests/framework/android_run.py --case tests/cases/android/ --serial emulator-5554
+```
+
+### 新增专家技能触发 / New Expert Skills
+
+| 触发词 / Trigger             | 技能 / Skill          | 用途 / Purpose                       |
+| ------------------------- | ------------------- | ---------------------------------- |
+| `/kotlin`、协程、Flow、suspend | expert-kotlin       | 协程审查清单、Flow 冷热流决策树、空安全治理           |
+| `/android`、Activity、组件化   | expert-android      | 生命周期规则、Manifest 审查、组件化拆分           |
+| `/compose`、Jetpack、重组     | expert-jetpack      | UDF 架构、副作用 API 选型、重组性能             |
+| `/android-test`、ADB       | expert-android-test | Turbine/Compose Test/ADB 用例/Monkey |
+
+### 新增配置（全部可选，缺省即默认）/ New Options
+
+| 字段                      | 默认值      | 说明                                  |
+| ----------------------- | -------- | ----------------------------------- |
+| `android.serializer`    | `moshi`  | 契约产物序列化库                            |
+| `android.verifyCompile` | `true`   | verify 是否执行 assembleDebug           |
+| `android.gradleMode`    | `static` | Gradle 解析模式（static 离线 / dynamic 准确） |
+| `test.target`           | 探测结果     | 自动化测试目标 web/adb                     |
+
+### 兼容性承诺 / Compatibility Promise
+
+- 既有 Java/RuoYi/Vue3 工程：`pdd contract` 输出与 3.3.x **零差异**（仅 `--backend-dir` 未显式指定时由探测器给出等价默认值）
+- 未安装 Android SDK 的机器：所有既有命令行为不变，Android linter 自动跳过
+- 插件为可选包：`android-toolchain` 缺失时框架行为不变
+
+***
 
 ## API 层 / API Layer
 
@@ -1306,14 +1370,14 @@ PDD-Skills 可作为 MCP Server 被 Claude Desktop / Cursor / Windsurf 等 AI ID
 
 ### 可用 Tools / Available Tools
 
-| Tool | 参数 / Parameters | 返回值 / Returns |
-| -------------------- | ----------------------- | ------------- |
-| `pdd_generate_spec` | prd_path, template | 生成的规格文件路径 / Generated spec path |
-| `pdd_generate_code` | spec_path, feature_id | 生成的文件列表 / Generated files |
-| `pdd_verify_feature` | spec_path, source_dir | 验证结果 / Verification result |
-| `pdd_code_review` | source_dir, rules | 审查报告 / Review report |
-| `pdd_list_skills` | category, language | 技能列表 / Skills list |
-| `pdd_get_status` | - | 系统状态 / System status |
+| Tool                 | 参数 / Parameters         | 返回值 / Returns                   |
+| -------------------- | ----------------------- | ------------------------------- |
+| `pdd_generate_spec`  | prd\_path, template     | 生成的规格文件路径 / Generated spec path |
+| `pdd_generate_code`  | spec\_path, feature\_id | 生成的文件列表 / Generated files       |
+| `pdd_verify_feature` | spec\_path, source\_dir | 验证结果 / Verification result      |
+| `pdd_code_review`    | source\_dir, rules      | 审查报告 / Review report            |
+| `pdd_list_skills`    | category, language      | 技能列表 / Skills list              |
+| `pdd_get_status`     | -                       | 系统状态 / System status            |
 
 ***
 
@@ -1564,7 +1628,11 @@ pdd-skills-v3/
 │   ├── sdk-base.js             # SDK 统一接口 / SDK Unified Interface
 │   ├── sdk-js.js               # JavaScript SDK
 │   ├── sdk-python/             # Python SDK (8 文件 / files)
-│   ├── plugin/                 # 插件系统 / Plugin System
+│   ├── project-type/           # ★ 工程类型探测器 / Project Type Detector (NEW v3.4.0-dev)
+│   ├── android/                # ★ Android 能力适配层 / Android Adapters (NEW v3.4.0-dev)
+│   │                           #   gradle-inspector · lifecycle-analyzer
+│   │                           #   kotlin-parser · contract-bridge
+│   ├── plugin/                 # 插件系统 / Plugin System (含 android-toolchain ★)
 │   ├── openclaw/               # OpenClaw 集成 / Integration
 │   ├── cache/                  # 三级缓存 / Three-Level Cache
 │   ├── token/                  # Token 预算 / Budget
@@ -1572,7 +1640,7 @@ pdd-skills-v3/
 │   ├── iteration/              # 迭代优化 / Iteration
 │   └── vm/                     # ★ PDD Visual Manager (~38 文件 / files)
 │
-├── skills/                     # 技能文件 / Skill Files (49 个)
+├── skills/                     # 技能文件 / Skill Files (53 个)
 │   ├── core/                   # 14 个核心技能 / Core Skills
 │   │                           #   pdd-main · pdd-ba · pdd-extract-features
 │   │                           #   pdd-generate-spec · pdd-design-spec ★v3.3.0
@@ -1581,7 +1649,7 @@ pdd-skills-v3/
 │   │                           #   pdd-doc-gardener · pdd-entropy-reduction
 │   │                           #   pdd-vm · official-doc-writer
 │   │                           #   traffic-accident-assessor
-│   ├── expert/                 # 14 个专家技能 / Expert Skills
+│   ├── expert/                 # 18 个专家技能 / Expert Skills（含 4 个 Android 专家 ★v3.4.0-dev）
 │   ├── entropy/                # 4 个熵减技能 / Entropy Skills
 │   ├── openspec/               # 10 个 OpenSpec 技能 / OpenSpec Skills
 │   └── pr/                     # 7 个 PR 技能 / PR Skills
@@ -1640,30 +1708,30 @@ CLI 参数 / CLI Args > 环境变量 / Env Vars > .pddrc.local > .pddrc > defaul
 
 ### 关键配置项 / Key Configurations
 
-| 分类 / Category | 配置项 / Config | 默认值 / Default | 说明 / Description |
-| --------- | ------------------------ | ---------------- | ----------------- |
-| **服务器 / Server** | server.port | 3000 | API 端口 / API Port |
-| | server.cors | false | CORS 跨域 / Cross-origin |
-| | server.rateLimit | 100/min | 限流阈值 / Rate limit |
-| **缓存 / Cache** | cache.l1.enabled | true | L1 缓存开关 / L1 Cache |
-| | cache.l1.maxSize | 100 | L1 容量 / Capacity |
-| | cache.l3.dir | ./cache | L3 磁盘目录 / Disk directory |
-| **Token** | budget.total | 100000 | 总预算 / Total budget |
-| | budget.warnAt | 0.80 | 警告阈值 / Warning threshold |
-| | budget.blockAt | 0.95 | 阻断阈值 / Block threshold |
-| **质量 / Quality** | quality.grade | C | 最低通过等级 / Min pass grade |
-| | iteration.maxRounds | 5 | 最大迭代轮次 / Max iterations |
-| | iteration.convergence | 0.05 | 收敛阈值 / Convergence threshold |
-| **插件 / Plugins** | plugins.dir | ./plugins | 插件目录 / Plugins directory |
-| | sandbox.enabled | true | 沙箱开关 / Sandbox enabled |
-| **★ VM** | vm.port | 3001 | Dashboard 端口 / Dashboard port |
-| | vm.refreshInterval | 30 | 刷新间隔(秒) / Refresh interval (s) |
-| | vm.theme | light | 主题 / Theme light/dark |
-| | vm.autoOpen | true | 自动打开浏览器 / Auto open browser |
-| | vm.maxSSEConnections | 100 | 最大SSE连接数 / Max SSE connections |
-| | vm.tuiRefreshInterval | 5 | TUI 刷新间隔(秒) / TUI refresh (s) |
-| **★ 脚手架 / Scaffold** | scaffold.defaultTemplate | python-fullstack | 默认模板 / Default template |
-| | scaffold.outputDir | ./output | 输出目录 / Output directory |
+| 分类 / Category        | 配置项 / Config             | 默认值 / Default    | 说明 / Description               |
+| -------------------- | ------------------------ | ---------------- | ------------------------------ |
+| **服务器 / Server**     | server.port              | 3000             | API 端口 / API Port              |
+| <br />               | server.cors              | false            | CORS 跨域 / Cross-origin         |
+| <br />               | server.rateLimit         | 100/min          | 限流阈值 / Rate limit              |
+| **缓存 / Cache**       | cache.l1.enabled         | true             | L1 缓存开关 / L1 Cache             |
+| <br />               | cache.l1.maxSize         | 100              | L1 容量 / Capacity               |
+| <br />               | cache.l3.dir             | ./cache          | L3 磁盘目录 / Disk directory       |
+| **Token**            | budget.total             | 100000           | 总预算 / Total budget             |
+| <br />               | budget.warnAt            | 0.80             | 警告阈值 / Warning threshold       |
+| <br />               | budget.blockAt           | 0.95             | 阻断阈值 / Block threshold         |
+| **质量 / Quality**     | quality.grade            | C                | 最低通过等级 / Min pass grade        |
+| <br />               | iteration.maxRounds      | 5                | 最大迭代轮次 / Max iterations        |
+| <br />               | iteration.convergence    | 0.05             | 收敛阈值 / Convergence threshold   |
+| **插件 / Plugins**     | plugins.dir              | ./plugins        | 插件目录 / Plugins directory       |
+| <br />               | sandbox.enabled          | true             | 沙箱开关 / Sandbox enabled         |
+| **★ VM**             | vm.port                  | 3001             | Dashboard 端口 / Dashboard port  |
+| <br />               | vm.refreshInterval       | 30               | 刷新间隔(秒) / Refresh interval (s) |
+| <br />               | vm.theme                 | light            | 主题 / Theme light/dark          |
+| <br />               | vm.autoOpen              | true             | 自动打开浏览器 / Auto open browser    |
+| <br />               | vm.maxSSEConnections     | 100              | 最大SSE连接数 / Max SSE connections |
+| <br />               | vm.tuiRefreshInterval    | 5                | TUI 刷新间隔(秒) / TUI refresh (s)  |
+| **★ 脚手架 / Scaffold** | scaffold.defaultTemplate | python-fullstack | 默认模板 / Default template        |
+| <br />               | scaffold.outputDir       | ./output         | 输出目录 / Output directory        |
 
 ***
 
@@ -1702,26 +1770,26 @@ CLI 参数 / CLI Args > 环境变量 / Env Vars > .pddrc.local > .pddrc > defaul
 
 在演示门控输出时发现评分卡出现 `评分 100/100 · 等级 F` 的自相矛盾，顺藤查出四个缺陷。它们的共同特征是**不报错、不告警，被直接当作通过**：
 
-| # | 缺陷 / Defect | 根因 / Root Cause | 影响 / Impact | 修复 / Fix |
-| - | ------------- | ----------------- | ------------- | ---------- |
-| ① | **等级恒为 F** | `gate-config.yaml` 的 `grade_thresholds` 键为**大写** `A/B/C/D`，而 YAML 解析器的键正则写作 `[a-z_]+` 只匹配小写 → 整块被解析成空对象 | 任何分数都判 F，`Grade: A~D` 分支永不生效 | 键正则放宽为 `[A-Za-z_]+` |
-| ② | **22 / 26 条 PRD 规则从未执行**<br>（含 **7 / 7 个 Blocker 规则**） | 规则的 `pattern` 使用了 Python 内联标志 `(?i)`，而 JavaScript 的 `new RegExp('(?i)...')` 直接抛 `Invalid group`；`applyRule` 的 `catch { return [{ passed: true }] }` 把异常**静默判为通过** | **全部 7 条阻断规则集体失效** —— 缺 6 项必备章节的 PRD 仍得 `99/100` 并**通过门禁**（Blocker 计数为 0） | 新增 `normalizePattern()` 剥离 `(?i)`（大小写不敏感本就由 `gi` 标志保证）；正则异常不再静默通过 |
-| ③ | **路径打错 → 假绿灯** | 未匹配到任何文件时无条件返回 `success: true` | 文件不存在、CI 变量为空时输出「`100/100` ✅ 通过门禁」——最危险的假阳性 | 区分两种「零文件」：显式指定却零匹配 → `skipped: true`，门控判为「未真正执行」；项目内本无 PRD → `applicable: false`，提示「不适用」而非伪装成通过 |
-| ④ | **豁免白名单从未生效**<br>（`exclude_patterns`） | 拿去比对的目标是 `match[0]`，即**命中的关键词本身**（如「提升」两个字），却被用来匹配 `作为.*参考` / `示例` 这类上下文正则 —— 任何输入下都不可能命中 | 所有 `absence` 类规则的豁免名单形同虚设；且失败方式恰好是**静默少报**（本想豁免的没豁免），而「豁免了几处」也没有任何出口可查 | 比对对象改为**整行内容**；豁免命中不再静默跳过，而是作为 `suppressions` 随结果返回 —— 终端打印 `ℹ 已豁免: N 处`，报告单列《已豁免命中》章节 |
+| # | 缺陷 / Defect                                        | 根因 / Root Cause                                                                                                                                                   | 影响 / Impact                                                               | 修复 / Fix                                                                                        |
+| - | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| ① | **等级恒为 F**                                         | `gate-config.yaml` 的 `grade_thresholds` 键为**大写** `A/B/C/D`，而 YAML 解析器的键正则写作 `[a-z_]+` 只匹配小写 → 整块被解析成空对象                                                           | 任何分数都判 F，`Grade: A~D` 分支永不生效                                              | 键正则放宽为 `[A-Za-z_]+`                                                                             |
+| ② | **22 / 26 条 PRD 规则从未执行**（含 **7 / 7 个 Blocker 规则**） | 规则的 `pattern` 使用了 Python 内联标志 `(?i)`，而 JavaScript 的 `new RegExp('(?i)...')` 直接抛 `Invalid group`；`applyRule` 的 `catch { return [{ passed: true }] }` 把异常**静默判为通过** | **全部 7 条阻断规则集体失效** —— 缺 6 项必备章节的 PRD 仍得 `99/100` 并**通过门禁**（Blocker 计数为 0） | 新增 `normalizePattern()` 剥离 `(?i)`（大小写不敏感本就由 `gi` 标志保证）；正则异常不再静默通过                               |
+| ③ | **路径打错 → 假绿灯**                                     | 未匹配到任何文件时无条件返回 `success: true`                                                                                                                                    | 文件不存在、CI 变量为空时输出「`100/100` ✅ 通过门禁」——最危险的假阳性                               | 区分两种「零文件」：显式指定却零匹配 → `skipped: true`，门控判为「未真正执行」；项目内本无 PRD → `applicable: false`，提示「不适用」而非伪装成通过 |
+| ④ | **豁免白名单从未生效**（`exclude_patterns`）                  | 拿去比对的目标是 `match[0]`，即**命中的关键词本身**（如「提升」两个字），却被用来匹配 `作为.*参考` / `示例` 这类上下文正则 —— 任何输入下都不可能命中                                                                         | 所有 `absence` 类规则的豁免名单形同虚设；且失败方式恰好是**静默少报**（本想豁免的没豁免），而「豁免了几处」也没有任何出口可查    | 比对对象改为**整行内容**；豁免命中不再静默跳过，而是作为 `suppressions` 随结果返回 —— 终端打印 `ℹ 已豁免: N 处`，报告单列《已豁免命中》章节          |
 
 > **设计原则：豁免必须可见。** 豁免是「有意不报」，但它同样是「有东西被拦下」这一事实。若只让它静默消失，豁免机制本身就变成了又一个假绿灯出口 —— 与缺陷 ③ 属于同一类问题。因此本仓库要求：**凡是让问题减少的机制，都必须留下计数。**
 
 **修复效果实测 / Measured Impact**
 
-| 场景 / Scenario | 修复前 / Before | 修复后 / After |
-| --------------- | --------------- | -------------- |
-| 传入**不存在**的文件路径 | `100/100 **F**` ✅ **通过门禁**（路径根本没打开，却给出满分绿灯） | ❌ 门禁未真正执行，结果不具判定力 |
-| 缺 6 项必备章节的 PRD | `99/100 **F**`，仅报 **1 条 Info**、**0 Blocker** ✅ **通过门禁** | **`0/100 F`** —— 6 Blocker + 2 Critical + 8 Warning + 4 Info，❌ **阻断** |
-| 真实项目 PRD | `78/100 **F**`，10 条问题，✅ 通过门禁 | **`77/100 C`**，11 条问题 —— 等级恢复为有效档位 |
-| 含黑名单词但带「示例 / 作为参考」上下文的行 | 照报 —— 豁免**从不生效**（实测 `0 处` 豁免） | 该行被真正豁免，摘要与报告均显示「已豁免 1 处」 |
-| 舆情项目真实 PRD<br>（`YUQING-System-Project`，改文案前 / 后） | `77/100 **C**`，0 Blocker / **3 Warning** / 8 Info | `92/100 **A**`，0 Blocker / **0 Warning** / 8 Info，✅ 通过 |
+| 场景 / Scenario                                | 修复前 / Before                                            | 修复后 / After                                                           |
+| -------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- |
+| 传入**不存在**的文件路径                               | `100/100 **F**` ✅ **通过门禁**（路径根本没打开，却给出满分绿灯）             | ❌ 门禁未真正执行，结果不具判定力                                                     |
+| 缺 6 项必备章节的 PRD                               | `99/100 **F**`，仅报 **1 条 Info**、**0 Blocker** ✅ **通过门禁** | **`0/100 F`** —— 6 Blocker + 2 Critical + 8 Warning + 4 Info，❌ **阻断** |
+| 真实项目 PRD                                     | `78/100 **F**`，10 条问题，✅ 通过门禁                            | **`77/100 C`**，11 条问题 —— 等级恢复为有效档位                                    |
+| 含黑名单词但带「示例 / 作为参考」上下文的行                      | 照报 —— 豁免**从不生效**（实测 `0 处` 豁免）                           | 该行被真正豁免，摘要与报告均显示「已豁免 1 处」                                             |
+| 舆情项目真实 PRD（`YUQING-System-Project`，改文案前 / 后） | `77/100 **C**`，0 Blocker / **3 Warning** / 8 Info       | `92/100 **A**`，0 Blocker / **0 Warning** / 8 Info，✅ 通过                |
 
-> 注意「等级 F」在修复前是**恒定的** —— 无论 0 分还是 100 分都是 F，正是缺陷 ① 的直接表现。上表前两行修复前全部为 F，修复后 A~F 才真正随分数变化。
+> 注意「等级 F」在修复前是**恒定的** —— 无论 0 分还是 100 分都是 F，正是缺陷 ① 的直接表现。上表前两行修复前全部为 F，修复后 A\~F 才真正随分数变化。
 
 ```bash
 # 复现验证 / Reproduce
@@ -1736,9 +1804,9 @@ pdd linter -t prd -f ./my-feature.prd
 
 代码原逻辑为「分数越低越好」（≤30 判绿），与 `SKILL.md` 定义的「**0-100，100 = 最有秩序**」正好相反。现统一为**高分 = 健康**，并明确五档分档：
 
-| 区间 | 90-100 | 70-89 | 50-69 | 30-49 | 0-29 |
-| ---- | ------ | ----- | ----- | ----- | ---- |
-| 状态 | 🟢 优秀 | 🟢 良好 | 🟡 一般 | 🟠 警告 | 🔴 危急 |
+| 区间 | 90-100 | 70-89 | 50-69 | 30-49 | 0-29  |
+| -- | ------ | ----- | ----- | ----- | ----- |
+| 状态 | 🟢 优秀  | 🟢 良好 | 🟡 一般 | 🟠 警告 | 🔴 危急 |
 
 #### 2. 阈值对齐黄金原则
 
@@ -1767,18 +1835,18 @@ ratio    = (扣分累计 / KLOC) / 容忍密度        # 0 = 完美，1 = 扣满
 **设计取舍 / Design Rationale**
 
 - **为什么按 KLOC 归一化** —— 度量的是**问题密度**。同样密度下，大项目不应比小项目更差；小项目里单条问题的影响则如实放大。
-- **为什么用 sqrt 而非线性** —— 线性在低密度区间斜率过陡（密度 10/KLOC 就掉到 78 分），区分度全挤在高分区。sqrt 让 0~45 这一整段都能拉开差距，同时保留「密度达到容忍值即归 0」的上界语义。
-- **容忍值如何标定** —— 由三个真实项目的实测扣分密度反推（若依 v6 / pdd-test-system / 本仓库），使三者落在「一般 ~ 良好」档，具备横向可比性。
+- **为什么用 sqrt 而非线性** —— 线性在低密度区间斜率过陡（密度 10/KLOC 就掉到 78 分），区分度全挤在高分区。sqrt 让 0\~45 这一整段都能拉开差距，同时保留「密度达到容忍值即归 0」的上界语义。
+- **容忍值如何标定** —— 由三个真实项目的实测扣分密度反推（若依 v6 / pdd-test-system / 本仓库），使三者落在「一般 \~ 良好」档，具备横向可比性。
 
 **评分对比实测 / Before vs After**
 
 > 「修复前」列由**同一份问题集 + 旧公式**复算得出，确保对比只反映评分模型的变化。
 
-| 项目 / Project | 规模 / Size | 综合评分 / Total | 代码质量 / Code Quality |
-| -------------- | ----------- | ---------------- | ----------------------- |
-| RuoYi-Vue-Plus v6 | 131.4 KLOC | 70 → **87** 🟢 良好 | **0 → 67** 🟡 一般 |
-| pdd-test-system | 16.2 KLOC | 75 → **76** 🟢 良好 | **0 → 4** 🔴 危急 |
-| 本仓库 / This repo | 194.7 KLOC | 68 → **77** 🟢 良好 | **0 → 23** 🔴 危急 |
+| 项目 / Project      | 规模 / Size  | 综合评分 / Total      | 代码质量 / Code Quality |
+| ----------------- | ---------- | ----------------- | ------------------- |
+| RuoYi-Vue-Plus v6 | 131.4 KLOC | 70 → **87** 🟢 良好 | **0 → 67** 🟡 一般    |
+| pdd-test-system   | 16.2 KLOC  | 75 → **76** 🟢 良好 | **0 → 4** 🔴 危急     |
+| 本仓库 / This repo   | 194.7 KLOC | 68 → **77** 🟢 良好 | **0 → 23** 🔴 危急    |
 
 关键改善是**三者终于拉开差距**（67 / 4 / 23）：pdd-test-system 的长函数密度为 4.3 个/KLOC，是若依 v6（0.46 个/KLOC）的 9 倍，落入危急档符合实际观感。
 
@@ -1808,32 +1876,33 @@ python skills/core/pdd-entropy-reduction/scripts/entropy_scan.py \
 
 修复过程中也厘清了一个常见混淆点：这两套体系**互不引用**，职责完全不同。
 
-| | **质量门控 / Quality Gates** | **熵减技能 / Entropy Scan** |
-| --- | --- | --- |
-| 形态 | Node 工具链，有 CLI（`pdd linter`） | Agent 技能（Markdown 指令 + Python 脚本） |
-| 入口 | `scripts/linter/run-linters.js` → `gate-engine.js` | `skills/core/pdd-entropy-reduction/` |
-| 查什么 | **规范符合性**：Checkstyle / PMD / ESLint / Ruff、PRD 规则、SQLFluff、BPMN | **腐化度**：文档一致性、架构边界、复杂度 / 重复、技术债 |
-| 评分 | 100 起扣：critical −15 / warning −5 / info −1；有 blocker 直接 0 | 密度归一化：`100 − 100 × sqrt(min(1, 扣分/KLOC ÷ 容忍密度))` |
-| 判定 | **会阻断**（BLOCKER 必须修复才算通过） | **只度量**，从不阻断 |
-| 用在何时 | PRD 写完 / 代码写完，卡在门禁上 | 定期体检、观察历史趋势 |
+| <br /> | **质量门控 / Quality Gates**                                        | **熵减技能 / Entropy Scan**                          |
+| ------ | --------------------------------------------------------------- | ------------------------------------------------ |
+| 形态     | Node 工具链，有 CLI（`pdd linter`）                                    | Agent 技能（Markdown 指令 + Python 脚本）                |
+| 入口     | `scripts/linter/run-linters.js` → `gate-engine.js`              | `skills/core/pdd-entropy-reduction/`             |
+| 查什么    | **规范符合性**：Checkstyle / PMD / ESLint / Ruff、PRD 规则、SQLFluff、BPMN | **腐化度**：文档一致性、架构边界、复杂度 / 重复、技术债                  |
+| 评分     | 100 起扣：critical −15 / warning −5 / info −1；有 blocker 直接 0       | 密度归一化：`100 − 100 × sqrt(min(1, 扣分/KLOC ÷ 容忍密度))` |
+| 判定     | **会阻断**（BLOCKER 必须修复才算通过）                                       | **只度量**，从不阻断                                     |
+| 用在何时   | PRD 写完 / 代码写完，卡在门禁上                                             | 定期体检、观察历史趋势                                      |
 
----
+***
 
 ## 版本历史 / Version History
 
-| 版本 / Version | 日期 / Date | 重要变更 / Major Changes |
-| ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **v3.3.1** | 2026-10-19 | **设计规范消费闭环 / Design Spec Consumption Loop**: `pdd-implement-feature` 升级至 v2.1 —— 流程新增 **Step 2「读取界面设计规范」**：前端编码前必须读取 `ui/DESIGN.md`（颜色 token、状态色板、4px 间距密度、组件模式），并输出第 9 条铁律「设计规范对齐」与新红旗 EXEC-IMPL-007；`ui/DESIGN.md` 缺失时输出 WARN 提示先运行 `/pdd-design-spec`（不阻塞后端实现）。同时修正 README/package.json 中的技能计数（41+ → **49**，core 14 / expert 14），补全核心技能列表。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330) |
-| **v3.3.0** | 2026-10-19 | **★ 界面设计规范 / Design Spec**: 新增 `pdd-design-spec` 核心技能，在 PRD 与 specs 之后生成 `ui/DESIGN.md` —— 一份 AI 可读、可执行、可审计的设计契约。含 **12 章规范骨架**、**8 条铁律**、**12 项可判定审计清单**、**12 个可复用模式库**（提炼自 84 份真实站点设计系统分析）。两个确定性脚本：`gen-design-scaffold.js` 从 PRD/spec 抽取状态枚举、页面清单、渠道并自动配出合规色板；`check-design.js` 做 **色相 × 明度双重判定**的语义校验。关键设计主张：**状态优先于品牌**、**状态色只作圆点不作文字**（解决高明度色做小字对比度必然不足的问题）、**状态爆炸时收敛色族而非挤色相**。内置融媒体领域预设（11 态稿件状态机 / 8 渠道 / 内容分级）。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330) |
-| **v3.2.1** | 2026-09-30 | **★ 质量保障加固 / Quality Assurance Hardening**: 修复质量门控 **4 个静默失效缺陷**（等级恒为 F、**22/26 条 PRD 规则含 7/7 个 Blocker 从未执行**、路径打错返回假绿灯、**`exclude_patterns` 豁免白名单从未生效**且无出口可查）并新增静默失效防护（豁免次数在摘要与报告中显式计数）；熵减扫描评分模型重构为**密度归一化 + sqrt 压缩**（原绝对扣分导致中大型项目代码质量恒为 0），评分口径对齐文档（0-100 高分=健康）、函数长度阈值 100→50 行、检测语言由 JS 扩展至 **JS/TS/Python/Java**，新增 **28 项基于标准库的单测**。详见 [质量保障加固](#质量保障加固--quality-assurance-hardening) |
-| **v3.2.0** | 2026-05-08 | **★ 测试用例系统发布 / Testcase System Release**: 新增 testcase-modeler（测试用例建模师）和 testcase-agent（自动化测试执行专家）两个核心 Skill，基于 Chrome DevTools MCP 实现零代码 E2E 测试自动化，支持自然语言转 YAML 用例、5条执行铁律、4级自愈策略、深度网络校验、专业 HTML 报告生成，总技能数增至 **43+** |
-| **v3.1.2** | 2026-04-10 | **技能生态大扩展 / Skill Ecosystem Expansion**: 新增 7 个专家技能 / 7 new expert skills, 新增 4 个熵减技能 / 4 entropy skills, PR技能扩展至7个 / PR skills expanded to 7, 核心技能增至12个 / Core skills increased to 12, 总计41+技能 / Total 41+ skills |
-| **v3.1.1** | 2026-04-08 | **Windows兼容性+项目结构优化 / Windows Compatibility + Structure Optimization**: 添加 Windows 终端兼容支持 / Windows terminal support, 优化项目初始化流程 / Optimize init process |
-| **v3.1.0** | 2026-04-05 | **智能能力+生态集成 / Intelligence + Ecosystem**: Bug模式库集中化 / Centralized bug patterns, PRD Linter扩展 / Extended PRD linter, 4级门控引擎 / 4-level gate engine, OpenAPI契约同步 / OpenAPI sync, PRD感知动态模板 / PRD-aware templates, MVP分层交付策略 / MVP delivery, expert-ruoyi+expert-activiti专家技能 / Expert skills |
-| **v3.0.1** | 2026-04-07 | **PDD Visual Manager 发布 / PDD Visual Manager Release**: Web Dashboard + Terminal TUI 双形态可视化监控 / Dual-mode visualization, 11个REST API端点 / 11 REST endpoints, SSE实时推送 / SSE push, Canvas图表引擎 / Canvas charts, ANSI TUI组件库 / ANSI TUI components |
-| **v3.0.0** | 2026-04-05 | **正式发布版 / Official Release**: 6大Phase全部完成 / 6 Phases completed + 插件系统 / Plugin system + OpenClaw + gRPC + Python SDK |
-| v2.x | 2026-03 | 内部迭代版本 / Internal iteration: MCP/SDK/缓存/Token/质量/迭代 / Cache/Token/Quality/Iteration |
-| v1.x | 2025-12 | 初始版本 / Initial version: 基础设施 + 核心技能 + Linter / Infrastructure + Core skills + Linter |
+| 版本 / Version   | 日期 / Date  | 重要变更 / Major Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v3.4.0-dev** | 2026-11-21 | **★ Kotlin 原生 Android 支持 / Kotlin Native Android Support**: 新增工程类型探测器 `lib/project-type/detector.js`（spring-boot/ruoyi/vue3/android-kotlin/android-compose/mixed）；`lib/android/` 四模块（kotlin-parser / gradle-inspector / lifecycle-analyzer / contract-bridge）——Gradle 体检评分、5 类生命周期反模式审查、OpenAPI→Kotlin DTO+Retrofit 契约产物；新增 4 个专家技能（expert-kotlin / expert-android / expert-jetpack / expert-android-test），总技能数 49 → **53**；linter 注册 detekt/ktlint/android-lint（仅 Android 工程激活）；新增 `android-toolchain` 插件（pre-verify Gradle 体检）与 ADB 测试框架（`tests/framework/` adb\_executor / ui\_selector / android\_run，`adb.*` YAML 用例与 Web 用例同构）。**兼容性红线**：Java/RuoYi 工程契约输出与 3.3.x 零差异；顺带修复 plugin-sdk.js 两处预存注释语法错误。详见 [Android 支持](#-kotlin-原生-android-support--android-support-new-v340-dev) 与 [设计方案](docs/plans/04-kotlin-android-capability-enhancement.md) |
+| **v3.3.1**     | 2026-10-19 | **设计规范消费闭环 / Design Spec Consumption Loop**: `pdd-implement-feature` 升级至 v2.1 —— 流程新增 **Step 2「读取界面设计规范」**：前端编码前必须读取 `ui/DESIGN.md`（颜色 token、状态色板、4px 间距密度、组件模式），并输出第 9 条铁律「设计规范对齐」与新红旗 EXEC-IMPL-007；`ui/DESIGN.md` 缺失时输出 WARN 提示先运行 `/pdd-design-spec`（不阻塞后端实现）。同时修正 README/package.json 中的技能计数（41+ → **49**，core 14 / expert 14），补全核心技能列表。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **v3.3.0**     | 2026-10-19 | **★ 界面设计规范 / Design Spec**: 新增 `pdd-design-spec` 核心技能，在 PRD 与 specs 之后生成 `ui/DESIGN.md` —— 一份 AI 可读、可执行、可审计的设计契约。含 **12 章规范骨架**、**8 条铁律**、**12 项可判定审计清单**、**12 个可复用模式库**（提炼自 84 份真实站点设计系统分析）。两个确定性脚本：`gen-design-scaffold.js` 从 PRD/spec 抽取状态枚举、页面清单、渠道并自动配出合规色板；`check-design.js` 做 **色相 × 明度双重判定**的语义校验。关键设计主张：**状态优先于品牌**、**状态色只作圆点不作文字**（解决高明度色做小字对比度必然不足的问题）、**状态爆炸时收敛色族而非挤色相**。内置融媒体领域预设（11 态稿件状态机 / 8 渠道 / 内容分级）。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330)                                                                                                                                                                                                                                                                                                                                                                                   |
+| **v3.2.1**     | 2026-09-30 | **★ 质量保障加固 / Quality Assurance Hardening**: 修复质量门控 **4 个静默失效缺陷**（等级恒为 F、**22/26 条 PRD 规则含 7/7 个 Blocker 从未执行**、路径打错返回假绿灯、**`exclude_patterns`** **豁免白名单从未生效**且无出口可查）并新增静默失效防护（豁免次数在摘要与报告中显式计数）；熵减扫描评分模型重构为**密度归一化 + sqrt 压缩**（原绝对扣分导致中大型项目代码质量恒为 0），评分口径对齐文档（0-100 高分=健康）、函数长度阈值 100→50 行、检测语言由 JS 扩展至 **JS/TS/Python/Java**，新增 **28 项基于标准库的单测**。详见 [质量保障加固](#质量保障加固--quality-assurance-hardening)                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **v3.2.0**     | 2026-05-08 | **★ 测试用例系统发布 / Testcase System Release**: 新增 testcase-modeler（测试用例建模师）和 testcase-agent（自动化测试执行专家）两个核心 Skill，基于 Chrome DevTools MCP 实现零代码 E2E 测试自动化，支持自然语言转 YAML 用例、5条执行铁律、4级自愈策略、深度网络校验、专业 HTML 报告生成，总技能数增至 **43+**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **v3.1.2**     | 2026-04-10 | **技能生态大扩展 / Skill Ecosystem Expansion**: 新增 7 个专家技能 / 7 new expert skills, 新增 4 个熵减技能 / 4 entropy skills, PR技能扩展至7个 / PR skills expanded to 7, 核心技能增至12个 / Core skills increased to 12, 总计41+技能 / Total 41+ skills                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **v3.1.1**     | 2026-04-08 | **Windows兼容性+项目结构优化 / Windows Compatibility + Structure Optimization**: 添加 Windows 终端兼容支持 / Windows terminal support, 优化项目初始化流程 / Optimize init process                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **v3.1.0**     | 2026-04-05 | **智能能力+生态集成 / Intelligence + Ecosystem**: Bug模式库集中化 / Centralized bug patterns, PRD Linter扩展 / Extended PRD linter, 4级门控引擎 / 4-level gate engine, OpenAPI契约同步 / OpenAPI sync, PRD感知动态模板 / PRD-aware templates, MVP分层交付策略 / MVP delivery, expert-ruoyi+expert-activiti专家技能 / Expert skills                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **v3.0.1**     | 2026-04-07 | **PDD Visual Manager 发布 / PDD Visual Manager Release**: Web Dashboard + Terminal TUI 双形态可视化监控 / Dual-mode visualization, 11个REST API端点 / 11 REST endpoints, SSE实时推送 / SSE push, Canvas图表引擎 / Canvas charts, ANSI TUI组件库 / ANSI TUI components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **v3.0.0**     | 2026-04-05 | **正式发布版 / Official Release**: 6大Phase全部完成 / 6 Phases completed + 插件系统 / Plugin system + OpenClaw + gRPC + Python SDK                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| v2.x           | 2026-03    | 内部迭代版本 / Internal iteration: MCP/SDK/缓存/Token/质量/迭代 / Cache/Token/Quality/Iteration                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| v1.x           | 2025-12    | 初始版本 / Initial version: 基础设施 + 核心技能 + Linter / Infrastructure + Core skills + Linter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ***
 

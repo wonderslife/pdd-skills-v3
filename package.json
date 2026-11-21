@@ -1,8 +1,8 @@
 {
   "name": "pdd-skills",
-  "version": "3.3.1",
+  "version": "3.4.0",
   "type": "module",
-  "description": "PDD Skills - PRD驱动开发框架 | 49个技能: 核心(14)/专家(14)/熵减(4)/OpenSpec(10)/PR管理(7) | AI原生开发工作流 | Bug模式库(14) | PRD规则(30) | 4级门控引擎 | 界面设计规范",
+  "description": "PDD Skills - PRD驱动开发框架 | 53个技能: 核心(14)/专家(18)/熵减(4)/OpenSpec(10)/PR管理(7) | AI原生开发工作流 | Bug模式库(14) | PRD规则(30) | 4级门控引擎 | 界面设计规范 | Kotlin原生Android支持",
   "main": "index.js",
   "bin": {
     "pdd": "./bin/pdd.js",
