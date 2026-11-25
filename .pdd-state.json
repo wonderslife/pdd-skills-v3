@@ -1,7 +1,7 @@
 {
   "module": "TOKO",
   "source_doc": "docs/plans/05-token-optimization-and-streaming-model-adaptation.md",
-  "phase": "impl-in-progress",
+  "phase": "released",
   "updated_at": "2026-11-25",
   "spec_output_dir": "dev-specs/",
   "feature_points": [
@@ -18,12 +18,18 @@
     { "id": "FP-TOKO-011", "name": "phase-aware-assembly", "priority": "P1", "status": "impl-done" },
     { "id": "FP-TOKO-012", "name": "compaction-templates", "priority": "P1", "status": "impl-done" },
     { "id": "FP-TOKO-013", "name": "quality-cost-score", "priority": "P2", "status": "impl-done" },
-    { "id": "FP-TOKO-014", "name": "release-350", "priority": "P2", "status": "spec-done" }
+    { "id": "FP-TOKO-014", "name": "release-350", "priority": "P2", "status": "impl-done" }
   ],
   "review": {
     "matrix_review": "skipped-by-user (defaults applied: matrix confirmed, module TOKO)",
     "spec_review": "revised per docs/reviews/review-20261125-053828.md (H1-H3 + M1-M5 + L1-L4, 12 fixes applied on 2026-11-25)",
-    "next_action": "按 review-20261125-053828 修订序逐条复核修订点（无需全量重审）；确认后可进入实现阶段（pdd-implement-feature，需用户另行发起）"
+    "next_action": "FP-001~014 全部 impl-done；3.5.0 已发布（npm publish + tag v3.5.0，核验报告 docs/reviews/review-20261125-131444.md）"
   },
-  "scope_note": "仅产出规格，不实现；技能文件与 lib 源码零改动"
+  "release": {
+    "version": "3.5.0",
+    "npm_publish": "pdd-skills@3.5.0（2026-11-25，--access public）",
+    "git_tag": "v3.5.0（commit c77b6f9）",
+    "verify_report": "docs/reviews/review-20261125-131444.md（结论 PASSED）"
+  },
+  "scope_note": "TOKO 3.5.0 全量交付完成：FP-001~014 实现+验收+发布；npm pdd-skills@3.5.0 + tag v3.5.0"
 }
