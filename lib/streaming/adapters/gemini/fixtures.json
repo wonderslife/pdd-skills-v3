@@ -1,0 +1,10 @@
+{
+  "sample_source": "synthetic",
+  "note": "Gemini streamGenerateContent 流夹具（FP-TOKO-007 R1）：thought 分片/text/functionCall 聚合/usageMetadata 随流/finishReason=STOP",
+  "events": [
+    { "candidates": [{ "content": { "parts": [{ "text": "推理过程", "thought": true }] }, "index": 0 }], "usageMetadata": { "promptTokenCount": 10, "candidatesTokenCount": 2 }, "modelVersion": "gemini-2.5-pro" },
+    { "candidates": [{ "content": { "parts": [{ "text": "最终答案" }] }, "index": 0 }], "usageMetadata": { "promptTokenCount": 10, "candidatesTokenCount": 5, "cachedContentTokenCount": 3 } },
+    { "candidates": [{ "content": { "parts": [{ "functionCall": { "name": "get_weather", "args": { "city": "北京" } } }] }, "index": 0 }], "usageMetadata": { "promptTokenCount": 10, "candidatesTokenCount": 9 } },
+    { "candidates": [{ "content": { "parts": [] }, "finishReason": "STOP", "index": 0 }], "usageMetadata": { "promptTokenCount": 10, "candidatesTokenCount": 16, "totalTokenCount": 26 } }
+  ]
+}

@@ -1,8 +1,8 @@
-# PDD-Skills v3.4.0
+# PDD-Skills v3.5.0
 
-> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**53 个技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**；新增 **Kotlin 原生 Android 全链路支持（v3.4.0-dev）**
+> 从需求文档到代码交付的全链路自动化平台 — **7 大 Phase**、**53 个技能**、**14 个 Bug 模式**、**30 条 PRD 规则**、**4 级质量门控**；新增 **Token 优化与流式模型适配（v3.5.0）**：CAG 上下文装配、PSE 统一流式事件、MSSA 模型适配器、预算流式闭环
 >
-> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **53 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**; new **Kotlin Native Android full-chain support (v3.4.0-dev)**
+> **English**: End-to-end automation platform from PRD to code delivery — **7 Phases**, **53 Skills**, **14 Bug Patterns**, **30 PRD Rules**, **4-Level Quality Gates**; new **Token Optimization & Streaming Model Adaptation (v3.5.0)**: CAG context assembly, PSE unified streaming events, MSSA model adapters, budget streaming closure
 
 ***
 
@@ -1632,6 +1632,13 @@ pdd-skills-v3/
 │   ├── android/                # ★ Android 能力适配层 / Android Adapters (NEW v3.4.0-dev)
 │   │                           #   gradle-inspector · lifecycle-analyzer
 │   │                           #   kotlin-parser · contract-bridge
+│   ├── context-assembly/       # ★ CAG 上下文装配网关 / Context Assembly Gateway (NEW v3.5.0)
+│   │                           #   tier-assembly · artifact-digesting · prefix-stability
+│   │                           #   phase-whitelist · compaction-templates
+│   ├── streaming/              # ★ PSE 流式事件层 + MSSA 适配器 / Streaming & Adapters (NEW v3.5.0)
+│   │                           #   pse-events · fallback-chain · tier-metadata
+│   │                           #   adapters/（openai/anthropic/gemini/deepseek/qwen/glm/kimi/doubao）
+│   │                           #   profiles/（8 家族 tokenizer 校准 + content_hash 锁定）
 │   ├── plugin/                 # 插件系统 / Plugin System (含 android-toolchain ★)
 │   ├── openclaw/               # OpenClaw 集成 / Integration
 │   ├── cache/                  # 三级缓存 / Three-Level Cache
@@ -1891,6 +1898,7 @@ python skills/core/pdd-entropy-reduction/scripts/entropy_scan.py \
 
 | 版本 / Version   | 日期 / Date  | 重要变更 / Major Changes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | -------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v3.5.0**     | 2026-11-25 | **★ Token 优化与流式模型适配 / Token Optimization & Streaming Model Adaptation**: 新增 **CAG 上下文装配网关**（`lib/context-assembly/`）——Tier 0-3 四层装配模型、装配报价单 manifest（manifest\_version 1.0）、工件摘要化（结构化边界不破坏截断）、前缀稳定化（KV-Cache 友好排序 + 缓存命中观测）、阶段感知白名单（IMPL 阶段 expert 池 18→3-4，单会话装配压缩 ≥40%）、压实模板（长会话综合 ≥55%）；新增 **PSE 统一流式事件层**（`lib/streaming/pse-events.js`，11 类事件 + SSE 编解码 + `POST /v1/stream` 纯新增端点）；新增 **MSSA 模型流式适配器**（8 家族：openai/anthropic/gemini/deepseek/qwen/glm/kimi/doubao，独立版本 + tested\_at + upstream\_version 声明，tokenizer profile content\_hash 锁定，降级链 openai fallback）；预算流式闭环（usage 双轨计数、三级软熔断梯级、记账误差 ≤5%）；质量评分新增可选 cost 子项（默认关闭，权重 ≤0.10）。**兼容性红线**：53 技能触发语义、既有 17 REST 端点、MCP 协议、budget-manager 类接口零变更（发版核验 8 项全绿，报告见 docs/reviews/review-20261125-131444.md）；npm 包体积增幅 0.48%。详见 [设计方案](docs/plans/05-token-optimization-and-streaming-model-adaptation.md) |
 | **v3.4.0-dev** | 2026-11-21 | **★ Kotlin 原生 Android 支持 / Kotlin Native Android Support**: 新增工程类型探测器 `lib/project-type/detector.js`（spring-boot/ruoyi/vue3/android-kotlin/android-compose/mixed）；`lib/android/` 四模块（kotlin-parser / gradle-inspector / lifecycle-analyzer / contract-bridge）——Gradle 体检评分、5 类生命周期反模式审查、OpenAPI→Kotlin DTO+Retrofit 契约产物；新增 4 个专家技能（expert-kotlin / expert-android / expert-jetpack / expert-android-test），总技能数 49 → **53**；linter 注册 detekt/ktlint/android-lint（仅 Android 工程激活）；新增 `android-toolchain` 插件（pre-verify Gradle 体检）与 ADB 测试框架（`tests/framework/` adb\_executor / ui\_selector / android\_run，`adb.*` YAML 用例与 Web 用例同构）。**兼容性红线**：Java/RuoYi 工程契约输出与 3.3.x 零差异；顺带修复 plugin-sdk.js 两处预存注释语法错误。详见 [Android 支持](#-kotlin-原生-android-support--android-support-new-v340-dev) 与 [设计方案](docs/plans/04-kotlin-android-capability-enhancement.md) |
 | **v3.3.1**     | 2026-10-19 | **设计规范消费闭环 / Design Spec Consumption Loop**: `pdd-implement-feature` 升级至 v2.1 —— 流程新增 **Step 2「读取界面设计规范」**：前端编码前必须读取 `ui/DESIGN.md`（颜色 token、状态色板、4px 间距密度、组件模式），并输出第 9 条铁律「设计规范对齐」与新红旗 EXEC-IMPL-007；`ui/DESIGN.md` 缺失时输出 WARN 提示先运行 `/pdd-design-spec`（不阻塞后端实现）。同时修正 README/package.json 中的技能计数（41+ → **49**，core 14 / expert 14），补全核心技能列表。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **v3.3.0**     | 2026-10-19 | **★ 界面设计规范 / Design Spec**: 新增 `pdd-design-spec` 核心技能，在 PRD 与 specs 之后生成 `ui/DESIGN.md` —— 一份 AI 可读、可执行、可审计的设计契约。含 **12 章规范骨架**、**8 条铁律**、**12 项可判定审计清单**、**12 个可复用模式库**（提炼自 84 份真实站点设计系统分析）。两个确定性脚本：`gen-design-scaffold.js` 从 PRD/spec 抽取状态枚举、页面清单、渠道并自动配出合规色板；`check-design.js` 做 **色相 × 明度双重判定**的语义校验。关键设计主张：**状态优先于品牌**、**状态色只作圆点不作文字**（解决高明度色做小字对比度必然不足的问题）、**状态爆炸时收敛色族而非挤色相**。内置融媒体领域预设（11 态稿件状态机 / 8 渠道 / 内容分级）。详见 [界面设计规范](#-界面设计规范--design-spec-new-v330)                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -1921,11 +1929,11 @@ python skills/core/pdd-entropy-reduction/scripts/entropy_scan.py \
 ***
 
 <p align="center">
-  <b>PDD-Skills v3.2.1 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
+  <b>PDD-Skills v3.5.0 — 让 AI 成为你的全职结对编程伙伴 🤖</b>
   <br>
   <b>Let AI be your full-time pair programming partner 🤖</b>
 </p>
 
 <p align="center">
-  <sub>43+ Skills ✅ · 14 Bug Patterns ✅ · 30 PRD Rules ✅ · 4-Level Gate ✅ · 4 Entropy Skills ✅ · ★ Testcase System ✅</sub>
+  <sub>53 Skills ✅ · 14 Bug Patterns ✅ · 30 PRD Rules ✅ · 4-Level Gate ✅ · 4 Entropy Skills ✅ · ★ Testcase System ✅ · ★ Token Optimization & Streaming ✅</sub>
 </p>

@@ -1,0 +1,9 @@
+{
+  "sample_source": "synthetic",
+  "note": "Kimi 夹具（FP-TOKO-007 R1）：content/usage/finish；reasoning_delta 样本对应 k2 thinking 系列（映射表显式标注'部分'，主流 moonshot-v1 无该字段）",
+  "events": [
+    { "id": "kimi-fixture", "choices": [{ "index": 0, "delta": { "role": "assistant", "content": "月光" }, "finish_reason": null }] },
+    { "id": "kimi-fixture", "choices": [{ "index": 0, "delta": { "reasoning_content": "k2 推理" }, "finish_reason": null }] },
+    { "id": "kimi-fixture", "choices": [{ "index": 0, "delta": {}, "finish_reason": "stop" }], "usage": { "prompt_tokens": 9, "completion_tokens": 18, "total_tokens": 27 } }
+  ]
+}

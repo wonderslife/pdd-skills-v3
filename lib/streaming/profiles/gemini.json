@@ -1,0 +1,18 @@
+{
+  "family": "gemini",
+  "ratios": {
+    "zh_chars_per_token": 0.7,
+    "en_words_per_token": 0.8,
+    "code_lines_per_token": 10
+  },
+  "usage_semantics": "gemini-in-stream",
+  "reasoning_channel": "interleaved",
+  "prefix_cache": {
+    "billing": 0.25,
+    "min_tokens": 1024
+  },
+  "context_window": 1048576,
+  "stream_protocol": "sse-gemini",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:318c41d2adc9a0d038e7a0d248d0c3ae50d9cb919cbb9eba8f1e0394f427d59c"
+}

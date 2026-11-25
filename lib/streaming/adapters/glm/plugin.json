@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-glm",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：GLM/智谱（chat-completions SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "glm", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "glm",
+    "tested_at": "2026-11-25",
+    "upstream_version": "open.bigmodel.cn v4（chat/completions，thinking 字段）",
+    "sample_source": "synthetic"
+  }
+}

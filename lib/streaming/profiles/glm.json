@@ -1,0 +1,18 @@
+{
+  "family": "glm",
+  "ratios": {
+    "zh_chars_per_token": 0.68,
+    "en_words_per_token": 0.78,
+    "code_lines_per_token": 9.5
+  },
+  "usage_semantics": "openai-compatible-tail",
+  "reasoning_channel": "dedicated_field",
+  "prefix_cache": {
+    "billing": 0.2,
+    "min_tokens": 1024
+  },
+  "context_window": 200000,
+  "stream_protocol": "sse-openai",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:e86ac3ebaf4faf667c5b3898633e8a0368076666ba0960aacbadb0c288707b44"
+}

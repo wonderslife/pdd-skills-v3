@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-anthropic",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：Anthropic（messages SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "anthropic", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "anthropic",
+    "tested_at": "2026-11-25",
+    "upstream_version": "messages API v1（streaming，start_and_delta usage）",
+    "sample_source": "synthetic"
+  }
+}

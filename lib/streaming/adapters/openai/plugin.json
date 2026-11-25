@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-openai",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：OpenAI（chat-completions SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "openai", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "openai",
+    "tested_at": "2026-11-25",
+    "upstream_version": "chat-completions v1（stream_options.include_usage，usage 末块）",
+    "sample_source": "synthetic"
+  }
+}

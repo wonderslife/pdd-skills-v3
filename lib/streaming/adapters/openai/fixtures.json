@@ -1,0 +1,13 @@
+{
+  "sample_source": "synthetic",
+  "note": "OpenAI chat-completions 流夹具（FP-TOKO-007 R1 契约回放）：覆盖 content/reasoning/tool/usage/done 五类映射 + T2 透传字段 + [DONE] 哨兵",
+  "events": [
+    { "id": "chatcmpl-fixture-1", "object": "chat.completion.chunk", "created": 1760000000, "model": "gpt-5", "choices": [{ "index": 0, "delta": { "role": "assistant", "content": "你好" }, "finish_reason": null }] },
+    { "id": "chatcmpl-fixture-1", "object": "chat.completion.chunk", "choices": [{ "index": 0, "delta": { "reasoning": "分析需求边界" }, "finish_reason": null }] },
+    { "id": "chatcmpl-fixture-1", "choices": [{ "index": 0, "delta": { "tool_calls": [{ "index": 0, "id": "call_1", "type": "function", "function": { "name": "get_weather", "arguments": "" } }] }, "finish_reason": null }] },
+    { "id": "chatcmpl-fixture-1", "choices": [{ "index": 0, "delta": { "tool_calls": [{ "index": 0, "function": { "arguments": "{\"city\":\"北京\"}" } }] }, "finish_reason": null }] },
+    { "id": "chatcmpl-fixture-2", "x_vendor_extension": { "trace": "t-9" }, "choices": [{ "index": 0, "delta": { "content": "扩展字段", "custom_flag": true }, "finish_reason": null }] },
+    { "id": "chatcmpl-fixture-1", "object": "chat.completion.chunk", "choices": [{ "index": 0, "delta": {}, "finish_reason": "stop" }], "usage": { "prompt_tokens": 12, "completion_tokens": 34, "total_tokens": 46, "prompt_tokens_details": { "cached_tokens": 8 } } },
+    "[DONE]"
+  ]
+}

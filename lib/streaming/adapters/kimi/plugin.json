@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-kimi",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：Kimi/月之暗面（OpenAI 兼容 SSE → PSE，reasoning 部分支持，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "kimi", "moonshot", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "kimi",
+    "tested_at": "2026-11-25",
+    "upstream_version": "api.moonshot.cn v1（OpenAI 兼容，k2 thinking 部分支持 reasoning_content）",
+    "sample_source": "synthetic"
+  }
+}

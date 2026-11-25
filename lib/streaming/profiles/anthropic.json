@@ -1,0 +1,18 @@
+{
+  "family": "anthropic",
+  "ratios": {
+    "zh_chars_per_token": 0.65,
+    "en_words_per_token": 0.78,
+    "code_lines_per_token": 9.5
+  },
+  "usage_semantics": "anthropic-start-and-delta",
+  "reasoning_channel": "thinking_block",
+  "prefix_cache": {
+    "billing": 0.1,
+    "min_tokens": 1024
+  },
+  "context_window": 200000,
+  "stream_protocol": "sse-anthropic",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:59284086703c46c71e49b98f851d36d9ec257c2a7267bf51bea6175d558a0d97"
+}

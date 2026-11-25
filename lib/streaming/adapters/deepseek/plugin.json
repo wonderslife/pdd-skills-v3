@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-deepseek",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：DeepSeek（OpenAI 兼容 SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "deepseek", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "deepseek",
+    "tested_at": "2026-11-25",
+    "upstream_version": "api-docs（OpenAI 兼容，reasoner 系列 reasoning_content）",
+    "sample_source": "synthetic"
+  }
+}

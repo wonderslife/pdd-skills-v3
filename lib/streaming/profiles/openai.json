@@ -1,0 +1,18 @@
+{
+  "family": "openai",
+  "ratios": {
+    "zh_chars_per_token": 0.6,
+    "en_words_per_token": 0.75,
+    "code_lines_per_token": 9
+  },
+  "usage_semantics": "openai-compatible-tail",
+  "reasoning_channel": "dedicated_field",
+  "prefix_cache": {
+    "billing": 0.5,
+    "min_tokens": 1024
+  },
+  "context_window": 400000,
+  "stream_protocol": "sse-openai",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:cb57a00a5f0bbd26d3c7c998dddc066e60a3c0c47aae72ddd7249dacf23472bb"
+}

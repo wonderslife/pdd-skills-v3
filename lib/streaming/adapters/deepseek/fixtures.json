@@ -1,0 +1,11 @@
+{
+  "sample_source": "synthetic",
+  "note": "DeepSeek 流夹具（FP-TOKO-007 R1）：reasoning_content/content/tool/usage 末块（prompt_cache_hit_tokens → cached_tokens）",
+  "events": [
+    { "id": "chatcmpl-ds", "object": "chat.completion.chunk", "model": "deepseek-reasoner", "choices": [{ "index": 0, "delta": { "role": "assistant", "content": "" }, "finish_reason": null }] },
+    { "id": "chatcmpl-ds", "choices": [{ "index": 0, "delta": { "reasoning_content": "深度推理" }, "finish_reason": null }] },
+    { "id": "chatcmpl-ds", "choices": [{ "index": 0, "delta": { "content": "答案内容" }, "finish_reason": null }] },
+    { "id": "chatcmpl-ds", "choices": [{ "index": 0, "delta": { "tool_calls": [{ "index": 0, "id": "call_ds", "type": "function", "function": { "name": "search", "arguments": "{}" } }] }, "finish_reason": null }] },
+    { "id": "chatcmpl-ds", "choices": [{ "index": 0, "delta": {}, "finish_reason": "stop" }], "usage": { "prompt_tokens": 20, "completion_tokens": 30, "total_tokens": 50, "prompt_cache_hit_tokens": 16, "prompt_cache_miss_tokens": 4 } }
+  ]
+}

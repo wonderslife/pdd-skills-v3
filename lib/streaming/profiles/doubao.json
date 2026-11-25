@@ -1,0 +1,18 @@
+{
+  "family": "doubao",
+  "ratios": {
+    "zh_chars_per_token": 0.64,
+    "en_words_per_token": 0.75,
+    "code_lines_per_token": 9.5
+  },
+  "usage_semantics": "openai-compatible-tail",
+  "reasoning_channel": "dedicated_field",
+  "prefix_cache": {
+    "billing": 0.2,
+    "min_tokens": 1024
+  },
+  "context_window": 256000,
+  "stream_protocol": "sse-openai",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:385cea3060de138c08c58c8c6912deb9d73ae73b1a5293d3a61fa214d51d95bd"
+}

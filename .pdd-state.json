@@ -1,0 +1,29 @@
+{
+  "module": "TOKO",
+  "source_doc": "docs/plans/05-token-optimization-and-streaming-model-adaptation.md",
+  "phase": "impl-in-progress",
+  "updated_at": "2026-11-25",
+  "spec_output_dir": "dev-specs/",
+  "feature_points": [
+    { "id": "FP-TOKO-001", "name": "tokenizer-profiles", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-002", "name": "budget-estimation-track", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-003", "name": "cag-tier-assembly", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-004", "name": "artifact-digesting", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-005", "name": "prefix-stabilization", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-006", "name": "pse-stream-endpoint", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-007", "name": "mssa-adapters", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-008", "name": "budget-streaming-closure", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-009", "name": "tier-metadata", "priority": "P0", "status": "impl-done" },
+    { "id": "FP-TOKO-010", "name": "fallback-chain", "priority": "P1", "status": "impl-done" },
+    { "id": "FP-TOKO-011", "name": "phase-aware-assembly", "priority": "P1", "status": "impl-done" },
+    { "id": "FP-TOKO-012", "name": "compaction-templates", "priority": "P1", "status": "impl-done" },
+    { "id": "FP-TOKO-013", "name": "quality-cost-score", "priority": "P2", "status": "impl-done" },
+    { "id": "FP-TOKO-014", "name": "release-350", "priority": "P2", "status": "spec-done" }
+  ],
+  "review": {
+    "matrix_review": "skipped-by-user (defaults applied: matrix confirmed, module TOKO)",
+    "spec_review": "revised per docs/reviews/review-20261125-053828.md (H1-H3 + M1-M5 + L1-L4, 12 fixes applied on 2026-11-25)",
+    "next_action": "按 review-20261125-053828 修订序逐条复核修订点（无需全量重审）；确认后可进入实现阶段（pdd-implement-feature，需用户另行发起）"
+  },
+  "scope_note": "仅产出规格，不实现；技能文件与 lib 源码零改动"
+}

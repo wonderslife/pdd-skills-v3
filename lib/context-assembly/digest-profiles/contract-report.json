@@ -1,0 +1,8 @@
+{
+  "profile_id": "contract-report",
+  "artifact_type": "契约扫描报告",
+  "keep_fields": ["summary", "issues.top_n"],
+  "max_items": 10,
+  "token_ceiling": 800,
+  "degraded_output": "path + one-line description + fetch instruction"
+}

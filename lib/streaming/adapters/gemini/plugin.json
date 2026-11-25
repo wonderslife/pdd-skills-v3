@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-gemini",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：Gemini（streamGenerateContent SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "gemini", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "gemini",
+    "tested_at": "2026-11-25",
+    "upstream_version": "generativelanguage v1beta（streamGenerateContent alt=sse）",
+    "sample_source": "synthetic"
+  }
+}

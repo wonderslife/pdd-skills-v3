@@ -1,0 +1,18 @@
+{
+  "family": "qwen",
+  "ratios": {
+    "zh_chars_per_token": 0.62,
+    "en_words_per_token": 0.75,
+    "code_lines_per_token": 9.5
+  },
+  "usage_semantics": "openai-compatible-tail",
+  "reasoning_channel": "thinking_block",
+  "prefix_cache": {
+    "billing": 0.1,
+    "min_tokens": 1024
+  },
+  "context_window": 131072,
+  "stream_protocol": "sse-openai",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:63529e26d37ec46856f315f0466c5918b384a750faf8fe121dbccd2bbf9b1393"
+}

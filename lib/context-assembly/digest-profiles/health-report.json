@@ -1,0 +1,8 @@
+{
+  "profile_id": "health-report",
+  "artifact_type": "Gradle 体检报告",
+  "keep_fields": ["lines:score", "lines:评分", "lines:ERROR"],
+  "max_items": 10,
+  "token_ceiling": 800,
+  "degraded_output": "path + one-line description + fetch instruction"
+}

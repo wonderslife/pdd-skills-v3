@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-qwen",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：Qwen/DashScope（原生 SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "qwen", "dashscope", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "qwen",
+    "tested_at": "2026-11-25",
+    "upstream_version": "DashScope 原生协议（incremental_output，qwen3 thinking 系列）",
+    "sample_source": "synthetic"
+  }
+}

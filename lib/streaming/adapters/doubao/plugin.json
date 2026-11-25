@@ -1,0 +1,17 @@
+{
+  "name": "mssa-adapter-doubao",
+  "version": "1.0.0",
+  "description": "MSSA 流式适配器：Doubao/火山方舟（OpenAI 兼容 SSE → PSE，FP-TOKO-007）",
+  "main": "index.js",
+  "provides": "mssa-adapter",
+  "author": "PDD Team",
+  "license": "MIT",
+  "keywords": ["mssa", "adapter", "doubao", "ark", "streaming"],
+  "pdd": ">=3.4.0",
+  "mssa": {
+    "family": "doubao",
+    "tested_at": "2026-11-25",
+    "upstream_version": "ark.cn-beijing.volces.com v3（OpenAI 兼容 + 方舟扩展字段）",
+    "sample_source": "synthetic"
+  }
+}

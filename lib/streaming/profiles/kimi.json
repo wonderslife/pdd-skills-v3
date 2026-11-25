@@ -1,0 +1,18 @@
+{
+  "family": "kimi",
+  "ratios": {
+    "zh_chars_per_token": 0.66,
+    "en_words_per_token": 0.75,
+    "code_lines_per_token": 9.5
+  },
+  "usage_semantics": "openai-compatible-tail",
+  "reasoning_channel": "none",
+  "prefix_cache": {
+    "billing": 0.25,
+    "min_tokens": 1024
+  },
+  "context_window": 262144,
+  "stream_protocol": "sse-openai",
+  "calibrated_at": "2026-11-25T00:00:00Z",
+  "content_hash": "sha256:feaaa413d12c1c5aeb4e63d2875e61ae553a31bcc5e05052e0d9a92068dece11"
+}

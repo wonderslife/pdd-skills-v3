@@ -1,0 +1,10 @@
+{
+  "sample_source": "synthetic",
+  "note": "GLM 夹具（FP-TOKO-007 R1）：delta.content/delta.thinking/tool_calls/usage 末块/finish_reason",
+  "events": [
+    { "id": "glm-fixture", "choices": [{ "index": 0, "delta": { "role": "assistant", "content": "你好" }, "finish_reason": null }] },
+    { "id": "glm-fixture", "choices": [{ "index": 0, "delta": { "thinking": "深度思考" }, "finish_reason": null }] },
+    { "id": "glm-fixture", "choices": [{ "index": 0, "delta": { "tool_calls": [{ "index": 0, "id": "call_g", "type": "function", "function": { "name": "get_weather", "arguments": "{}" } }] }, "finish_reason": null }] },
+    { "id": "glm-fixture", "choices": [{ "index": 0, "delta": {}, "finish_reason": "stop" }], "usage": { "prompt_tokens": 11, "completion_tokens": 22, "total_tokens": 33 } }
+  ]
+}

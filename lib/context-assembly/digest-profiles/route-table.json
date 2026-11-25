@@ -1,0 +1,8 @@
+{
+  "profile_id": "route-table",
+  "artifact_type": "组件化路由清单",
+  "keep_fields": ["routes.top_n", "impact"],
+  "max_items": 10,
+  "token_ceiling": 800,
+  "degraded_output": "path + one-line description + fetch instruction"
+}

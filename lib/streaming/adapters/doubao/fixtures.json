@@ -1,0 +1,9 @@
+{
+  "sample_source": "synthetic",
+  "note": "Doubao/火山方舟夹具（FP-TOKO-007 R1）：content/reasoning_content/usage 末块 + 方舟扩展 completion_tokens_details（经 extra.usage 透传）",
+  "events": [
+    { "id": "doubao-fixture", "choices": [{ "index": 0, "delta": { "role": "assistant", "content": "豆包" }, "finish_reason": null }] },
+    { "id": "doubao-fixture", "choices": [{ "index": 0, "delta": { "reasoning_content": "深度推理" }, "finish_reason": null }] },
+    { "id": "doubao-fixture", "choices": [{ "index": 0, "delta": {}, "finish_reason": "stop" }], "usage": { "prompt_tokens": 13, "completion_tokens": 26, "total_tokens": 39, "completion_tokens_details": { "reasoning_tokens": 7 } } }
+  ]
+}
